@@ -1,0 +1,13 @@
+/* RadioButtonGroup in the sidebar */
+:host {
+    width: 100%;
+}
+
+.bk-btn-group.bk-vertical {
+    gap: 10px;
+    margin: 0 15px 0 0;
+}
+
+button {
+    border-radius: 10px;
+}

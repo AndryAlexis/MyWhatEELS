@@ -1,6 +1,8 @@
 from apps import create_apps
+import panel as pn
 
-# if __name__ == "__main__":
-#     create_apps()
+pn.extension(sizing_mode="stretch_width")
 
-create_apps()
+if __name__ == "__main__":
+    apps = create_apps()
+    pn.serve(apps, port=5006)

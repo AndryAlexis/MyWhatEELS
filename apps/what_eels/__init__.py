@@ -1,44 +1,65 @@
+# Import required Panel library and application components
 import panel as pn
+from .views import *
+from .src.config.constants import *
+from .src.utils.read_files import read_css
 
+# Configure Panel extension with default sizing mode
 pn.extension(sizing_mode="stretch_width")
 
-THUMBNAIL_PATH = "apps/what_eels/WhatEELS.jpg"
-
-pn.pane.JPG(THUMBNAIL_PATH)
-
-def app():
-    pages = {
-        "Page 1": pn.Column("# Page 1", "...bla bla bla"),
-        "Page 2": pn.Column("# Page 2", "...more bla"),
+def app():   
+    # Dictionary mapping view names to view components
+    views = {
+        "Home page": home_view(),
+        "About": about_view(),
     }
 
-    def show(page):
-        return pages[page]
+    def show(view):
+        # Helper function to display selected view
+        return views[view]
 
-    starting_page = pn.state.session_args.get("page", [b"Page 1"])[0].decode()
-    page = pn.widgets.RadioButtonGroup(
-        value=starting_page,
-        options=list(pages.keys()),
-        name="Page",
+    # Get initial view from URL parameters, defaulting to Home page
+    starting_view = pn.state.session_args.get("view", [b"Home page"])[0].decode()
+        
+    # Load custom CSS styling for radio buttons
+    rb_stylesheet = read_css(path="apps/what_eels/src/styles/sidebar/radioButtonGroup.css")
+    
+    # Create radio button group for view selection
+    radio_buttons = pn.widgets.RadioButtonGroup(
+        value=starting_view,
+        options=list(views.keys()),
+        name="View",
         sizing_mode="fixed",
         button_type="success",
+        orientation="vertical",
+        stylesheets=[rb_stylesheet],
     )
-    ishow = pn.bind(show, page=page)
-    pn.state.location.sync(page, {"value": "page"})
+        
+    # Create sidebar containing radio buttons
+    sidebar = pn.Column(
+        radio_buttons,
+    )
 
-    ACCENT_COLOR = "#0072B5"
-    DEFAULT_PARAMS = {
-        "site": "WhatEELS",
-        "accent_base_color": ACCENT_COLOR,
-        "header_background": ACCENT_COLOR,
-    }
+    # Bind view selection to radio buttons
+    ishow = pn.bind(show, view=radio_buttons)
+
+    # Sync URL parameter with selected view
+    pn.state.location.sync(radio_buttons, {"value": "view"})
     
+    # Return main application template
     return pn.template.FastListTemplate(
         title="",
-        sidebar=[page],
+        sidebar=[sidebar],
         main=[ishow],
         **DEFAULT_PARAMS,
+        sidebar_width=225,
+        raw_css=["""
+            :host {
+                border: 5px solid orange !important;
+            }
+            
+            .card-margin.stretch_width {
+                height: calc((100vh - 1em) - 80px);
+            }
+        """],
     )
-    
-# app().servable()
-    
