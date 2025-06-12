@@ -1,24 +1,5 @@
-   pandas==1.4.4
-   scikit-learn==1.1.2
-   plotly==5.10.0
-   scipy==1.9.1
-   notebook==6.4.12
-   python==3.10
-   jupyterlab_widgets==1.0.0
-   nodejs==18.11.0
-   panel==0.14.0
-   holoviews==1.15.1
-   matplotlib
-   black==22.6.0
-   numpy==1.23.3
-   param==1.12.2
-   networkx==2.8.4
-   ipywidgets==7.6.5
-   jupyterlab
-   hyperspy-base
-   hyperspy
-   hvplot
-   xarray
-   lmfit
-   pscript
-   watchfiles
+# This file lists the dependencies for the project.
+panel==1.7.1
+watchfiles==1.0.5
+Pygments==2.19.1
+hvplot==0.11.3

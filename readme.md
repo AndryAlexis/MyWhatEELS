@@ -1,21 +1,18 @@
 # Panel Project Setup Instructions
 
 ## Prerequisites
-- Python 3.7 or higher
+- Python 3.13.4
 - pip (Python package installer)
 
 ## Installation Steps
 
 1. Create and activate a virtual environment (recommended):
-   ```bash
+   ```powershell
    # Create a virtual environment
-   python -m venv venv
+   python -m venv .venv
 
    # Activate virtual environment
-   # On Windows:
-   venv\Scripts\activate
-   # On macOS/Linux:
-   source venv/bin/activate
+   .venv\Scripts\Activate
    ```
 
 2. Install required dependencies:
