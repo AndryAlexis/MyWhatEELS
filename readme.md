@@ -22,7 +22,6 @@
 
 3. Run your Panel application:
    ```bash
-   panel serve main.py --dev
    python main.py
    ```
 

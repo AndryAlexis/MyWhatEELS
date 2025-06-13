@@ -1,8 +1,7 @@
-from apps import create_apps
 import panel as pn
+pn.extension(sizing_mode="stretch_width") # Import Panel and initialize the extension
 
-pn.extension(sizing_mode="stretch_width")
+import whateels
 
 if __name__ == "__main__":
-    apps = create_apps()
-    pn.serve(apps, port=5006)
+    pn.serve(whateels.app(), port=5006)
