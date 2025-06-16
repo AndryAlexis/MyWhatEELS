@@ -1,7 +1,3 @@
-import panel as pn
-pn.extension(sizing_mode="stretch_width") # Import Panel and initialize the extension
+from whateels import app
 
-import whateels
-
-if __name__ == "__main__":
-    pn.serve(whateels.app(), port=5006)
+app(title="WhatEELS").servable()

@@ -1,0 +1,16 @@
+{
+  "en": {
+    "feature_0": "Feature 0",
+    "feature_1": "Feature 1",
+    "search_placeholder": "Search a feature...",
+    "title": "WhatEELS",
+    "welcome": "Welcome to WhatEELS!"
+  },
+  "es": {
+    "feature_0": "Función 0",
+    "feature_1": "Función 1",
+    "search_placeholder": "Buscar una función...",
+    "title": "WhatEELS",
+    "welcome": "¡Bienvenido a WhatEELS!"
+  }
+}
