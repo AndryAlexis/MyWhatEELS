@@ -1,36 +1,29 @@
 import panel as pn
 
-def filedropper() -> pn.widgets.FileDropper:
+def file_dropper():
     pn.extension('filedropper')
     
-    # Create a FileDropper widget
+    # Create FileDropper and output pane
     file_dropper = pn.widgets.FileDropper(
-        layout="integrated", 
-        styles={
-            'border': '2px dashed #ccc',
-            'padding': '0px',
-            'text-align': 'center',
-            'width': '100%',
-            'height': '100%',
-        },
-        accepted_filetypes=['.dm3', '.dm4'],
-        multiple=True,
+        layout="compact",
+        multiple=False,
     )
+    file_name_pane = pn.pane.Markdown("No file uploaded yet.", sizing_mode='stretch_width')
 
-    # Callback to print selected files info
+    # Callback to update file name in main area
     def on_files_change(event):
         files = event.new
-        print("Raw files value:", files)
+
         if files:
-            print("Files selected:")
             for file in files:
                 if isinstance(file, dict):
-                    print(f"File: {file.get('name')}, Size: {file.get('size')} bytes")
+                    file_name_pane.object = f"**Uploaded file:** {file.get('name')}"
+                    break
                 else:
-                    print(f"- {file} (type: {type(file)})", event)
+                    file_name_pane.object = f"**Uploaded file:** {file}"
         else:
-            print("No files selected.")
+            file_name_pane.object = "No file uploaded yet."
 
     file_dropper.param.watch(on_files_change, 'value')
-
-    return file_dropper
+    
+    return file_dropper, file_name_pane
