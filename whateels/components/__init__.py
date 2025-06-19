@@ -1,2 +1,2 @@
-from .topmenu import top_menu
-from .filedropper import file_dropper
+from .top_menu import top_menu
+from .file_dropper import file_dropper

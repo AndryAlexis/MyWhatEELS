@@ -1,43 +1,43 @@
 import panel as pn
+import os
+import hyperspy.api as hs
 
-def home_page():
-    return pn.pane.Markdown("# Welcome to WhatEELS")
+pn.extension()
 
-def nlls_page():
-    return pn.pane.Markdown("# NLLS Analysis\nThis is the NLLS page.")
+# Create the FileInput widget for user uploads
+file_input = pn.widgets.FileInput(accept='.dm3,.dm4,.DM3', multiple=False)
+output = pn.pane.Markdown("No file uploaded yet.")
+parsed_data_pane = pn.pane.Markdown("", sizing_mode='stretch_width')
 
-main_area = pn.Column()
+# Ensure uploads directory exists
+os.makedirs("uploads", exist_ok=True)
 
-def update_main_area(event=None):
-    page = pn.state.location.hash.lstrip("#")
-    if page == "nlls":
-        main_area[:] = [nlls_page()]
+def on_file_change(event):
+    if file_input.value is not None:
+        file_bytes = file_input.value
+        file_name = file_input.filename
+        output.object = f"**Uploaded file:** {file_name} ({len(file_bytes)} bytes)"
+        file_path = os.path.join("uploads", file_name)
+        with open(file_path, "wb") as f:
+            f.write(file_bytes)
+        # Process the file with hyperspy
+        try:
+            s = hs.load(file_path)
+            # Display summary info about the loaded signal
+            parsed_data_pane.object = f"**HyperSpy loaded signal:**\nType: {type(s)}\nMain info: {str(s)}"
+        except Exception as e:
+            parsed_data_pane.object = f"**Error loading with HyperSpy:** {e}"
     else:
-        main_area[:] = [home_page()]
+        output.object = "No file uploaded yet."
+        parsed_data_pane.object = ""
 
-# Initial load
-update_main_area()
+file_input.param.watch(on_file_change, 'value')
 
-# Watch for URL hash changes
-pn.state.location.param.watch(lambda e: update_main_area(), "hash")
-
-# Navigation buttons
-nav = pn.Row(
-    pn.widgets.Button(
-        name="Home", button_type="primary", width=100, 
-        on_click=lambda e: setattr(pn.state.location, "hash", "#home"),
-    ),
-    pn.widgets.Button(
-        name="NLLS", button_type="primary", width=100,
-        on_click=lambda e: setattr(pn.state.location, "hash", "#nlls")
-    ),
+# Panel layout
+app = pn.template.FastListTemplate(
+    title="File Upload & HyperSpy Example",
+    sidebar=[file_input],
+    main=[output, parsed_data_pane],
 )
 
-template = pn.template.FastListTemplate(
-    title="WhatEELS",
-    sidebar=[nav],
-    main=[main_area],
-)
-
-# In your main.py or serve entry point:
-template.servable()
+app.servable()
