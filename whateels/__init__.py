@@ -24,6 +24,7 @@ def app(title="Application Title"):
 
     # Initial load
     update_main_area()
+    update_sidebar_area()
     
     # Watch for URL hash changes
     pn.state.location.param.watch(lambda e: update_main_area(), "hash")

@@ -1,5 +1,6 @@
 import panel as pn
 pn.extension()
+import os
 
 def file_dropper():    
     # Create FileDropper and output pane
@@ -11,10 +12,17 @@ def file_dropper():
     file_name_pane = pn.pane.Markdown("No file uploaded yet.", sizing_mode='stretch_width')
 
     # Callback to update file name in main area
-    def on_files_change(event):
-        files_bytes = file_input.value
-        file_name = file_input.filename
+    def on_files_change(event): 
+        # Ensure uploads directory exists
+        os.makedirs("uploads", exist_ok=True)
         
+        # Save the uploaded file to the uploads directory
+        files_bytes = file_input.value # Get the uploaded file bytes
+        file_name = file_input.filename # Get the uploaded file name
+        
+        file_path = os.path.join("uploads", file_name)
+        with open(file_path, "wb") as f:
+            f.write(files_bytes)    
         print(f"File name: {file_name}, File size: {len(files_bytes) if files_bytes else 0} bytes")
 
     file_input.param.watch(on_files_change, 'value')
