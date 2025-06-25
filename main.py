@@ -1,3 +1,5 @@
 from whateels import app
 
-app(title="WhatEELS").servable()
+if __name__ == "__main__":
+    # This line is for running with 'python main.py'
+    app(title="WhatEELS")

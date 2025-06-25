@@ -1,11 +1,11 @@
 import panel as pn
 pn.extension()
 
-def nlls_main_area():
-    return pn.pane.Markdown("# NLLS Analysis\nThis is the NLLS page aaa.")
+from whateels.components import fast_list_template
 
-def nlls_sidebar_area():
-    return pn.Column(
-        pn.pane.Markdown("NLLS Analysis Sidebar"),
-        sizing_mode='stretch_width'
+def nlls():
+    return fast_list_template(
+        title="NLLS",
+        main=[pn.pane.Markdown("# NLLS Page")],
+        sidebar=[],
     )

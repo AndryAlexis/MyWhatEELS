@@ -1,0 +1,7 @@
+:root {
+    --header-background: #4caf50 !important;
+}
+
+#header-items {
+    justify-content: end; /* Align items to the right */
+}

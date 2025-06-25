@@ -1,15 +1,16 @@
 import panel as pn
 pn.extension()
 
-from whateels.components import file_dropper as fd
+from whateels.components import file_dropper as fd, fast_list_template
 
-def home_main_area():    
-    return pn.pane.Markdown("# Welcome to WhatEELS")
+def home():
+    file_dropper_widget, file_name_pane = fd()
 
-def home_sidebar_area():
-    file_dropper, file_name_pane = fd()
-    return pn.Column(
-        file_dropper,
-        file_name_pane,
-        sizing_mode='stretch_width'
+    return fast_list_template(
+        title="WhatEELS",
+        main=[pn.pane.Markdown("# Home Page")],
+        sidebar=[
+            file_dropper_widget,
+            file_name_pane,
+        ],
     )

@@ -1,2 +1,3 @@
-from .home import home_main_area, home_sidebar_area
-from .nlls import nlls_main_area, nlls_sidebar_area
+from .home import home
+from .nlls import nlls
+from .login import login
