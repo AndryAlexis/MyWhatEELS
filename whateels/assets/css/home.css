@@ -1,0 +1,22 @@
+.feedback-message {
+    margin: 0 .5em;
+    padding: 0 .5em;
+}
+
+.fdw-box-title {
+    font-size: 1.2em;
+    font-weight: bold;
+    margin: .5em 0 .2em 0;
+    padding: 0;
+
+    h3 {
+        margin: 0;
+    }
+}
+
+.feedback-message {
+    padding: 0 .5em .5em .5em;
+    margin: 0;
+    opacity: .8;
+    font-style: italic;
+}

@@ -18,7 +18,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 from random import choice
 
-from scipy.integrate import simps
+try:
+    from scipy.integrate import simps
+except ImportError:
+    from scipy.integrate import simpson as simps
 
 hv.extension("bokeh",logo = False)
 print('Importing - Visualization tools')
@@ -77,6 +80,14 @@ def formatter4(value):
 class Visual_loading(param.Parameterized):
     click_text = param.String()
 
+    def _safe_set_style(self, widget, style_dict):
+        """Safely set style on a widget, with fallback for compatibility"""
+        try:
+            widget.style = style_dict
+        except (AttributeError, TypeError):
+            # Fallback if style setting fails in current Panel version
+            pass
+
     def __init__(self,ds):
         super().__init__()
         # hv.extension('plotly',logo = False)
@@ -87,7 +98,8 @@ class Visual_loading(param.Parameterized):
         self.message_click = pn.Param(self.param['click_text'],\
             widgets = {'click_text':pn.widgets.StaticText},\
             parameters = ['click_text'],show_labels = False,show_name = False)
-        self.message_click[0].style = {'font-weight':'bold','color':'grey'}
+        # Set style after widget creation
+        self._safe_set_style(self.message_click[0], {'font-weight':'bold','color':'grey'})
         if ds.x.values.size == 1 and ds.y.values.size == 1:
             self.type_dataset = 'SSp' #Single spectrum
             self.create_SSp()
@@ -135,49 +147,49 @@ class Visual_loading(param.Parameterized):
             tools = ['hover','tap'])
         self.empty_spectrum =\
             hv.Area(self.ds_emptyCurve)\
-            .opts(frame_height = 300,yformatter = formatter,frame_width = 600,\
+            .opts(frame_height = 300,yformatter = '%+.1e',frame_width = 600,\
                 shared_axes=False,framewise = True,show_grid = True,\
                 color='grey',fill_alpha=0.75,line_width = 0)
         self.empty_curve = hv.Curve(self.ds_emptyCurve)\
-            .opts(frame_height = 300,yformatter = formatter,frame_width = 600,\
+            .opts(frame_height = 300,yformatter = '%+.1e',frame_width = 600,\
                 shared_axes=False,framewise = True,show_grid = True,\
                 color='black',line_width=2.)
         self.tap = streams.Tap(x = -1,y = -1,source = self.im)
         self.hov = streams.PointerXY(x = -1,y = -1,source = self.im)
         self.spectrum_hover = hv.DynamicMap(self._callback_hover_2d,streams=[self.hov])\
-            .opts(frame_height = 300,yformatter = formatter,frame_width = 600,\
+            .opts(frame_height = 300,yformatter = '%+.1e',frame_width = 600,\
             shared_axes=False,framewise = True,show_grid = True)
         self.spectrum_tap = hv.DynamicMap(self._callback_tap_2d,streams=[self.tap])\
-            .opts(frame_height = 300,yformatter = formatter,frame_width = 600,\
+            .opts(frame_height = 300,yformatter = '%+.1e',frame_width = 600,\
             shared_axes=False,framewise = True,show_grid = True)
         
     def create_SLi(self):
         self.im = hv.Image(self.ds.ElectronCount,kdims = ['y','Eloss'])\
             .opts(cmap = 'Greys_r',invert_axes=True,invert_yaxis=True,\
-                frame_width = 900,frame_height = 125,yformatter = formatter2,\
+                frame_width = 900,frame_height = 125,yformatter = '%.0f',\
                 xaxis = None,toolbar = None,bgcolor = 'ghostwhite')
         self.empty_spectrum =\
             hv.Area(self.ds_emptyCurve)\
-            .opts(frame_height = 250,yformatter = formatter,frame_width = 900,\
+            .opts(frame_height = 250,yformatter = '%+.1e',frame_width = 900,\
                 shared_axes=False,framewise = True,show_grid = True,\
                 color='grey',fill_alpha=0.75,line_width = 0)
         self.empty_curve = hv.Curve(self.ds_emptyCurve)\
-            .opts(frame_height = 250,yformatter = formatter,frame_width = 900,\
+            .opts(frame_height = 250,yformatter = '%+.1e',frame_width = 900,\
                 shared_axes=False,framewise = True,show_grid = True,\
                 color='black',line_width=2.)
         self.tap = streams.Tap(x = -1,y = -1,source = self.im)
         self.hov = streams.PointerXY(x = -1,y = -1,source = self.im)
         self.spectrum_hover = hv.DynamicMap(self._callback_hover_1d,streams=[self.hov])\
-            .opts(frame_height = 250,yformatter = formatter,frame_width = 900,\
+            .opts(frame_height = 250,yformatter = '%+.1e',frame_width = 900,\
             shared_axes=False,framewise = True,show_grid = True)
         self.spectrum_tap = hv.DynamicMap(self._callback_tap_1d,streams=[self.tap])\
-            .opts(frame_height = 250,yformatter = formatter,frame_width = 900,\
+            .opts(frame_height = 250,yformatter = '%+.1e',frame_width = 900,\
             shared_axes=False,framewise = True,show_grid = True)
         
     def create_SSp(self):
         self.spectrum = hv.Area(self.ds.ElectronCount.isel(x = 0,y = 0))\
             .opts(color='limegreen',fill_alpha=0.5,line_color='black',\
-                frame_width = 900,frame_height = 350,yformatter = formatter,\
+                frame_width = 900,frame_height = 350,yformatter = '%+.1e',\
                 framewise = True,shared_axes = False,show_grid = True)
         
     def _callback_tap_2d(self,x,y):
@@ -186,7 +198,7 @@ class Visual_loading(param.Parameterized):
             x0,y0 = self.im_ref.closest((x,y))
             self.click_text = '|- x : {} -|- y : {} -|'.format('None','None')
             try:
-                self.message_click[0].style = {'font-weight':'bold','color':'grey'}
+                self._safe_set_style(self.message_click[0], {'font-weight':'bold','color':'grey'})
             except:
                 pass
             finally:
@@ -195,7 +207,7 @@ class Visual_loading(param.Parameterized):
             x0,y0 = self.im_ref.closest((x,y))
             self.click_text = '|- x : {} -|- y : {} -|'.format('None','None')
             try:
-                self.message_click[0].style = {'font-weight':'bold','color':'grey'}
+                self._safe_set_style(self.message_click[0], {'font-weight':'bold','color':'grey'})
             except:
                 pass
             finally:
@@ -207,9 +219,9 @@ class Visual_loading(param.Parameterized):
             .opts(fill_color= 'orangered',fill_alpha = 0.5,line_color = 'darkred',\
             line_width=1.5,line_alpha = 1)
             #.opts(color='darkred',fill_alpha=0.5,line_color='black')
-            curve.relabel('Tick formatters').opts(yformatter=formatter)
+            curve.relabel('Tick formatters')
             try:
-                self.message_click[0].style = {'font-weight':'bold','color':'darkred'}
+                self._safe_set_style(self.message_click[0], {'font-weight':'bold','color':'darkred'})
             except:
                 pass
             finally:
@@ -225,7 +237,7 @@ class Visual_loading(param.Parameterized):
             x0,y0 = self.im_ref.closest((x,y))
             curve = hv.Area(self.ds.isel(x = int(x0),y = int(y0)))\
             .opts(fill_color='limegreen',fill_alpha=0.5,line_width = 0)
-            curve.relabel('Tick formatters').opts(yformatter=formatter)
+            curve.relabel('Tick formatters')
             return curve
 
     def _callback_tap_1d(self,x,y):
@@ -234,7 +246,7 @@ class Visual_loading(param.Parameterized):
             y0 = self.im.closest((x,y))[1]
             self.click_text = '|- y : {} -|'.format('None')
             try:
-                self.message_click[0].style = {'font-weight':'bold','color':'grey'}
+                self._safe_set_style(self.message_click[0], {'font-weight':'bold','color':'grey'})
             except:
                 pass
             finally:
@@ -243,7 +255,7 @@ class Visual_loading(param.Parameterized):
             y0 = self.im.closest((x,y))[1]
             self.click_text = '|- y : {} -|'.format('None')
             try:
-                self.message_click[0].style = {'font-weight':'bold','color':'grey'}
+                self._safe_set_style(self.message_click[0], {'font-weight':'bold','color':'grey'})
             except:
                 pass
             finally:
@@ -254,9 +266,9 @@ class Visual_loading(param.Parameterized):
             curve = hv.Curve(self.ds.isel(y = int(y0),x = 0))\
             .opts(color='midnightblue',line_width = 2.)
             #.opts(color='midnightblue',fill_alpha=0.5,line_color='black')
-            curve.relabel('Tick formatters').opts(yformatter=formatter)
+            curve.relabel('Tick formatters')
             try:
-                self.message_click[0].style = {'font-weight':'bold','color':'midnightblue'}
+                self._safe_set_style(self.message_click[0], {'font-weight':'bold','color':'midnightblue'})
             except:
                 pass
             finally:
@@ -272,17 +284,25 @@ class Visual_loading(param.Parameterized):
             y0 = self.im.closest((x,y))[1]
             curve = hv.Area(self.ds.isel(y = int(y0),x = 0))\
             .opts(color='grey',fill_alpha=0.75,line_width = 0)
-            curve.relabel('Tick formatters').opts(yformatter=formatter)
+            curve.relabel('Tick formatters')
             return curve
         
     def create_panels(self):
         self.message_click[0].margin = (0,10,5,10)
-        or_name_message = pn.widgets.StaticText(value = 'DataSet on Display',\
-            style = {'font-weight' : 'bold'})
-        text_tap = pn.widgets.StaticText(value = 'Selected data',\
-            style = {'font-weight' : 'bold'})
-        original_name_str = pn.widgets.StaticText(value = self.ds.original_name,\
-            style = {'font-weight' : 'bold','color':'grey'})
+        or_name_message = pn.widgets.StaticText(value = 'DataSet on Display')
+        text_tap = pn.widgets.StaticText(value = 'Selected data')
+        
+        # Safely get the original name and ensure it's a string
+        try:
+            original_name = self.ds.original_name
+        except AttributeError:
+            original_name = getattr(self.ds, 'attrs', {}).get('original_name', 'Unknown')
+        
+        # Ensure original_name is always a string
+        if not isinstance(original_name, str):
+            original_name = str(original_name)
+        
+        original_name_str = pn.widgets.StaticText(value = original_name)
         if self.type_dataset == 'SSp':
             fila = pn.Row(or_name_message,original_name_str,width = 1000)
             self.struc = pn.Column(fila,self.spectrum,width = 1000,height = 550)

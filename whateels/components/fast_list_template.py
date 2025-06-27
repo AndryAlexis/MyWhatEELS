@@ -27,5 +27,7 @@ def fast_list_template(title, main, sidebar=None, header=None):
         title=title,
         main=main,
         sidebar=sidebar,
-        header=header
+        header=header,
+        right_sidebar=[pn.pane.Markdown("**Right Sidebar**")],
+        collapsed_sidebar=False
     )
