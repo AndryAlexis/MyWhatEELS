@@ -4,7 +4,7 @@ import xarray as xr
 import numpy as np
 
 from whateels.helpers.file_reader.file_reader import DM_EELS_Reader
-from whateels.helpers.visual_displays import Visual_loading
+from whateels.helpers.visual_display import VisualDisplay
 pn.extension('bokeh', 'tabulator')
 
 class DMFileViewer():
@@ -67,7 +67,7 @@ class DMFileViewer():
             
             if ds is not None:
                 # Create visualization
-                viz = Visual_loading(ds)
+                viz = VisualDisplay(ds)
                 viz.create_panels()
                 
                 # Replace the visualization container content
