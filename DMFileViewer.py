@@ -3,7 +3,7 @@ import panel as pn
 import xarray as xr
 import numpy as np
 
-from whateels.helpers.file_reader.file_reader import DM_EELS_Reader
+from whateels.helpers.file_reader import DM_EELS_Reader
 from whateels.helpers.visual_display import VisualDisplay
 pn.extension('bokeh', 'tabulator')
 
@@ -63,16 +63,16 @@ class DMFileViewer():
                 f.write(file_content)
             
             # Load the DM3/DM4 file
-            ds = self._load_dm_file(temp_path)
+            dataset = self._load_dm_file(temp_path)
             
-            if ds is not None:
+            if dataset is not None:
                 # Create visualization
-                viz = VisualDisplay(ds)
-                viz.create_panels()
+                visualization = VisualDisplay(dataset)
+                visualization.create_panels()
                 
                 # Replace the visualization container content
                 self.visualization_container.clear()
-                self.visualization_container.append(viz.struc)
+                self.visualization_container.append(visualization.struc)
                 
                 # Update status
                 self.status_message.object = f"### Successfully loaded: {filename}"
@@ -87,15 +87,15 @@ class DMFileViewer():
             if os.path.exists(temp_path):
                 os.remove(temp_path)
                 
-        except Exception as e:
+        except Exception as exception:
             # Reset to placeholder on error
             self.visualization_container.clear()
             self.visualization_container.append(self.visualization_pane)
             
-            error_msg = str(e)
-            if "Expected versions 3 or 4" in error_msg:
+            error_message = str(exception)
+            if "Expected versions 3 or 4" in error_message:
                 self.status_message.object = "### Error: Invalid or corrupted DM3/DM4 file. Please check the file format."
-            elif "File size" in error_msg and "too small" in error_msg:
+            elif "File size" in error_message and "too small" in error_message:
                 # Safely get file size
                 try:
                     file_size = os.path.getsize(temp_path) if 'temp_path' in locals() and os.path.exists(temp_path) else 0
@@ -103,8 +103,8 @@ class DMFileViewer():
                 except:
                     self.status_message.object = "### Error: File too small. DM3/DM4 files should be much larger."
             else:
-                self.status_message.object = f"### Error loading file: {str(e)}"
-            print(f"Error: {e}")
+                self.status_message.object = f"### Error loading file: {str(exception)}"
+            print(f"Error: {exception}")
             
             # Clean up temporary file if it exists
             try:
@@ -122,62 +122,62 @@ class DMFileViewer():
                 raise ValueError(f"File size ({file_size} bytes) is too small for a valid DM3/DM4 file. Expected at least 1KB.")
             
             # Use the DM_EELS_Reader from the whatEELS library
-            si = DM_EELS_Reader(filepath).read_data()
+            spectrum_image = DM_EELS_Reader(filepath).read_data()
             
             # Get data and energy axis
-            data = si.data
-            E = si.energy_axis
+            electron_count_data = spectrum_image.data
+            energy_axis = spectrum_image.energy_axis
             
             # Reshape data for xarray (ensure it's in y, x, Eloss format)
-            if len(data.shape) == 3:
+            if len(electron_count_data.shape) == 3:
                 # For spectrum images: (Eloss, Y, X) -> (Y, X, Eloss)
-                data = data.transpose((1, 2, 0))
-                type_dataset = 'SIm'
-                ys = np.arange(0, data.shape[0])
-                xs = np.arange(0, data.shape[1])
-            elif len(data.shape) == 2:
+                electron_count_data = electron_count_data.transpose((1, 2, 0))
+                dataset_type = 'SIm'
+                y_coordinates = np.arange(0, electron_count_data.shape[0])
+                x_coordinates = np.arange(0, electron_count_data.shape[1])
+            elif len(electron_count_data.shape) == 2:
                 # For spectrum lines: (Eloss, X) -> (X, 1, Eloss)
-                type_dataset = 'SLi'
-                ys = np.arange(0, data.shape[1])
-                xs = np.zeros((1), dtype=np.int32)
-                shap = list(data.shape)
-                shap.insert(1, 1)
-                data = data.reshape(shap)
-            elif len(data.shape) == 1:
+                dataset_type = 'SLi'
+                y_coordinates = np.arange(0, electron_count_data.shape[1])
+                x_coordinates = np.zeros((1), dtype=np.int32)
+                shape_dimensions = list(electron_count_data.shape)
+                shape_dimensions.insert(1, 1)
+                electron_count_data = electron_count_data.reshape(shape_dimensions)
+            elif len(electron_count_data.shape) == 1:
                 # For single spectra: (Eloss,) -> (1, 1, Eloss)
-                type_dataset = 'SSp'
-                xs = np.zeros((1), dtype=np.int32)
-                ys = np.zeros((1), dtype=np.int32)
-                shap = [1, 1]
-                shap.extend(list(data.shape))
-                data = data.reshape(shap)
+                dataset_type = 'SSp'
+                x_coordinates = np.zeros((1), dtype=np.int32)
+                y_coordinates = np.zeros((1), dtype=np.int32)
+                shape_dimensions = [1, 1]
+                shape_dimensions.extend(list(electron_count_data.shape))
+                electron_count_data = electron_count_data.reshape(shape_dimensions)
             else:
                 return None
             
             # Create xarray dataset
-            ds = xr.Dataset(
-                {'ElectronCount': (['y', 'x', 'Eloss'], data)},
-                coords={'y': ys, 'x': xs, 'Eloss': E}
+            dataset = xr.Dataset(
+                {'ElectronCount': (['y', 'x', 'Eloss'], electron_count_data)},
+                coords={'y': y_coordinates, 'x': x_coordinates, 'Eloss': energy_axis}
             )
             
             # Add metadata
-            ds.attrs['original_name'] = os.path.basename(filepath)
-            ds.attrs['beam_energy'] = getattr(si, 'beam_energy', 0)
-            ds.attrs['collection_angle'] = getattr(si, 'collection_angle', 0.0)
-            ds.attrs['convergence_angle'] = getattr(si, 'convergence_angle', 0.0)
+            dataset.attrs['original_name'] = os.path.basename(filepath)
+            dataset.attrs['beam_energy'] = getattr(spectrum_image, 'beam_energy', 0)
+            dataset.attrs['collection_angle'] = getattr(spectrum_image, 'collection_angle', 0.0)
+            dataset.attrs['convergence_angle'] = getattr(spectrum_image, 'convergence_angle', 0.0)
             
-            return ds
+            return dataset
             
-        except Exception as e:
-            error_msg = str(e)
-            if "Expected versions 3 or 4" in error_msg:
-                print(f"Error loading DM file - Invalid or corrupted DM3/DM4 file: {e}")
+        except Exception as exception:
+            error_message = str(exception)
+            if "Expected versions 3 or 4" in error_message:
+                print(f"Error loading DM file - Invalid or corrupted DM3/DM4 file: {exception}")
                 return None
-            elif "File size" in error_msg and "too small" in error_msg:
-                print(f"Error loading DM file - File too small: {e}")
+            elif "File size" in error_message and "too small" in error_message:
+                print(f"Error loading DM file - File too small: {exception}")
                 return None
             else:
-                print(f"Error loading DM file: {e}")
+                print(f"Error loading DM file: {exception}")
                 return None
     
     def _create_layout(self):

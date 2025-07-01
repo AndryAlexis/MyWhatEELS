@@ -1,41 +1,136 @@
-import panel as pn
-pn.extension()
-import os
+"""
+File Dropper Component for EELS Data Upload
 
-def file_dropper():    
-    # Create FileDropper and output pane
-    file_dropper = pn.widgets.FileDropper(
-        sizing_mode='stretch_width',  # Make it stretch to available width
-        multiple=False,  # Allow only single file upload
+This module provides a Panel-based file upload component specifically designed
+for DM3/DM4 EELS data files with validation and feedback.
+"""
+
+import os
+import panel as pn
+
+pn.extension()
+
+
+def file_dropper():
+    """
+    Create a file dropper component for uploading DM3/DM4 EELS data files.
+    
+    Returns
+    -------
+    tuple
+        A tuple containing (container_widget, feedback_pane) for the file dropper interface
+    """
+    # Create title for the upload box
+    upload_title = pn.pane.HTML(
+        "<h3 class='fdw-box-title'>Upload an image</h3>"
     )
+
+    # Create feedback message pane (initialized first to avoid reference errors)
     feedback_message_pane = pn.pane.HTML(
         "<p class='feedback-message'>No file uploaded yet.</p>", 
         sizing_mode='stretch_width', 
         css_classes=['feedback-message']
     )
 
-    # Callback to update file name in main area
-    def on_files_change(event): 
-        # Ensure uploads directory exists
-        os.makedirs("uploads", exist_ok=True)
-        
-        # Save the uploaded file(s) to the uploads directory
-        # file_dropper.value is a dict: {filename: bytes}
-        for file_name, file_bytes in file_dropper.value.items():
-            if not (file_name.lower().endswith('.dm3') or file_name.lower().endswith('.dm4')):
-                # Reset the FileDropper by clearing its value and triggering UI refresh
-                file_dropper.value = {}
-                temp_path = os.path.join(os.getcwd(), file_name)
-                file_dropper.param.trigger('value')  # Force UI update
-                print(f"Rejected file: {temp_path} (not .dm3 or .dm4)")
-                feedback_message_pane.object = "<p class='feedback-message error'>❌ Rejected file: {} (not .dm3 or .dm4)</p>".format(file_name)
-                continue
-            file_path = os.path.join("uploads", file_name)
-            with open(file_path, "wb") as f:
-                f.write(file_bytes)
-            print(f"File name: {file_name}, File size: {len(file_bytes) if file_bytes else 0} bytes")
-            feedback_message_pane.object = "<p class='feedback-message success'>✅ Uploaded file: {} ({} bytes)</p>".format(file_name, len(file_bytes))
+    # Create the file dropper widget
+    file_dropper_widget = pn.widgets.FileDropper(
+        sizing_mode='stretch_width',  # Stretch to available width
+        multiple=False,  # Allow only single file upload
+    )
 
-    file_dropper.param.watch(on_files_change, 'value')
+    # Container to hold all components
+    upload_container = pn.WidgetBox(
+        upload_title, 
+        file_dropper_widget, 
+        feedback_message_pane,
+    )
+
+    def handle_file_upload(event):
+        """
+        Handle file upload events with validation and feedback.
+        
+        Args:
+            event: Panel parameter change event containing file data
+        """
+        # Ensure uploads directory exists
+        _ensure_uploads_directory()
+        
+        # Process each uploaded file
+        for filename, file_content in file_dropper_widget.value.items():
+            if _is_valid_file_extension(filename):
+                _save_file_and_show_success(filename, file_content, feedback_message_pane)
+            else:
+                _reject_file_and_show_error(filename, file_dropper_widget, feedback_message_pane)
+
+    def _ensure_uploads_directory():
+        """Ensure the uploads directory exists."""
+        uploads_directory = "uploads"
+        os.makedirs(uploads_directory, exist_ok=True)
+
+    def _is_valid_file_extension(filename: str) -> bool:
+        """
+        Check if the file has a valid DM3 or DM4 extension.
+        
+        Args:
+            filename: Name of the file to validate
+            
+        Returns:
+            bool: True if file extension is valid, False otherwise
+        """
+        return filename.lower().endswith(('.dm3', '.dm4'))
+
+    def _reject_file_and_show_error(filename: str, file_dropper_widget, feedback_pane):
+        """
+        Handle rejection of invalid files.
+        
+        Args:
+            filename: Name of the rejected file
+            file_dropper_widget: Widget to reset
+            feedback_pane: Pane to update with error message
+        """
+        # Reset the FileDropper widget
+        file_dropper_widget.value = {}
+        file_dropper_widget.param.trigger('value')  # Force UI update
+        
+        # Show error feedback
+        current_path = os.path.join(os.getcwd(), filename)
+        print(f"Rejected file: {current_path} (not .dm3 or .dm4)")
+        
+        error_message = (
+            f"<p class='feedback-message error'>"
+            f"❌ Rejected file: {filename} (not .dm3 or .dm4)"
+            f"</p>"
+        )
+        feedback_pane.object = error_message
+
+    def _save_file_and_show_success(filename: str, file_content: bytes, feedback_pane):
+        """
+        Save uploaded file and show success feedback.
+        
+        Args:
+            filename: Name of the file to save
+            file_content: Binary content of the file
+            feedback_pane: Pane to update with success message
+        """
+        # Save file to uploads directory
+        uploads_directory = "uploads"
+        file_path = os.path.join(uploads_directory, filename)
+        
+        with open(file_path, "wb") as file_handle:
+            file_handle.write(file_content)
+        
+        # Show success feedback
+        file_size = len(file_content) if file_content else 0
+        print(f"File uploaded successfully: {filename}, Size: {file_size} bytes")
+        
+        success_message = (
+            f"<p class='feedback-message success'>"
+            f"✅ Uploaded file: {filename} ({file_size} bytes)"
+            f"</p>"
+        )
+        feedback_pane.object = success_message
+
+    # Watch for file upload events
+    file_dropper_widget.param.watch(handle_file_upload, 'value')
     
-    return file_dropper, feedback_message_pane
+    return upload_container

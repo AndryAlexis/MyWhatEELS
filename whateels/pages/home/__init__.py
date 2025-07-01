@@ -1,27 +1,25 @@
 import panel as pn
 pn.extension()
 
-pn.config.raw_css.append(open("whateels/assets/css/home.css").read())
+from whateels.components import CustomPage
+from .MVC import Model, Controller, View
+from .MVC.model import *  # Import constants and other model components
 
-from whateels.components import file_dropper as fd, fast_list_template
-
-def home():
-    file_dropper_widget, feedback_message_pane = fd()
+class Home(CustomPage):
+    """
+    HomePage class for the WhatEELS application.
+    This class extends CustomPage to create a specific home page layout.
+    """
     
-    fdw_box_title = pn.pane.HTML(
-        "<h3 class='fdw-box-title'>Upload an image</h3>",
-    )
-    
-    fdw_box = pn.WidgetBox(
-        fdw_box_title, 
-        file_dropper_widget, 
-        feedback_message_pane,
-    )
-
-    return fast_list_template(
-        title="WhatEELS",
-        main=[pn.pane.Markdown("# Home Page")],
-        sidebar=[
-            fdw_box
-        ],
-    )
+    def __init__(self, title: str = Constants.TITLE):
+        
+        self.model = Model()
+        self.view = View(self.model)
+        self.controller = Controller(self.model, self.view)
+        
+        super().__init__(
+            title=title,
+            main=[self.view.main],
+            sidebar=[self.view.sidebar],
+            raw_css_path=Constants.CSS_PATH,
+        )

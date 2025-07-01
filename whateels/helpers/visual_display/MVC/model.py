@@ -21,6 +21,10 @@ class Constants:
     SINGLE_SPECTRUM = 'SSp'
     SPECTRUM_LINE = 'SLi'
     SPECTRUM_IMAGE = 'SIm'
+    
+    # Component attribute names
+    SPECTRUM_HOVER_ATTR = 'spectrum_hover'
+    SPECTRUM_TAP_ATTR = 'spectrum_tap'
 
     # Click text templates
     CLICK_TEXT_1D_TEMPLATE = '|- y : {} -|'
@@ -30,7 +34,6 @@ class Constants:
     
     # None string
     NONE_TEXT = 'None'
-
 
 class Colors:
     """Color constants for visualization styling."""
@@ -48,7 +51,6 @@ class Colors:
     MIDNIGHTBLUE = 'midnightblue'
     GAINSBORO = 'gainsboro'
 
-
 class Formatters:
     """Formatting constants for data display."""
     
@@ -62,7 +64,6 @@ class Formatters:
     INTEGER_PADDED = ':>12.0f'  # Right-aligned with padding
     INTEGER_5D = ':5d'
     FLOAT_9_2F = ':9.2f'
-
 
 class UIConfig:
     """UI configuration constants."""
@@ -81,12 +82,12 @@ class UIConfig:
     UNKNOWN_LABEL = 'Unknown'
 
 
-class State:
-    """Manages the state and data for EELS visualization."""
+class Model:
+    """Manages the data and business logic for EELS visualization."""
     
     def __init__(self, dataset: xr.Dataset):
         """
-        Initialize the visualization state.
+        Initialize the model with dataset.
         
         Args:
             dataset: xarray Dataset containing EELS data with dimensions x, y, and Eloss

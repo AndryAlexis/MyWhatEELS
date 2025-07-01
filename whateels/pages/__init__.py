@@ -1,3 +1,3 @@
-from .home import home
-from .nlls import nlls
-from .login import login
+from .home import Home
+from .nlls import NLLS
+from .login import Login

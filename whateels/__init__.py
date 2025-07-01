@@ -1,18 +1,27 @@
 import panel as pn
+from whateels.pages import Home, NLLS, Login
 
-from whateels.pages import home, nlls, login
-
-def app(title="WhatEELS"):
-    pn.extension()
+class App():
+    """
+    Main application class for WhatEELS.
     
-    pages = {
-        "/": home,
-        "/nlls": nlls,
-        "/login": login
-    }
+    This class initializes the Panel application with the necessary pages and configurations.
+    """
+    
+    _DEFAULT_TITLE = "WhatEELS"
+    
+    def __init__(self, title : str = _DEFAULT_TITLE):
+        self.title = title
 
-    return pn.serve(
-        pages,
-        title=title,
-        port=5006  # Set your desired port here
-    )
+    def run(self, port : int = 5006):
+        pages = {
+            "/": Home(),
+            "/nlls": NLLS(),
+            "/login": Login(),
+        }
+
+        return pn.serve(
+            pages,
+            title=self.title,
+            port=port,
+        )

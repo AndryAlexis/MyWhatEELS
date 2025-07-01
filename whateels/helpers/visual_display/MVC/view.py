@@ -1,5 +1,5 @@
 """
-View layer for EELS visualization - handles all UI component creation and styling.
+View layer for EELS visualization - handles all UI components creation and styling.
 """
 
 import holoviews as hv
@@ -16,14 +16,14 @@ hv.extension("bokeh", logo=False)
 class View:
     """Handles creation of all visual components for EELS data visualization."""
     
-    def __init__(self, state: 'State'):
+    def __init__(self, model: Model):
         """
-        Initialize the view with a visualization state.
+        Initialize the view with a model.
         
         Args:
-            state: State object containing data and configuration
+            model: Model object containing data and configuration
         """
-        self.state = state
+        self.model = model
         self.click_feedback_widget: Optional[pn.Param] = None
         
         # Visual components (will be created by specific methods)
@@ -66,15 +66,15 @@ class View:
         
         # Interactive heatmap for spectrum image
         self.interactive_image = hv.HeatMap(
-            self.state.dataset.ElectronCount.sum(Constants.ELOSS),
+            self.model.dataset.ElectronCount.sum(Constants.ELOSS),
             kdims=UIConfig.KDIMS_XY
         ).opts(
             cmap=Colors.GREYS_R,
             invert_yaxis=True,
             xaxis=None,
             yaxis=None,
-            xlim=self.state.x_limits,
-            ylim=self.state.y_limits,
+            xlim=self.model.x_limits,
+            ylim=self.model.y_limits,
             line_width=1.5,
             fill_alpha=0.5,
             line_alpha=0.1,
@@ -102,7 +102,7 @@ class View:
         """Create all visual components for spectrum line (2D line scan) visualization."""
         # Main image display for line scan
         self.line_image = hv.Image(
-            self.state.dataset.ElectronCount, 
+            self.model.dataset.ElectronCount, 
             kdims=UIConfig.KDIMS_Y_ELOSS
         ).opts(
             cmap=Colors.GREYS_R,
@@ -125,7 +125,7 @@ class View:
     
     def create_single_spectrum_component(self) -> None:
         """Create visual component for single spectrum visualization."""
-        self.spectrum = hv.Area(self.state.dataset.ElectronCount.isel(x=0, y=0)).opts(
+        self.spectrum = hv.Area(self.model.dataset.ElectronCount.isel(x=0, y=0)).opts(
             color=Colors.LIMEGREEN,
             fill_alpha=0.5,
             line_color=Colors.BLACK,
@@ -140,7 +140,7 @@ class View:
     def _create_empty_spectrum_components(self, frame_width: int, frame_height: int) -> None:
         """Create empty spectrum and curve components with specified dimensions."""
         # Empty spectrum placeholder
-        self.empty_spectrum = hv.Area(self.state.empty_curve_dataset).opts(
+        self.empty_spectrum = hv.Area(self.model.empty_curve_dataset).opts(
             frame_height=frame_height,
             yformatter=Formatters.SCIENTIFIC,
             frame_width=frame_width,
@@ -153,7 +153,7 @@ class View:
         )
         
         # Empty curve for fallback display
-        self.empty_curve = hv.Curve(self.state.empty_curve_dataset).opts(
+        self.empty_curve = hv.Curve(self.model.empty_curve_dataset).opts(
             frame_height=frame_height,
             yformatter=Formatters.SCIENTIFIC,
             frame_width=frame_width,
@@ -166,7 +166,7 @@ class View:
     
     def create_dynamic_spectrum_maps(self, hover_callback, tap_callback) -> Tuple[hv.DynamicMap, hv.DynamicMap]:
         """Create dynamic maps for hover and tap interactions."""
-        if self.state.dataset_type == Constants.SPECTRUM_IMAGE:
+        if self.model.dataset_type == Constants.SPECTRUM_IMAGE:
             frame_width, frame_height = 600, 300
         else:  # SPECTRUM_LINE
             frame_width, frame_height = 900, 250
@@ -199,12 +199,14 @@ class View:
     
     def create_spectrum_visualization(self, x: float, y: float, is_tap: bool = False) -> hv.Element:
         """Create a spectrum visualization for the given coordinates."""
-        if not self.state.is_point_in_bounds(x, y):
-            return self.empty_spectrum if self.state.dataset_type != Constants.SPECTRUM_LINE or is_tap else self.empty_spectrum
+        if not self.model.is_point_in_bounds(x, y):
+            # TODO - look if this is still needed
+            # return self.empty_spectrum if self.model.dataset_type != Constants.SPECTRUM_LINE or is_tap else self.empty_spectrum
+            return self.empty_spectrum
         
-        if self.state.dataset_type == Constants.SPECTRUM_IMAGE:
+        if self.model.dataset_type == Constants.SPECTRUM_IMAGE:
             closest_x, closest_y = self.reference_image.closest((x, y))
-            spectrum_data = self.state.dataset.isel(x=int(closest_x), y=int(closest_y))
+            spectrum_data = self.model.dataset.isel(x=int(closest_x), y=int(closest_y))
             
             if is_tap:
                 # Tap visualization - highlighted spectrum
@@ -223,9 +225,9 @@ class View:
                     line_width=0
                 )
                 
-        elif self.state.dataset_type == Constants.SPECTRUM_LINE:
+        elif self.model.dataset_type == Constants.SPECTRUM_LINE:
             closest_y = self.line_image.closest((x, y))[1]
-            spectrum_data = self.state.dataset.isel(y=int(closest_y), x=0)
+            spectrum_data = self.model.dataset.isel(y=int(closest_y), x=0)
             
             if is_tap:
                 # Tap visualization - curve spectrum
@@ -251,7 +253,7 @@ class View:
         # Create static text widgets for labels
         dataset_label = pn.widgets.StaticText(value=UIConfig.DATASET_DISPLAY_LABEL)
         selected_data_label = pn.widgets.StaticText(value=UIConfig.SELECTED_DATA_LABEL)
-        dataset_name_widget = pn.widgets.StaticText(value=self.state.get_dataset_name())
+        dataset_name_widget = pn.widgets.StaticText(value=self.model.get_dataset_name())
         
         # Create panel layouts based on dataset type
         if dataset_type == Constants.SINGLE_SPECTRUM:
@@ -266,8 +268,8 @@ class View:
             )
             
             # These will be set by the controller
-            spectrum_hover = getattr(self, 'spectrum_hover', pn.Spacer())
-            spectrum_tap = getattr(self, 'spectrum_tap', pn.Spacer())
+            spectrum_hover = getattr(self, Constants.SPECTRUM_HOVER_ATTR, pn.Spacer())
+            spectrum_tap = getattr(self, Constants.SPECTRUM_TAP_ATTR, pn.Spacer())
             
             return pn.Column(
                 header_info,
@@ -289,8 +291,8 @@ class View:
             )
             
             # These will be set by the controller
-            spectrum_hover = getattr(self, 'spectrum_hover', pn.Spacer())
-            spectrum_tap = getattr(self, 'spectrum_tap', pn.Spacer())
+            spectrum_hover = getattr(self, Constants.SPECTRUM_HOVER_ATTR, pn.Spacer())
+            spectrum_tap = getattr(self, Constants.SPECTRUM_TAP_ATTR, pn.Spacer())
             
             return pn.Column(
                 header_info,

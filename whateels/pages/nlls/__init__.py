@@ -1,11 +1,18 @@
 import panel as pn
 pn.extension()
 
-from whateels.components import fast_list_template
+from whateels.components import CustomPage
 
-def nlls():
-    return fast_list_template(
-        title="NLLS",
-        main=[pn.pane.Markdown("# NLLS Page")],
-        sidebar=[],
-    )
+class NLLS(CustomPage):
+    """
+    NLLS Page class for the WhatEELS application.
+    This class extends CustomPage to create a specific NLLS page layout.
+    """
+    
+    _DEFAULT_TITLE = "NLLS"
+    
+    def __init__(self, title: str = _DEFAULT_TITLE):
+        super().__init__(
+            title=title,
+            right_sidebar=[pn.pane.Markdown("## NLLS Options")],
+        )
