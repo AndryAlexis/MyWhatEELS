@@ -1,6 +1,3 @@
-import panel as pn
-pn.extension()
-
 from whateels.components import CustomPage
 
 class Login(CustomPage):

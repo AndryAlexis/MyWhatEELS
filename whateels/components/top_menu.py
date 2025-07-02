@@ -1,7 +1,7 @@
 import panel as pn
 
 def top_menu() -> pn.Row:
-    pn.extension('filedropper')
+    # Note: pn.extension() is configured in the main app
 
     # Create the top menu with buttons
     top_menu = pn.Row(

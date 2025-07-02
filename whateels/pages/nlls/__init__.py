@@ -1,6 +1,4 @@
 import panel as pn
-pn.extension()
-
 from whateels.components import CustomPage
 
 class NLLS(CustomPage):

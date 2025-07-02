@@ -1,4 +1,3 @@
-# from whateels import app
 from whateels import App
 
 if __name__ == "__main__":

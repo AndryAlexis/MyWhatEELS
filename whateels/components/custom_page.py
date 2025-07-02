@@ -9,12 +9,7 @@ import os
 import panel as pn
 from typing import Optional, List, Union
 
-# Load custom CSS for FastListTemplate with error handling
-try:
-    with open("whateels/assets/css/custom_page.css", "r") as css_file:
-        pn.config.raw_css.append(css_file.read())
-except FileNotFoundError:
-    print("Warning: custom_page.css not found, using default styling")
+# Note: CSS loading and pn.extension() are handled in the main app
 
 
 class CustomPage(pn.template.FastListTemplate):
