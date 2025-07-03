@@ -5,12 +5,8 @@ This module provides a customized Panel FastListTemplate with navigation header
 and CSS styling for the WhatEELS scientific web application.
 """
 
-import os
 import panel as pn
 from typing import Optional, List, Union
-
-# Note: CSS loading and pn.extension() are handled in the main app
-
 
 class CustomPage(pn.template.FastListTemplate):
     """
@@ -20,14 +16,15 @@ class CustomPage(pn.template.FastListTemplate):
     Automatically handles CSS loading and provides default navigation if no header is specified.
     """
     
+    _DEFAULT_TITLE = "Custom Page"
+    
     def __init__(
         self, 
-        title: str = "Custom Page", 
+        title: str = _DEFAULT_TITLE, 
         main: Optional[Union[List, pn.viewable.Viewable]] = None, 
         sidebar: Optional[Union[List, pn.viewable.Viewable]] = None, 
         header: Optional[List[pn.viewable.Viewable]] = None, 
         right_sidebar: Optional[Union[List, pn.viewable.Viewable]] = None, 
-        raw_css_path: Optional[str] = None
     ):
         """
         Initialize CustomPage with enhanced FastListTemplate.
@@ -39,7 +36,6 @@ class CustomPage(pn.template.FastListTemplate):
             header: Header navigation components (optional, defaults to standard nav)
             right_sidebar: Right sidebar components (optional)
             collapsed_sidebar: Whether the sidebar starts in collapsed state
-            raw_css_path: Path to additional CSS file to load (optional)
         """
         # Set default header if none provided
         if header is None:
@@ -48,10 +44,6 @@ class CustomPage(pn.template.FastListTemplate):
         # Set default main content if none provided
         if main is None:
             main = [pn.pane.Markdown("# Welcome to WhatEELS")]
-        
-        # Load additional CSS if provided
-        if raw_css_path is not None:
-            self._load_additional_css(raw_css_path)
         
         # Build initialization parameters dynamically
         init_params = {
@@ -94,25 +86,3 @@ class CustomPage(pn.template.FastListTemplate):
             )
             for link_text, description in navigation_links
         ]
-    
-    def _load_additional_css(self, css_path: str) -> None:
-        """
-        Load additional CSS file and append to Panel configuration.
-        
-        Args:
-            css_path: Path to the CSS file to load
-            
-        Raises:
-            FileNotFoundError: If the CSS file cannot be found (logged as warning)
-        """
-        if not os.path.exists(css_path):
-            print(f"Warning: CSS file '{css_path}' not found, skipping")
-            return
-            
-        try:
-            with open(css_path, "r", encoding="utf-8") as css_file:
-                pn.config.raw_css.append(css_file.read())
-        except (IOError, OSError) as e:
-            print(f"Warning: Could not load CSS file '{css_path}': {e}")
-        except UnicodeDecodeError as e:
-            print(f"Warning: CSS file '{css_path}' has encoding issues: {e}")

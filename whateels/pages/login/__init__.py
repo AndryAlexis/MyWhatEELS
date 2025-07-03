@@ -7,12 +7,10 @@ class Login(CustomPage):
     """
     
     _DEFAULT_TITLE = "Login"
-    _LOGIN_CSS_PATH = "whateels/assets/css/login.css"
     
     def __init__(self, title: str = _DEFAULT_TITLE):
         super().__init__(
             title=title,
-            raw_css_path=self._LOGIN_CSS_PATH,
         )
         
         

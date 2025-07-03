@@ -3,9 +3,17 @@ import panel as pn
 import xarray as xr
 import numpy as np
 
+# Initialize Panel extensions if not already initialized
+try:
+    # Check if extensions are already loaded
+    if not hasattr(pn.config, 'js_files') or 'bokeh' not in str(pn.config.js_files):
+        pn.extension('filedropper', 'bokeh', 'tabulator', theme='default')
+except:
+    # Fallback: initialize extensions
+    pn.extension('filedropper', 'bokeh', 'tabulator', theme='default')
+
 from whateels.helpers.file_reader import DM_EELS_Reader
 from whateels.helpers.visual_display import VisualDisplay
-pn.extension('bokeh', 'tabulator')
 
 class DMFileViewer():
     """Simple DM3/DM4 file viewer using Panel FileDropper"""
