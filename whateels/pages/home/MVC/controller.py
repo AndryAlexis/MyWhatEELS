@@ -5,7 +5,7 @@ from whateels.helpers import TempFile, DM_EELS_Reader, VisualDisplay
 from .model import Model
 from .view import View
 
-class Controller(param.Parameterized):
+class Controller:
     """
     Controller class for the home page of the WhatEELS application.
     This class handles file upload events and interacts with the Model and View.
@@ -36,15 +36,11 @@ class Controller(param.Parameterized):
             
             # Load the DM3/DM4 file and convert to xarray dataset
             dataset = self._load_dm_file(temp_path)
-            print('temp_path:', temp_path)
-            print('Dataset loaded:', dataset)
-            
-            # if dataset is not None:
-            #     self.model.process_eels_data(dataset, filename)
-            #     self.view.update_visualization(dataset)
-            #     self.view.status_message.object = "### File loaded successfully"
-            # else:
-            #     self.view.status_message.object = "### Error loading file"
+
+            if dataset is not None:
+                pass
+            else:
+                pass
         
 
     def handle_file_removed(self, filename: str):
@@ -72,22 +68,16 @@ class Controller(param.Parameterized):
             
             # Reshape data for xarray (ensure it's in y, x, Eloss format)
             if len(electron_count_data.shape) == 3:
-                # For spectrum images: (Eloss, Y, X) -> (Y, X, Eloss)
                 electron_count_data = electron_count_data.transpose((1, 2, 0))
-                dataset_type = 'SIm'
                 y_coordinates = np.arange(0, electron_count_data.shape[0])
                 x_coordinates = np.arange(0, electron_count_data.shape[1])
             elif len(electron_count_data.shape) == 2:
-                # For spectrum lines: (Eloss, X) -> (X, 1, Eloss)
-                dataset_type = 'SLi'
                 y_coordinates = np.arange(0, electron_count_data.shape[1])
                 x_coordinates = np.zeros((1), dtype=np.int32)
                 shape_dimensions = list(electron_count_data.shape)
                 shape_dimensions.insert(1, 1)
                 electron_count_data = electron_count_data.reshape(shape_dimensions)
             elif len(electron_count_data.shape) == 1:
-                # For single spectra: (Eloss,) -> (1, 1, Eloss)
-                dataset_type = 'SSp'
                 x_coordinates = np.zeros((1), dtype=np.int32)
                 y_coordinates = np.zeros((1), dtype=np.int32)
                 shape_dimensions = [1, 1]

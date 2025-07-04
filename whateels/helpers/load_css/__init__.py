@@ -58,12 +58,6 @@ class LoadCSS:
         Args:
             css_files: List/tuple of CSS file paths, or None to use defaults
         """
-        # Use provided css_files or fall back to default files
-        if css_files is None:
-            css_files = [
-                "whateels/assets/css/custom_page.css",
-                "whateels/assets/css/home.css"
-            ]
         
         for css_file in css_files:
             try:

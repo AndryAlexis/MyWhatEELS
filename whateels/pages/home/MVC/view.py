@@ -6,7 +6,8 @@ class View:
     """
     View class for the home page of the WhatEELS application.
     This class is responsible for creating the layout and components of the home page.
-    It uses the Model to access constants and configurations."""
+    It uses the Model to access constants and configurations.
+    """
     def __init__(self, model: Model):
         self.model = model
         self.callbacks = {} # Dictionary to hold callbacks
@@ -15,7 +16,7 @@ class View:
         """
         Create and return the sidebar layout for the view.
         """
-        
+
         file_dropper = FileDropper(
             valid_extensions=Model.FileDropper.VALID_EXTENSIONS,
             reject_message=Model.FileDropper.REJECT_MESSAGE,
@@ -26,8 +27,13 @@ class View:
         )
         
         file_dropper_box = pn.WidgetBox(file_dropper)
+        
+        column = pn.Column(
+            file_dropper_box,
+            sizing_mode='stretch_width'
+        )
 
-        return file_dropper_box
+        return column
     
     def _main_layout(self):
         default_content = pn.pane.Markdown("# Home Page")
