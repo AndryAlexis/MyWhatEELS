@@ -494,3 +494,267 @@
 2025-07-04 10:17:39,379 : whateels.helpers.parsers.dm34 :     WARNING : convergence_angle : 'Convergence semi-angle (mrad)'
 2025-07-04 10:17:39,379 : whateels.helpers.parsers.dm34 :     INFO : convergence_angle : Added Route to the dictionary -> [ImageTags][EELS][Experimental Conditions]
 2025-07-04 10:17:39,379 : whateels.helpers.parsers.dm34 :     INFO : convergence_angle : Convergence angle alpha value updated to 0 mrad
+2025-07-04 10:19:12,371 : whateels.helpers.parsers.dm34 :     INFO : process_file_header : DM version = 4 - File size (Bytes) = 9007137 - little endian
+2025-07-04 10:19:12,375 : whateels.helpers.parsers.dm34 :     WARNING : read_string : Failed reading with an encoding utf8
+2025-07-04 10:19:12,375 : whateels.helpers.parsers.dm34 :     WARNING : read_string : Failed reading with an encoding utf8
+2025-07-04 10:19:12,381 : whateels.helpers.parsers.dm34 :     WARNING : collection_angle : Expected a value for the convergence angle. No such value in the parsed dictionary found
+2025-07-04 10:19:12,381 : whateels.helpers.parsers.dm34 :     WARNING : collection_angle : 'EELS'
+2025-07-04 10:19:12,381 : whateels.helpers.parsers.dm34 :     INFO : collection_angle : Added Route to the dictionary -> [ImageTags][EELS][Experimental Conditions]
+2025-07-04 10:19:12,381 : whateels.helpers.parsers.dm34 :     INFO : collection_angle : Collection angle beta value updated to 0 mrad
+2025-07-04 10:19:12,382 : whateels.helpers.parsers.dm34 :     WARNING : convergence_angle : Expected a value for the convergence angle. No such value in the parsed dictionary found
+2025-07-04 10:19:12,382 : whateels.helpers.parsers.dm34 :     WARNING : convergence_angle : 'Convergence semi-angle (mrad)'
+2025-07-04 10:19:12,382 : whateels.helpers.parsers.dm34 :     INFO : convergence_angle : Added Route to the dictionary -> [ImageTags][EELS][Experimental Conditions]
+2025-07-04 10:19:12,382 : whateels.helpers.parsers.dm34 :     INFO : convergence_angle : Convergence angle alpha value updated to 0 mrad
+2025-07-04 10:23:42,728 : whateels.helpers.parsers.dm34 :     INFO : process_file_header : DM version = 4 - File size (Bytes) = 9007137 - little endian
+2025-07-04 10:23:42,732 : whateels.helpers.parsers.dm34 :     WARNING : read_string : Failed reading with an encoding utf8
+2025-07-04 10:23:42,732 : whateels.helpers.parsers.dm34 :     WARNING : read_string : Failed reading with an encoding utf8
+2025-07-04 10:23:43,490 : whateels.helpers.parsers.dm34 :     WARNING : collection_angle : Expected a value for the convergence angle. No such value in the parsed dictionary found
+2025-07-04 10:23:43,490 : whateels.helpers.parsers.dm34 :     WARNING : collection_angle : 'EELS'
+2025-07-04 10:23:43,490 : whateels.helpers.parsers.dm34 :     INFO : collection_angle : Added Route to the dictionary -> [ImageTags][EELS][Experimental Conditions]
+2025-07-04 10:23:43,490 : whateels.helpers.parsers.dm34 :     INFO : collection_angle : Collection angle beta value updated to 0 mrad
+2025-07-04 10:23:43,490 : whateels.helpers.parsers.dm34 :     WARNING : convergence_angle : Expected a value for the convergence angle. No such value in the parsed dictionary found
+2025-07-04 10:23:43,490 : whateels.helpers.parsers.dm34 :     WARNING : convergence_angle : 'Convergence semi-angle (mrad)'
+2025-07-04 10:23:43,490 : whateels.helpers.parsers.dm34 :     INFO : convergence_angle : Added Route to the dictionary -> [ImageTags][EELS][Experimental Conditions]
+2025-07-04 10:23:43,490 : whateels.helpers.parsers.dm34 :     INFO : convergence_angle : Convergence angle alpha value updated to 0 mrad
+2025-07-04 10:23:50,928 : whateels.helpers.parsers.dm34 :     INFO : process_file_header : DM version = 4 - File size (Bytes) = 9006121 - little endian
+2025-07-04 10:23:50,932 : whateels.helpers.parsers.dm34 :     WARNING : read_string : Failed reading with an encoding utf8
+2025-07-04 10:23:50,932 : whateels.helpers.parsers.dm34 :     WARNING : read_string : Failed reading with an encoding utf8
+2025-07-04 10:23:50,938 : whateels.helpers.parsers.dm34 :     WARNING : collection_angle : Expected a value for the convergence angle. No such value in the parsed dictionary found
+2025-07-04 10:23:50,938 : whateels.helpers.parsers.dm34 :     WARNING : collection_angle : 'EELS'
+2025-07-04 10:23:50,938 : whateels.helpers.parsers.dm34 :     INFO : collection_angle : Added Route to the dictionary -> [ImageTags][EELS][Experimental Conditions]
+2025-07-04 10:23:50,938 : whateels.helpers.parsers.dm34 :     INFO : collection_angle : Collection angle beta value updated to 0 mrad
+2025-07-04 10:23:50,938 : whateels.helpers.parsers.dm34 :     WARNING : convergence_angle : Expected a value for the convergence angle. No such value in the parsed dictionary found
+2025-07-04 10:23:50,938 : whateels.helpers.parsers.dm34 :     WARNING : convergence_angle : 'Convergence semi-angle (mrad)'
+2025-07-04 10:23:50,938 : whateels.helpers.parsers.dm34 :     INFO : convergence_angle : Added Route to the dictionary -> [ImageTags][EELS][Experimental Conditions]
+2025-07-04 10:23:50,938 : whateels.helpers.parsers.dm34 :     INFO : convergence_angle : Convergence angle alpha value updated to 0 mrad
+2025-07-04 10:23:57,521 : whateels.helpers.parsers.dm34 :     INFO : process_file_header : DM version = 4 - File size (Bytes) = 9006121 - little endian
+2025-07-04 10:23:57,524 : whateels.helpers.parsers.dm34 :     WARNING : read_string : Failed reading with an encoding utf8
+2025-07-04 10:23:57,524 : whateels.helpers.parsers.dm34 :     WARNING : read_string : Failed reading with an encoding utf8
+2025-07-04 10:23:57,530 : whateels.helpers.parsers.dm34 :     WARNING : collection_angle : Expected a value for the convergence angle. No such value in the parsed dictionary found
+2025-07-04 10:23:57,530 : whateels.helpers.parsers.dm34 :     WARNING : collection_angle : 'EELS'
+2025-07-04 10:23:57,530 : whateels.helpers.parsers.dm34 :     INFO : collection_angle : Added Route to the dictionary -> [ImageTags][EELS][Experimental Conditions]
+2025-07-04 10:23:57,531 : whateels.helpers.parsers.dm34 :     INFO : collection_angle : Collection angle beta value updated to 0 mrad
+2025-07-04 10:23:57,531 : whateels.helpers.parsers.dm34 :     WARNING : convergence_angle : Expected a value for the convergence angle. No such value in the parsed dictionary found
+2025-07-04 10:23:57,531 : whateels.helpers.parsers.dm34 :     WARNING : convergence_angle : 'Convergence semi-angle (mrad)'
+2025-07-04 10:23:57,531 : whateels.helpers.parsers.dm34 :     INFO : convergence_angle : Added Route to the dictionary -> [ImageTags][EELS][Experimental Conditions]
+2025-07-04 10:23:57,531 : whateels.helpers.parsers.dm34 :     INFO : convergence_angle : Convergence angle alpha value updated to 0 mrad
+2025-07-04 10:32:43,593 : whateels.helpers.parsers.dm34 :     INFO : process_file_header : DM version = 4 - File size (Bytes) = 9007137 - little endian
+2025-07-04 10:32:43,597 : whateels.helpers.parsers.dm34 :     WARNING : read_string : Failed reading with an encoding utf8
+2025-07-04 10:32:43,598 : whateels.helpers.parsers.dm34 :     WARNING : read_string : Failed reading with an encoding utf8
+2025-07-04 10:32:44,355 : whateels.helpers.parsers.dm34 :     WARNING : collection_angle : Expected a value for the convergence angle. No such value in the parsed dictionary found
+2025-07-04 10:32:44,355 : whateels.helpers.parsers.dm34 :     WARNING : collection_angle : 'EELS'
+2025-07-04 10:32:44,355 : whateels.helpers.parsers.dm34 :     INFO : collection_angle : Added Route to the dictionary -> [ImageTags][EELS][Experimental Conditions]
+2025-07-04 10:32:44,355 : whateels.helpers.parsers.dm34 :     INFO : collection_angle : Collection angle beta value updated to 0 mrad
+2025-07-04 10:32:44,355 : whateels.helpers.parsers.dm34 :     WARNING : convergence_angle : Expected a value for the convergence angle. No such value in the parsed dictionary found
+2025-07-04 10:32:44,355 : whateels.helpers.parsers.dm34 :     WARNING : convergence_angle : 'Convergence semi-angle (mrad)'
+2025-07-04 10:32:44,355 : whateels.helpers.parsers.dm34 :     INFO : convergence_angle : Added Route to the dictionary -> [ImageTags][EELS][Experimental Conditions]
+2025-07-04 10:32:44,355 : whateels.helpers.parsers.dm34 :     INFO : convergence_angle : Convergence angle alpha value updated to 0 mrad
+2025-07-04 10:33:09,526 : whateels.helpers.parsers.dm34 :     INFO : process_file_header : DM version = 4 - File size (Bytes) = 9007137 - little endian
+2025-07-04 10:33:09,531 : whateels.helpers.parsers.dm34 :     WARNING : read_string : Failed reading with an encoding utf8
+2025-07-04 10:33:09,531 : whateels.helpers.parsers.dm34 :     WARNING : read_string : Failed reading with an encoding utf8
+2025-07-04 10:33:09,537 : whateels.helpers.parsers.dm34 :     WARNING : collection_angle : Expected a value for the convergence angle. No such value in the parsed dictionary found
+2025-07-04 10:33:09,537 : whateels.helpers.parsers.dm34 :     WARNING : collection_angle : 'EELS'
+2025-07-04 10:33:09,537 : whateels.helpers.parsers.dm34 :     INFO : collection_angle : Added Route to the dictionary -> [ImageTags][EELS][Experimental Conditions]
+2025-07-04 10:33:09,537 : whateels.helpers.parsers.dm34 :     INFO : collection_angle : Collection angle beta value updated to 0 mrad
+2025-07-04 10:33:09,537 : whateels.helpers.parsers.dm34 :     WARNING : convergence_angle : Expected a value for the convergence angle. No such value in the parsed dictionary found
+2025-07-04 10:33:09,537 : whateels.helpers.parsers.dm34 :     WARNING : convergence_angle : 'Convergence semi-angle (mrad)'
+2025-07-04 10:33:09,538 : whateels.helpers.parsers.dm34 :     INFO : convergence_angle : Added Route to the dictionary -> [ImageTags][EELS][Experimental Conditions]
+2025-07-04 10:33:09,538 : whateels.helpers.parsers.dm34 :     INFO : convergence_angle : Convergence angle alpha value updated to 0 mrad
+2025-07-04 10:33:27,260 : whateels.helpers.parsers.dm34 :     INFO : process_file_header : DM version = 4 - File size (Bytes) = 9007137 - little endian
+2025-07-04 10:33:27,264 : whateels.helpers.parsers.dm34 :     WARNING : read_string : Failed reading with an encoding utf8
+2025-07-04 10:33:27,264 : whateels.helpers.parsers.dm34 :     WARNING : read_string : Failed reading with an encoding utf8
+2025-07-04 10:33:27,270 : whateels.helpers.parsers.dm34 :     WARNING : collection_angle : Expected a value for the convergence angle. No such value in the parsed dictionary found
+2025-07-04 10:33:27,270 : whateels.helpers.parsers.dm34 :     WARNING : collection_angle : 'EELS'
+2025-07-04 10:33:27,270 : whateels.helpers.parsers.dm34 :     INFO : collection_angle : Added Route to the dictionary -> [ImageTags][EELS][Experimental Conditions]
+2025-07-04 10:33:27,270 : whateels.helpers.parsers.dm34 :     INFO : collection_angle : Collection angle beta value updated to 0 mrad
+2025-07-04 10:33:27,270 : whateels.helpers.parsers.dm34 :     WARNING : convergence_angle : Expected a value for the convergence angle. No such value in the parsed dictionary found
+2025-07-04 10:33:27,270 : whateels.helpers.parsers.dm34 :     WARNING : convergence_angle : 'Convergence semi-angle (mrad)'
+2025-07-04 10:33:27,270 : whateels.helpers.parsers.dm34 :     INFO : convergence_angle : Added Route to the dictionary -> [ImageTags][EELS][Experimental Conditions]
+2025-07-04 10:33:27,270 : whateels.helpers.parsers.dm34 :     INFO : convergence_angle : Convergence angle alpha value updated to 0 mrad
+2025-07-04 10:38:31,618 : whateels.helpers.parsers.dm34 :     INFO : process_file_header : DM version = 4 - File size (Bytes) = 9007137 - little endian
+2025-07-04 10:38:31,621 : whateels.helpers.parsers.dm34 :     WARNING : read_string : Failed reading with an encoding utf8
+2025-07-04 10:38:31,621 : whateels.helpers.parsers.dm34 :     WARNING : read_string : Failed reading with an encoding utf8
+2025-07-04 10:38:32,370 : whateels.helpers.parsers.dm34 :     WARNING : collection_angle : Expected a value for the convergence angle. No such value in the parsed dictionary found
+2025-07-04 10:38:32,371 : whateels.helpers.parsers.dm34 :     WARNING : collection_angle : 'EELS'
+2025-07-04 10:38:32,371 : whateels.helpers.parsers.dm34 :     INFO : collection_angle : Added Route to the dictionary -> [ImageTags][EELS][Experimental Conditions]
+2025-07-04 10:38:32,371 : whateels.helpers.parsers.dm34 :     INFO : collection_angle : Collection angle beta value updated to 0 mrad
+2025-07-04 10:38:32,371 : whateels.helpers.parsers.dm34 :     WARNING : convergence_angle : Expected a value for the convergence angle. No such value in the parsed dictionary found
+2025-07-04 10:38:32,371 : whateels.helpers.parsers.dm34 :     WARNING : convergence_angle : 'Convergence semi-angle (mrad)'
+2025-07-04 10:38:32,371 : whateels.helpers.parsers.dm34 :     INFO : convergence_angle : Added Route to the dictionary -> [ImageTags][EELS][Experimental Conditions]
+2025-07-04 10:38:32,371 : whateels.helpers.parsers.dm34 :     INFO : convergence_angle : Convergence angle alpha value updated to 0 mrad
+2025-07-04 10:48:24,477 : whateels.helpers.parsers.dm34 :     INFO : process_file_header : DM version = 4 - File size (Bytes) = 9007137 - little endian
+2025-07-04 10:48:24,481 : whateels.helpers.parsers.dm34 :     WARNING : read_string : Failed reading with an encoding utf8
+2025-07-04 10:48:24,481 : whateels.helpers.parsers.dm34 :     WARNING : read_string : Failed reading with an encoding utf8
+2025-07-04 10:48:25,286 : whateels.helpers.parsers.dm34 :     WARNING : collection_angle : Expected a value for the convergence angle. No such value in the parsed dictionary found
+2025-07-04 10:48:25,286 : whateels.helpers.parsers.dm34 :     WARNING : collection_angle : 'EELS'
+2025-07-04 10:48:25,286 : whateels.helpers.parsers.dm34 :     INFO : collection_angle : Added Route to the dictionary -> [ImageTags][EELS][Experimental Conditions]
+2025-07-04 10:48:25,286 : whateels.helpers.parsers.dm34 :     INFO : collection_angle : Collection angle beta value updated to 0 mrad
+2025-07-04 10:48:25,286 : whateels.helpers.parsers.dm34 :     WARNING : convergence_angle : Expected a value for the convergence angle. No such value in the parsed dictionary found
+2025-07-04 10:48:25,286 : whateels.helpers.parsers.dm34 :     WARNING : convergence_angle : 'Convergence semi-angle (mrad)'
+2025-07-04 10:48:25,286 : whateels.helpers.parsers.dm34 :     INFO : convergence_angle : Added Route to the dictionary -> [ImageTags][EELS][Experimental Conditions]
+2025-07-04 10:48:25,286 : whateels.helpers.parsers.dm34 :     INFO : convergence_angle : Convergence angle alpha value updated to 0 mrad
+2025-07-04 11:02:55,588 : whateels.helpers.parsers.dm34 :     INFO : process_file_header : DM version = 4 - File size (Bytes) = 9007137 - little endian
+2025-07-04 11:02:55,591 : whateels.helpers.parsers.dm34 :     WARNING : read_string : Failed reading with an encoding utf8
+2025-07-04 11:02:55,592 : whateels.helpers.parsers.dm34 :     WARNING : read_string : Failed reading with an encoding utf8
+2025-07-04 11:02:56,368 : whateels.helpers.parsers.dm34 :     WARNING : collection_angle : Expected a value for the convergence angle. No such value in the parsed dictionary found
+2025-07-04 11:02:56,368 : whateels.helpers.parsers.dm34 :     WARNING : collection_angle : 'EELS'
+2025-07-04 11:02:56,369 : whateels.helpers.parsers.dm34 :     INFO : collection_angle : Added Route to the dictionary -> [ImageTags][EELS][Experimental Conditions]
+2025-07-04 11:02:56,369 : whateels.helpers.parsers.dm34 :     INFO : collection_angle : Collection angle beta value updated to 0 mrad
+2025-07-04 11:02:56,369 : whateels.helpers.parsers.dm34 :     WARNING : convergence_angle : Expected a value for the convergence angle. No such value in the parsed dictionary found
+2025-07-04 11:02:56,369 : whateels.helpers.parsers.dm34 :     WARNING : convergence_angle : 'Convergence semi-angle (mrad)'
+2025-07-04 11:02:56,369 : whateels.helpers.parsers.dm34 :     INFO : convergence_angle : Added Route to the dictionary -> [ImageTags][EELS][Experimental Conditions]
+2025-07-04 11:02:56,369 : whateels.helpers.parsers.dm34 :     INFO : convergence_angle : Convergence angle alpha value updated to 0 mrad
+2025-07-04 11:07:17,113 : whateels.helpers.parsers.dm34 :     INFO : process_file_header : DM version = 4 - File size (Bytes) = 9007137 - little endian
+2025-07-04 11:07:17,117 : whateels.helpers.parsers.dm34 :     WARNING : read_string : Failed reading with an encoding utf8
+2025-07-04 11:07:17,117 : whateels.helpers.parsers.dm34 :     WARNING : read_string : Failed reading with an encoding utf8
+2025-07-04 11:07:17,875 : whateels.helpers.parsers.dm34 :     WARNING : collection_angle : Expected a value for the convergence angle. No such value in the parsed dictionary found
+2025-07-04 11:07:17,875 : whateels.helpers.parsers.dm34 :     WARNING : collection_angle : 'EELS'
+2025-07-04 11:07:17,875 : whateels.helpers.parsers.dm34 :     INFO : collection_angle : Added Route to the dictionary -> [ImageTags][EELS][Experimental Conditions]
+2025-07-04 11:07:17,876 : whateels.helpers.parsers.dm34 :     INFO : collection_angle : Collection angle beta value updated to 0 mrad
+2025-07-04 11:07:17,876 : whateels.helpers.parsers.dm34 :     WARNING : convergence_angle : Expected a value for the convergence angle. No such value in the parsed dictionary found
+2025-07-04 11:07:17,876 : whateels.helpers.parsers.dm34 :     WARNING : convergence_angle : 'Convergence semi-angle (mrad)'
+2025-07-04 11:07:17,876 : whateels.helpers.parsers.dm34 :     INFO : convergence_angle : Added Route to the dictionary -> [ImageTags][EELS][Experimental Conditions]
+2025-07-04 11:07:17,876 : whateels.helpers.parsers.dm34 :     INFO : convergence_angle : Convergence angle alpha value updated to 0 mrad
+2025-07-04 11:09:27,369 : whateels.helpers.parsers.dm34 :     INFO : process_file_header : DM version = 4 - File size (Bytes) = 9007137 - little endian
+2025-07-04 11:09:27,372 : whateels.helpers.parsers.dm34 :     WARNING : read_string : Failed reading with an encoding utf8
+2025-07-04 11:09:27,372 : whateels.helpers.parsers.dm34 :     WARNING : read_string : Failed reading with an encoding utf8
+2025-07-04 11:09:28,185 : whateels.helpers.parsers.dm34 :     WARNING : collection_angle : Expected a value for the convergence angle. No such value in the parsed dictionary found
+2025-07-04 11:09:28,186 : whateels.helpers.parsers.dm34 :     WARNING : collection_angle : 'EELS'
+2025-07-04 11:09:28,186 : whateels.helpers.parsers.dm34 :     INFO : collection_angle : Added Route to the dictionary -> [ImageTags][EELS][Experimental Conditions]
+2025-07-04 11:09:28,186 : whateels.helpers.parsers.dm34 :     INFO : collection_angle : Collection angle beta value updated to 0 mrad
+2025-07-04 11:09:28,186 : whateels.helpers.parsers.dm34 :     WARNING : convergence_angle : Expected a value for the convergence angle. No such value in the parsed dictionary found
+2025-07-04 11:09:28,186 : whateels.helpers.parsers.dm34 :     WARNING : convergence_angle : 'Convergence semi-angle (mrad)'
+2025-07-04 11:09:28,186 : whateels.helpers.parsers.dm34 :     INFO : convergence_angle : Added Route to the dictionary -> [ImageTags][EELS][Experimental Conditions]
+2025-07-04 11:09:28,186 : whateels.helpers.parsers.dm34 :     INFO : convergence_angle : Convergence angle alpha value updated to 0 mrad
+2025-07-04 11:09:59,848 : whateels.helpers.parsers.dm34 :     INFO : process_file_header : DM version = 4 - File size (Bytes) = 9007137 - little endian
+2025-07-04 11:09:59,851 : whateels.helpers.parsers.dm34 :     WARNING : read_string : Failed reading with an encoding utf8
+2025-07-04 11:09:59,851 : whateels.helpers.parsers.dm34 :     WARNING : read_string : Failed reading with an encoding utf8
+2025-07-04 11:10:00,621 : whateels.helpers.parsers.dm34 :     WARNING : collection_angle : Expected a value for the convergence angle. No such value in the parsed dictionary found
+2025-07-04 11:10:00,621 : whateels.helpers.parsers.dm34 :     WARNING : collection_angle : 'EELS'
+2025-07-04 11:10:00,621 : whateels.helpers.parsers.dm34 :     INFO : collection_angle : Added Route to the dictionary -> [ImageTags][EELS][Experimental Conditions]
+2025-07-04 11:10:00,621 : whateels.helpers.parsers.dm34 :     INFO : collection_angle : Collection angle beta value updated to 0 mrad
+2025-07-04 11:10:00,621 : whateels.helpers.parsers.dm34 :     WARNING : convergence_angle : Expected a value for the convergence angle. No such value in the parsed dictionary found
+2025-07-04 11:10:00,621 : whateels.helpers.parsers.dm34 :     WARNING : convergence_angle : 'Convergence semi-angle (mrad)'
+2025-07-04 11:10:00,621 : whateels.helpers.parsers.dm34 :     INFO : convergence_angle : Added Route to the dictionary -> [ImageTags][EELS][Experimental Conditions]
+2025-07-04 11:10:00,621 : whateels.helpers.parsers.dm34 :     INFO : convergence_angle : Convergence angle alpha value updated to 0 mrad
+2025-07-04 11:12:26,971 : whateels.helpers.parsers.dm34 :     INFO : process_file_header : DM version = 4 - File size (Bytes) = 9007137 - little endian
+2025-07-04 11:12:26,975 : whateels.helpers.parsers.dm34 :     WARNING : read_string : Failed reading with an encoding utf8
+2025-07-04 11:12:26,975 : whateels.helpers.parsers.dm34 :     WARNING : read_string : Failed reading with an encoding utf8
+2025-07-04 11:12:27,808 : whateels.helpers.parsers.dm34 :     WARNING : collection_angle : Expected a value for the convergence angle. No such value in the parsed dictionary found
+2025-07-04 11:12:27,808 : whateels.helpers.parsers.dm34 :     WARNING : collection_angle : 'EELS'
+2025-07-04 11:12:27,808 : whateels.helpers.parsers.dm34 :     INFO : collection_angle : Added Route to the dictionary -> [ImageTags][EELS][Experimental Conditions]
+2025-07-04 11:12:27,808 : whateels.helpers.parsers.dm34 :     INFO : collection_angle : Collection angle beta value updated to 0 mrad
+2025-07-04 11:12:27,808 : whateels.helpers.parsers.dm34 :     WARNING : convergence_angle : Expected a value for the convergence angle. No such value in the parsed dictionary found
+2025-07-04 11:12:27,808 : whateels.helpers.parsers.dm34 :     WARNING : convergence_angle : 'Convergence semi-angle (mrad)'
+2025-07-04 11:12:27,808 : whateels.helpers.parsers.dm34 :     INFO : convergence_angle : Added Route to the dictionary -> [ImageTags][EELS][Experimental Conditions]
+2025-07-04 11:12:27,809 : whateels.helpers.parsers.dm34 :     INFO : convergence_angle : Convergence angle alpha value updated to 0 mrad
+2025-07-04 11:13:36,765 : whateels.helpers.parsers.dm34 :     INFO : process_file_header : DM version = 4 - File size (Bytes) = 9007137 - little endian
+2025-07-04 11:13:36,770 : whateels.helpers.parsers.dm34 :     WARNING : read_string : Failed reading with an encoding utf8
+2025-07-04 11:13:36,770 : whateels.helpers.parsers.dm34 :     WARNING : read_string : Failed reading with an encoding utf8
+2025-07-04 11:13:37,562 : whateels.helpers.parsers.dm34 :     WARNING : collection_angle : Expected a value for the convergence angle. No such value in the parsed dictionary found
+2025-07-04 11:13:37,562 : whateels.helpers.parsers.dm34 :     WARNING : collection_angle : 'EELS'
+2025-07-04 11:13:37,562 : whateels.helpers.parsers.dm34 :     INFO : collection_angle : Added Route to the dictionary -> [ImageTags][EELS][Experimental Conditions]
+2025-07-04 11:13:37,562 : whateels.helpers.parsers.dm34 :     INFO : collection_angle : Collection angle beta value updated to 0 mrad
+2025-07-04 11:13:37,562 : whateels.helpers.parsers.dm34 :     WARNING : convergence_angle : Expected a value for the convergence angle. No such value in the parsed dictionary found
+2025-07-04 11:13:37,562 : whateels.helpers.parsers.dm34 :     WARNING : convergence_angle : 'Convergence semi-angle (mrad)'
+2025-07-04 11:13:37,562 : whateels.helpers.parsers.dm34 :     INFO : convergence_angle : Added Route to the dictionary -> [ImageTags][EELS][Experimental Conditions]
+2025-07-04 11:13:37,563 : whateels.helpers.parsers.dm34 :     INFO : convergence_angle : Convergence angle alpha value updated to 0 mrad
+2025-07-04 11:14:17,205 : whateels.helpers.parsers.dm34 :     INFO : process_file_header : DM version = 4 - File size (Bytes) = 9007137 - little endian
+2025-07-04 11:14:17,209 : whateels.helpers.parsers.dm34 :     WARNING : read_string : Failed reading with an encoding utf8
+2025-07-04 11:14:17,209 : whateels.helpers.parsers.dm34 :     WARNING : read_string : Failed reading with an encoding utf8
+2025-07-04 11:14:17,236 : whateels.helpers.parsers.dm34 :     WARNING : collection_angle : Expected a value for the convergence angle. No such value in the parsed dictionary found
+2025-07-04 11:14:17,236 : whateels.helpers.parsers.dm34 :     WARNING : collection_angle : 'EELS'
+2025-07-04 11:14:17,236 : whateels.helpers.parsers.dm34 :     INFO : collection_angle : Added Route to the dictionary -> [ImageTags][EELS][Experimental Conditions]
+2025-07-04 11:14:17,236 : whateels.helpers.parsers.dm34 :     INFO : collection_angle : Collection angle beta value updated to 0 mrad
+2025-07-04 11:14:17,236 : whateels.helpers.parsers.dm34 :     WARNING : convergence_angle : Expected a value for the convergence angle. No such value in the parsed dictionary found
+2025-07-04 11:14:17,236 : whateels.helpers.parsers.dm34 :     WARNING : convergence_angle : 'Convergence semi-angle (mrad)'
+2025-07-04 11:14:17,236 : whateels.helpers.parsers.dm34 :     INFO : convergence_angle : Added Route to the dictionary -> [ImageTags][EELS][Experimental Conditions]
+2025-07-04 11:14:17,236 : whateels.helpers.parsers.dm34 :     INFO : convergence_angle : Convergence angle alpha value updated to 0 mrad
+2025-07-04 11:17:49,897 : whateels.helpers.parsers.dm34 :     INFO : process_file_header : DM version = 4 - File size (Bytes) = 9007137 - little endian
+2025-07-04 11:17:49,902 : whateels.helpers.parsers.dm34 :     WARNING : read_string : Failed reading with an encoding utf8
+2025-07-04 11:17:49,902 : whateels.helpers.parsers.dm34 :     WARNING : read_string : Failed reading with an encoding utf8
+2025-07-04 11:17:50,775 : whateels.helpers.parsers.dm34 :     WARNING : collection_angle : Expected a value for the convergence angle. No such value in the parsed dictionary found
+2025-07-04 11:17:50,775 : whateels.helpers.parsers.dm34 :     WARNING : collection_angle : 'EELS'
+2025-07-04 11:17:50,775 : whateels.helpers.parsers.dm34 :     INFO : collection_angle : Added Route to the dictionary -> [ImageTags][EELS][Experimental Conditions]
+2025-07-04 11:17:50,775 : whateels.helpers.parsers.dm34 :     INFO : collection_angle : Collection angle beta value updated to 0 mrad
+2025-07-04 11:17:50,775 : whateels.helpers.parsers.dm34 :     WARNING : convergence_angle : Expected a value for the convergence angle. No such value in the parsed dictionary found
+2025-07-04 11:17:50,775 : whateels.helpers.parsers.dm34 :     WARNING : convergence_angle : 'Convergence semi-angle (mrad)'
+2025-07-04 11:17:50,776 : whateels.helpers.parsers.dm34 :     INFO : convergence_angle : Added Route to the dictionary -> [ImageTags][EELS][Experimental Conditions]
+2025-07-04 11:17:50,776 : whateels.helpers.parsers.dm34 :     INFO : convergence_angle : Convergence angle alpha value updated to 0 mrad
+2025-07-04 11:21:28,954 : whateels.helpers.parsers.dm34 :     INFO : process_file_header : DM version = 4 - File size (Bytes) = 9007137 - little endian
+2025-07-04 11:21:28,957 : whateels.helpers.parsers.dm34 :     WARNING : read_string : Failed reading with an encoding utf8
+2025-07-04 11:21:28,957 : whateels.helpers.parsers.dm34 :     WARNING : read_string : Failed reading with an encoding utf8
+2025-07-04 11:21:29,775 : whateels.helpers.parsers.dm34 :     WARNING : collection_angle : Expected a value for the convergence angle. No such value in the parsed dictionary found
+2025-07-04 11:21:29,775 : whateels.helpers.parsers.dm34 :     WARNING : collection_angle : 'EELS'
+2025-07-04 11:21:29,775 : whateels.helpers.parsers.dm34 :     INFO : collection_angle : Added Route to the dictionary -> [ImageTags][EELS][Experimental Conditions]
+2025-07-04 11:21:29,775 : whateels.helpers.parsers.dm34 :     INFO : collection_angle : Collection angle beta value updated to 0 mrad
+2025-07-04 11:21:29,775 : whateels.helpers.parsers.dm34 :     WARNING : convergence_angle : Expected a value for the convergence angle. No such value in the parsed dictionary found
+2025-07-04 11:21:29,775 : whateels.helpers.parsers.dm34 :     WARNING : convergence_angle : 'Convergence semi-angle (mrad)'
+2025-07-04 11:21:29,775 : whateels.helpers.parsers.dm34 :     INFO : convergence_angle : Added Route to the dictionary -> [ImageTags][EELS][Experimental Conditions]
+2025-07-04 11:21:29,775 : whateels.helpers.parsers.dm34 :     INFO : convergence_angle : Convergence angle alpha value updated to 0 mrad
+2025-07-04 11:23:52,882 : whateels.helpers.parsers.dm34 :     INFO : process_file_header : DM version = 4 - File size (Bytes) = 9007137 - little endian
+2025-07-04 11:23:52,886 : whateels.helpers.parsers.dm34 :     WARNING : read_string : Failed reading with an encoding utf8
+2025-07-04 11:23:52,887 : whateels.helpers.parsers.dm34 :     WARNING : read_string : Failed reading with an encoding utf8
+2025-07-04 11:23:53,688 : whateels.helpers.parsers.dm34 :     WARNING : collection_angle : Expected a value for the convergence angle. No such value in the parsed dictionary found
+2025-07-04 11:23:53,688 : whateels.helpers.parsers.dm34 :     WARNING : collection_angle : 'EELS'
+2025-07-04 11:23:53,688 : whateels.helpers.parsers.dm34 :     INFO : collection_angle : Added Route to the dictionary -> [ImageTags][EELS][Experimental Conditions]
+2025-07-04 11:23:53,688 : whateels.helpers.parsers.dm34 :     INFO : collection_angle : Collection angle beta value updated to 0 mrad
+2025-07-04 11:23:53,688 : whateels.helpers.parsers.dm34 :     WARNING : convergence_angle : Expected a value for the convergence angle. No such value in the parsed dictionary found
+2025-07-04 11:23:53,689 : whateels.helpers.parsers.dm34 :     WARNING : convergence_angle : 'Convergence semi-angle (mrad)'
+2025-07-04 11:23:53,689 : whateels.helpers.parsers.dm34 :     INFO : convergence_angle : Added Route to the dictionary -> [ImageTags][EELS][Experimental Conditions]
+2025-07-04 11:23:53,689 : whateels.helpers.parsers.dm34 :     INFO : convergence_angle : Convergence angle alpha value updated to 0 mrad
+2025-07-04 11:29:56,140 : whateels.helpers.parsers.dm34 :     INFO : process_file_header : DM version = 4 - File size (Bytes) = 9007137 - little endian
+2025-07-04 11:29:56,144 : whateels.helpers.parsers.dm34 :     WARNING : read_string : Failed reading with an encoding utf8
+2025-07-04 11:29:56,144 : whateels.helpers.parsers.dm34 :     WARNING : read_string : Failed reading with an encoding utf8
+2025-07-04 11:29:56,955 : whateels.helpers.parsers.dm34 :     WARNING : collection_angle : Expected a value for the convergence angle. No such value in the parsed dictionary found
+2025-07-04 11:29:56,955 : whateels.helpers.parsers.dm34 :     WARNING : collection_angle : 'EELS'
+2025-07-04 11:29:56,955 : whateels.helpers.parsers.dm34 :     INFO : collection_angle : Added Route to the dictionary -> [ImageTags][EELS][Experimental Conditions]
+2025-07-04 11:29:56,955 : whateels.helpers.parsers.dm34 :     INFO : collection_angle : Collection angle beta value updated to 0 mrad
+2025-07-04 11:29:56,955 : whateels.helpers.parsers.dm34 :     WARNING : convergence_angle : Expected a value for the convergence angle. No such value in the parsed dictionary found
+2025-07-04 11:29:56,956 : whateels.helpers.parsers.dm34 :     WARNING : convergence_angle : 'Convergence semi-angle (mrad)'
+2025-07-04 11:29:56,956 : whateels.helpers.parsers.dm34 :     INFO : convergence_angle : Added Route to the dictionary -> [ImageTags][EELS][Experimental Conditions]
+2025-07-04 11:29:56,956 : whateels.helpers.parsers.dm34 :     INFO : convergence_angle : Convergence angle alpha value updated to 0 mrad
+2025-07-04 11:30:56,340 : whateels.helpers.parsers.dm34 :     INFO : process_file_header : DM version = 4 - File size (Bytes) = 9007137 - little endian
+2025-07-04 11:30:56,345 : whateels.helpers.parsers.dm34 :     WARNING : read_string : Failed reading with an encoding utf8
+2025-07-04 11:30:56,345 : whateels.helpers.parsers.dm34 :     WARNING : read_string : Failed reading with an encoding utf8
+2025-07-04 11:30:57,159 : whateels.helpers.parsers.dm34 :     WARNING : collection_angle : Expected a value for the convergence angle. No such value in the parsed dictionary found
+2025-07-04 11:30:57,160 : whateels.helpers.parsers.dm34 :     WARNING : collection_angle : 'EELS'
+2025-07-04 11:30:57,160 : whateels.helpers.parsers.dm34 :     INFO : collection_angle : Added Route to the dictionary -> [ImageTags][EELS][Experimental Conditions]
+2025-07-04 11:30:57,160 : whateels.helpers.parsers.dm34 :     INFO : collection_angle : Collection angle beta value updated to 0 mrad
+2025-07-04 11:30:57,160 : whateels.helpers.parsers.dm34 :     WARNING : convergence_angle : Expected a value for the convergence angle. No such value in the parsed dictionary found
+2025-07-04 11:30:57,160 : whateels.helpers.parsers.dm34 :     WARNING : convergence_angle : 'Convergence semi-angle (mrad)'
+2025-07-04 11:30:57,160 : whateels.helpers.parsers.dm34 :     INFO : convergence_angle : Added Route to the dictionary -> [ImageTags][EELS][Experimental Conditions]
+2025-07-04 11:30:57,160 : whateels.helpers.parsers.dm34 :     INFO : convergence_angle : Convergence angle alpha value updated to 0 mrad
+2025-07-04 11:31:30,095 : whateels.helpers.parsers.dm34 :     INFO : process_file_header : DM version = 4 - File size (Bytes) = 9007137 - little endian
+2025-07-04 11:31:30,099 : whateels.helpers.parsers.dm34 :     WARNING : read_string : Failed reading with an encoding utf8
+2025-07-04 11:31:30,099 : whateels.helpers.parsers.dm34 :     WARNING : read_string : Failed reading with an encoding utf8
+2025-07-04 11:31:30,879 : whateels.helpers.parsers.dm34 :     WARNING : collection_angle : Expected a value for the convergence angle. No such value in the parsed dictionary found
+2025-07-04 11:31:30,879 : whateels.helpers.parsers.dm34 :     WARNING : collection_angle : 'EELS'
+2025-07-04 11:31:30,879 : whateels.helpers.parsers.dm34 :     INFO : collection_angle : Added Route to the dictionary -> [ImageTags][EELS][Experimental Conditions]
+2025-07-04 11:31:30,879 : whateels.helpers.parsers.dm34 :     INFO : collection_angle : Collection angle beta value updated to 0 mrad
+2025-07-04 11:31:30,879 : whateels.helpers.parsers.dm34 :     WARNING : convergence_angle : Expected a value for the convergence angle. No such value in the parsed dictionary found
+2025-07-04 11:31:30,879 : whateels.helpers.parsers.dm34 :     WARNING : convergence_angle : 'Convergence semi-angle (mrad)'
+2025-07-04 11:31:30,879 : whateels.helpers.parsers.dm34 :     INFO : convergence_angle : Added Route to the dictionary -> [ImageTags][EELS][Experimental Conditions]
+2025-07-04 11:31:30,879 : whateels.helpers.parsers.dm34 :     INFO : convergence_angle : Convergence angle alpha value updated to 0 mrad
+2025-07-04 11:33:18,949 : whateels.helpers.parsers.dm34 :     INFO : process_file_header : DM version = 4 - File size (Bytes) = 9007137 - little endian
+2025-07-04 11:33:18,953 : whateels.helpers.parsers.dm34 :     WARNING : read_string : Failed reading with an encoding utf8
+2025-07-04 11:33:18,953 : whateels.helpers.parsers.dm34 :     WARNING : read_string : Failed reading with an encoding utf8
+2025-07-04 11:33:19,740 : whateels.helpers.parsers.dm34 :     WARNING : collection_angle : Expected a value for the convergence angle. No such value in the parsed dictionary found
+2025-07-04 11:33:19,741 : whateels.helpers.parsers.dm34 :     WARNING : collection_angle : 'EELS'
+2025-07-04 11:33:19,741 : whateels.helpers.parsers.dm34 :     INFO : collection_angle : Added Route to the dictionary -> [ImageTags][EELS][Experimental Conditions]
+2025-07-04 11:33:19,741 : whateels.helpers.parsers.dm34 :     INFO : collection_angle : Collection angle beta value updated to 0 mrad
+2025-07-04 11:33:19,741 : whateels.helpers.parsers.dm34 :     WARNING : convergence_angle : Expected a value for the convergence angle. No such value in the parsed dictionary found
+2025-07-04 11:33:19,741 : whateels.helpers.parsers.dm34 :     WARNING : convergence_angle : 'Convergence semi-angle (mrad)'
+2025-07-04 11:33:19,741 : whateels.helpers.parsers.dm34 :     INFO : convergence_angle : Added Route to the dictionary -> [ImageTags][EELS][Experimental Conditions]
+2025-07-04 11:33:19,741 : whateels.helpers.parsers.dm34 :     INFO : convergence_angle : Convergence angle alpha value updated to 0 mrad
+2025-07-04 11:39:27,726 : whateels.helpers.parsers.dm34 :     INFO : process_file_header : DM version = 4 - File size (Bytes) = 9007137 - little endian
+2025-07-04 11:39:27,731 : whateels.helpers.parsers.dm34 :     WARNING : read_string : Failed reading with an encoding utf8
+2025-07-04 11:39:27,731 : whateels.helpers.parsers.dm34 :     WARNING : read_string : Failed reading with an encoding utf8
+2025-07-04 11:39:28,532 : whateels.helpers.parsers.dm34 :     WARNING : collection_angle : Expected a value for the convergence angle. No such value in the parsed dictionary found
+2025-07-04 11:39:28,532 : whateels.helpers.parsers.dm34 :     WARNING : collection_angle : 'EELS'
+2025-07-04 11:39:28,532 : whateels.helpers.parsers.dm34 :     INFO : collection_angle : Added Route to the dictionary -> [ImageTags][EELS][Experimental Conditions]
+2025-07-04 11:39:28,532 : whateels.helpers.parsers.dm34 :     INFO : collection_angle : Collection angle beta value updated to 0 mrad
+2025-07-04 11:39:28,533 : whateels.helpers.parsers.dm34 :     WARNING : convergence_angle : Expected a value for the convergence angle. No such value in the parsed dictionary found
+2025-07-04 11:39:28,533 : whateels.helpers.parsers.dm34 :     WARNING : convergence_angle : 'Convergence semi-angle (mrad)'
+2025-07-04 11:39:28,533 : whateels.helpers.parsers.dm34 :     INFO : convergence_angle : Added Route to the dictionary -> [ImageTags][EELS][Experimental Conditions]
+2025-07-04 11:39:28,533 : whateels.helpers.parsers.dm34 :     INFO : convergence_angle : Convergence angle alpha value updated to 0 mrad
