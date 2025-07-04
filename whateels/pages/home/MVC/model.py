@@ -22,3 +22,20 @@ class Model:
     class Callbacks:
         FILE_UPLOADED = "handle_file_uploaded",
         FILE_REMOVED = "handle_file_removed"
+    
+    class Visualization:
+        # Placeholder content for when no file is loaded
+        PLACEHOLDER_HTML = """
+        <div style='width:100%; height:550px; background-color:#f5f5f5; 
+                    display:flex; align-items:center; justify-content:center;
+                    border:2px dashed #ccc; border-radius:8px;'>
+            <div style='text-align:center; color:#666;'>
+                <h3>No file loaded</h3>
+                <p>Upload a DM3 or DM4 file to see the visualization</p>
+            </div>
+        </div>
+        """
+        
+        # Container dimensions
+        CONTAINER_WIDTH = 1000
+        CONTAINER_HEIGHT = 550

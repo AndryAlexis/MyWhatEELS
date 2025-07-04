@@ -38,18 +38,27 @@ class Controller:
             dataset = self._load_dm_file(temp_path)
 
             if dataset is not None:
-                pass
+                # Create visualization using VisualDisplay
+                visualization = VisualDisplay(dataset)
+                visualization.create_panels()
+                
+                # Update the view with the new visualization
+                self.view.update_visualization(visualization.struc)
+                print(f'Successfully loaded and visualized: {filename}')
             else:
-                pass
+                # Reset to placeholder on error
+                self.view.reset_visualization()
+                print(f'Error loading file: {filename}')
         
 
     def handle_file_removed(self, filename: str):
-        """        Handle file removal from the FileDropper component.
+        """Handle file removal from the FileDropper component.
         Args:
             filename: Name of the removed file
         """
         print('File removed', filename)
-        pass
+        # Reset visualization to placeholder when file is removed
+        self.view.reset_visualization()
     
     def _load_dm_file(self, filepath):
         """Load DM3/DM4 file and convert to xarray dataset"""
