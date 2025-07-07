@@ -39,7 +39,7 @@ class View:
         self.click_feedback_widget = None
     
     def _init_visualization_components(self):
-        """Initialize the visualization container and placeholder"""
+        """Initialize the visualization container and placeholders"""
         # Placeholder for when no file is loaded
         self.visualization_placeholder = pn.pane.HTML(
             self.model.Placeholders.NO_FILE_LOADED,
@@ -47,7 +47,16 @@ class View:
             min_height=400
         )
         
-        # Container that will hold either placeholder or actual visualization
+        # Loading placeholder for when file is being processed
+        self.loading_placeholder = pn.Column(
+            pn.pane.HTML(
+                self.model.Placeholders.LOADING_FILE,
+                sizing_mode='stretch_both'
+            ),
+            sizing_mode='stretch_both',
+        )
+        
+        # Container that will hold placeholder, loading, or actual visualization
         self.visualization_container = pn.Column(
             self.visualization_placeholder,
             sizing_mode='stretch_both',  # This makes it fill 100% width and height
@@ -66,11 +75,9 @@ class View:
             on_file_uploaded_callback=self.callbacks.get(Model.Callbacks.FILE_UPLOADED),
             on_file_removed_callback=self.callbacks.get(Model.Callbacks.FILE_REMOVED)
         )
-        
-        file_dropper_box = pn.WidgetBox(file_dropper)
-        
+        # Create a WidgetBox to hold the FileDropper        
         column = pn.Column(
-            file_dropper_box,
+            file_dropper,
             sizing_mode='stretch_width'
         )
 
@@ -107,6 +114,11 @@ class View:
         """
         self.visualization_container.clear()
         self.visualization_container.append(visualization_component)
+    
+    def show_loading(self):
+        """Show loading screen while processing file"""
+        self.visualization_container.clear()
+        self.visualization_container.append(self.loading_placeholder)
     
     def reset_visualization(self):
         """Reset the main area to show the placeholder"""

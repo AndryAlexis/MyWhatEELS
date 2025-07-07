@@ -13,14 +13,15 @@ class App:
     
     This class initializes the Panel application with the necessary pages and configurations.
     """
-    
+
     _DEFAULT_TITLE = "App"
+    _DEFAULT_PORT = 5006
     _DEFAULT_CSS_PATH = Path(__file__).parent / "assets" / "css"
     
     def __init__(self, title : str = _DEFAULT_TITLE):
         self.title = title
 
-    def run(self, port : int = 5006):
+    def run(self, port : int = _DEFAULT_PORT):
         # Load CSS files only once
         LoadCSS([
             str(self._DEFAULT_CSS_PATH / "home.css"),

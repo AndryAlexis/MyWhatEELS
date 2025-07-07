@@ -1,0 +1,46 @@
+{
+    "app_name": "WhatEELS",
+    "version": "1.0.0",
+    "author": {
+        "name": [
+            "Andry Alexis Reyes Cruz",
+            "Vanessa Costa Ledesma"
+        ],
+        "email": [
+            "andry.html@gmail.com",
+            "correodevanessa@correo.xd"
+        ]
+    },
+    "description": "This is a sample application configuration file.",
+    "pages": {
+        "home": {
+            "path": "/",
+            "title": "WhatEELS",
+            "aside": {
+                "file_dropper": {
+                    "title": "Upload EELS data file",
+                    "feedback_message": {
+                        "success": "File uploaded successfully.",
+                        "error": "Failed to upload file. Please try again.",
+                        "no_file": "No file uplodaded yet... :("
+                    }
+                }
+            },
+            "content": {
+                "placeholder": {
+                    "no_file": {
+                        "title": "No file loaded",
+                        "message": "Upload a DM4 file to see the visualization."
+                    }
+                }
+            }
+        },
+        "nlls": {
+            "path": "/nlls"
+        },
+        "login": {
+            "path": "/login"
+        }
+    }
+
+}

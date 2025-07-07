@@ -61,6 +61,91 @@ class Model:
                 </div>
             </div>
         """
+        LOADING_FILE = """
+            <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); border-radius: 8px">
+                
+                <!-- EELS Spectrum Animation -->
+                <div style="position: relative; width: 200px; height: 100px; margin-bottom: 30px;">
+                    <!-- Spectrum lines -->
+                    <div class="spectrum-container">
+                        <div class="spectrum-line" style="animation-delay: 0s;"></div>
+                        <div class="spectrum-line" style="animation-delay: 0.2s;"></div>
+                        <div class="spectrum-line" style="animation-delay: 0.4s;"></div>
+                        <div class="spectrum-line" style="animation-delay: 0.6s;"></div>
+                        <div class="spectrum-line" style="animation-delay: 0.8s;"></div>
+                    </div>
+                    
+                    <!-- Scanning beam -->
+                    <div class="scanning-beam"></div>
+                </div>
+                
+                <!-- Loading text with electron icon -->
+                <div style="text-align: center;">
+                    <h3 style="color: #2c3e50; margin: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; font-size: 3rem;">
+                        ⚛️ Processing EELS Data
+                    </h3>
+                    <p style="color: #7f8c8d; margin: 10px 0 0 0; font-size: 2rem;">
+                        Analyzing electron energy loss spectrum...
+                    </p>
+                </div>
+            </div>
+            
+            <style>
+                .spectrum-container {
+                    position: relative;
+                    width: 200px;
+                    height: 80px;
+                    border-left: 2px solid #34495e;
+                    border-bottom: 2px solid #34495e;
+                }
+                
+                .spectrum-line {
+                    position: absolute;
+                    bottom: 0;
+                    width: 5px;
+                    background: linear-gradient(to top, #3498db, #2980b9);
+                    border-radius: 2px 2px 0 0;
+                    animation: spectrum-grow 2s ease-in-out infinite;
+                }
+                
+                .spectrum-line:nth-child(1) { left: 20px; }
+                .spectrum-line:nth-child(2) { left: 50px; }
+                .spectrum-line:nth-child(3) { left: 80px; }
+                .spectrum-line:nth-child(4) { left: 110px; }
+                .spectrum-line:nth-child(5) { left: 140px; }
+                
+                .scanning-beam {
+                    position: absolute;
+                    top: -10px;
+                    width: 3px;
+                    height: 100px;
+                    background: linear-gradient(to bottom, #e74c3c, transparent);
+                    animation: scan-beam 3s linear infinite;
+                }
+                
+                @keyframes spectrum-grow {
+                    0%, 100% { height: 10px; opacity: 0.5; }
+                    50% { height: 60px; opacity: 1; }
+                }
+                
+                @keyframes scan-beam {
+                    0% { left: 0px; opacity: 0; }
+                    10% { opacity: 1; }
+                    90% { opacity: 1; }
+                    100% { left: 200px; opacity: 0; }
+                }
+                
+                /* Pulsing glow effect */
+                @keyframes glow-pulse {
+                    0%, 100% { box-shadow: 0 0 5px #3498db; }
+                    50% { box-shadow: 0 0 20px #3498db, 0 0 30px #3498db; }
+                }
+                
+                .spectrum-container {
+                    animation: glow-pulse 2s ease-in-out infinite;
+                }
+            </style>
+        """
     
     class Colors:
         """Color constants for visualization styling."""
