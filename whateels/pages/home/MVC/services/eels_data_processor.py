@@ -143,3 +143,31 @@ class EELSDataProcessor:
         except Exception as e:
             print(f"Warning: Could not clean dataset: {e}")
             return dataset
+    
+    def determine_dataset_type(self, dataset: xr.Dataset) -> str:
+        """
+        Determine the type of dataset based on dimensions.
+        
+        This method analyzes the dataset coordinates to classify it as:
+        - Single Spectrum: 1x1 spatial dimensions
+        - Spectrum Line: 1D spatial scan
+        - Spectrum Image: 2D spatial scan
+        
+        Args:
+            dataset: xarray Dataset with EELS data
+            
+        Returns:
+            str: Dataset type constant ('SSp', 'SLi', or 'SIm')
+        """
+        # Import constants from model
+        from ..model import Model
+        
+        x_size = len(dataset.coords[Model.Constants.AXIS_X])
+        y_size = len(dataset.coords[Model.Constants.AXIS_Y])
+        
+        if x_size == 1 and y_size == 1:
+            return Model.Constants.SINGLE_SPECTRUM
+        elif y_size == 1:
+            return Model.Constants.SPECTRUM_LINE
+        else:
+            return Model.Constants.SPECTRUM_IMAGE

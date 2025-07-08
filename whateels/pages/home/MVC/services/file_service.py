@@ -11,6 +11,7 @@ This service handles all file-related operations including:
 import os, numpy as np, xarray as xr, traceback
 from pathlib import Path
 from whateels.helpers import TempFile, DM_EELS_Reader
+from .eels_data_processor import EELSDataProcessor
 
 class FileService:
     """Service class for handling file operations"""
@@ -29,9 +30,6 @@ class FileService:
         Returns:
             xarray.Dataset or None: Processed dataset or None if error
         """
-        print(f"Starting file upload process for: {filename}")
-        print(f"File content size: {len(file_content)} bytes")
-        
         # Get the correct file extension from the uploaded filename
         file_extension = Path(filename).suffix
         
@@ -42,13 +40,10 @@ class FileService:
                 with open(temp_path, 'wb') as f:
                     f.write(file_content)
                 
-                print(f"Temporary file created: {temp_path}")
-                
                 # Load the DM3/DM4 file and convert to xarray dataset
                 dataset = self.load_dm_file(temp_path)
                 
                 if dataset is not None:
-                    print(f"Dataset loaded successfully. Shape: {dataset.ElectronCount.shape}")
                     return dataset
                 else:
                     print(f'Error loading file: {filename}')
@@ -62,24 +57,16 @@ class FileService:
     def load_dm_file(self, filepath):
         """Load DM3/DM4 file and convert to xarray dataset"""
         try:
-            print(f"Loading DM file: {filepath}")
-            
             # Check file size first
             if not self._validate_file_size(filepath):
                 return None
             
             # Use the DM_EELS_Reader from the whatEELS library
-            print("Initializing DM_EELS_Reader...")
             spectrum_image = DM_EELS_Reader(filepath).read_data()
-            print("DM file read successfully")
             
             # Get data and energy axis
             electron_count_data = spectrum_image.data
             energy_axis = spectrum_image.energy_axis
-            
-            print(f"Original data shape: {electron_count_data.shape}")
-            print(f"Energy axis shape: {energy_axis.shape}")
-            print(f"Energy axis range: {energy_axis.min():.2f} to {energy_axis.max():.2f}")
             
             # Check for NaN/inf in raw data
             self._log_data_quality(electron_count_data, energy_axis)
@@ -89,8 +76,6 @@ class FileService:
             
             # Clean electron count data
             electron_count_data = np.nan_to_num(electron_count_data, nan=0.0, posinf=0.0, neginf=0.0)
-            
-            print("Data cleaned successfully")
             
             # Add metadata and return
             dataset = self._create_dataset_from_data(electron_count_data, energy_axis, spectrum_image, filepath)
@@ -102,7 +87,6 @@ class FileService:
     def _validate_file_size(self, filepath):
         """Validate file size for DM files"""
         file_size = os.path.getsize(filepath)
-        print(f"File size: {file_size} bytes")
         
         if file_size < 1000:  # Less than 1KB is suspicious for DM files
             print(f"Error: File size ({file_size} bytes) is too small for a valid DM3/DM4 file. Expected at least 1KB.")
@@ -116,27 +100,23 @@ class FileService:
         energy_nan_count = np.isnan(energy_axis).sum()
         energy_inf_count = np.isinf(energy_axis).sum()
         
-        print(f"Raw data NaN count: {data_nan_count}, Inf count: {data_inf_count}")
-        print(f"Energy axis NaN count: {energy_nan_count}, Inf count: {energy_inf_count}")
+        # Only log if there are quality issues
+        if data_nan_count > 0 or data_inf_count > 0:
+            print(f"Warning: Raw data has {data_nan_count} NaN values and {data_inf_count} Inf values")
+        if energy_nan_count > 0 or energy_inf_count > 0:
+            print(f"Warning: Energy axis has {energy_nan_count} NaN values and {energy_inf_count} Inf values")
     
     def _create_dataset_from_data(self, electron_count_data, energy_axis, spectrum_image, filepath):
         """Create xarray dataset from processed data"""
-        from .eels_data_processor import EELSDataProcessor
-        
-        data_service = EELSDataProcessor()
+        eels_data_processor = EELSDataProcessor()
         
         # Process the data using DataService
-        processed_data = data_service.process_data_for_xarray(electron_count_data, energy_axis)
+        processed_data = eels_data_processor.process_data_for_xarray(electron_count_data, energy_axis)
         
         if processed_data is None:
             return None
         
         electron_count_data, x_coordinates, y_coordinates = processed_data
-        
-        # Create xarray dataset
-        print(f"Creating xarray dataset...")
-        print(f"Data shape: {electron_count_data.shape}")
-        print(f"Coordinate lengths - Y: {len(y_coordinates)}, X: {len(x_coordinates)}, Eloss: {len(energy_axis)}")
         
         # Validate dimensions match
         if electron_count_data.shape != (len(y_coordinates), len(x_coordinates), len(energy_axis)):
@@ -150,14 +130,15 @@ class FileService:
             coords={'y': y_coordinates, 'x': x_coordinates, 'Eloss': energy_axis}
         )
         
-        print("Dataset created successfully")
-        
         # Clean dataset for NaN/inf values
-        dataset = data_service.clean_dataset(dataset)
-        print("Dataset cleaned successfully")
+        dataset = eels_data_processor.clean_dataset(dataset)
+        
+        # Determine dataset type using the data service
+        dataset_type = eels_data_processor.determine_dataset_type(dataset)
         
         # Add metadata
         dataset.attrs['original_name'] = os.path.basename(filepath)
+        dataset.attrs['dataset_type'] = dataset_type
         dataset.attrs['beam_energy'] = getattr(spectrum_image, 'beam_energy', 0)
         dataset.attrs['collection_angle'] = getattr(spectrum_image, 'collection_angle', 0.0)
         dataset.attrs['convergence_angle'] = getattr(spectrum_image, 'convergence_angle', 0.0)

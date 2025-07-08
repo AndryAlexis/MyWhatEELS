@@ -19,10 +19,6 @@ class Controller:
         self.data_service = EELSDataProcessor()
         self.interaction_handler = InteractionHandler(model, view)
     
-    # ============================================================================
-    # FileDropper Event Handlers
-    # ============================================================================
-    
     def handle_file_uploaded(self, filename: str, file_content: bytes):
         """
         🔽 FileDropper Event Handler: Handle file upload from the FileDropper component.
@@ -41,8 +37,9 @@ class Controller:
             # Reset interaction state for new file
             self.interaction_handler.reset_click_state()
             
-            # Set dataset in model
-            self.model.set_dataset(dataset)
+            # Set dataset in model with type from dataset metadata
+            dataset_type = dataset.attrs.get('dataset_type', None)
+            self.model.set_dataset(dataset, dataset_type)
             
             # Create visualization based on dataset type
             visualization_component = self.view.create_eels_visualization(self.model.dataset_type)

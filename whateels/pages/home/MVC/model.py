@@ -160,16 +160,7 @@ class Model:
         ORANGERED = 'orangered'
         DARKRED = 'darkred'
     
-    def set_dataset(self, dataset: xr.Dataset):
-        """Set the dataset and determine its type"""
+    def set_dataset(self, dataset: xr.Dataset, dataset_type: str = None):
+        """Set the dataset and its type"""
         self.dataset = dataset
-        self.dataset_type = self._determine_dataset_type(dataset)
-    
-    def _determine_dataset_type(self, dataset: xr.Dataset) -> str:
-        """Determine the type of dataset based on dimensions"""
-        if len(dataset.coords[self.Constants.AXIS_X]) == 1 and len(dataset.coords[self.Constants.AXIS_Y]) == 1:
-            return self.Constants.SINGLE_SPECTRUM
-        elif len(dataset.coords[self.Constants.AXIS_Y]) == 1:
-            return self.Constants.SPECTRUM_LINE
-        else:
-            return self.Constants.SPECTRUM_IMAGE
+        self.dataset_type = dataset_type
