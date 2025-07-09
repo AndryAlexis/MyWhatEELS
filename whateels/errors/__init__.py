@@ -1,12 +1,8 @@
 """
 WhatEELS Error Handling Module
 
-Custom exceptions for the WhatEELS application, organized by category:
-- base: Foundation exception classes
-- parsing: DM file format parsing exceptions  
-- data: EELS data processing exceptions
+Custom exceptions for the WhatEELS application.
+Currently contains DM file-specific exceptions.
 """
 
-from .base import *
-from .parsing import *
-from .data import *
+from .dm import *
