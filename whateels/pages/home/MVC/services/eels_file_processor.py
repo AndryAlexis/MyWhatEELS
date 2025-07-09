@@ -1,11 +1,8 @@
 """
-File Service for handling DM3/DM4 file operations.
+EELS File Processor for DM3/DM4 file operations.
 
-This service handles all file-related operations including:
-- File validation and size checking
-- Temporary file management  
-- DM3/DM4 file reading and parsing
-- Error handling for file operations
+Handles file I/O, validation, and orchestrates the file-to-dataset pipeline.
+Manages temporary files and delegates data processing to EELSDataProcessor.
 """
 
 import os, numpy as np, xarray as xr, traceback
@@ -13,23 +10,19 @@ from pathlib import Path
 from whateels.helpers import TempFile, DM_EELS_Reader
 from .eels_data_processor import EELSDataProcessor
 
-class FileService:
-    """Service class for handling file operations"""
+class EELSFileProcessor:
+    """
+    Handles DM3/DM4 file I/O and orchestrates file-to-dataset processing.
+    
+    Manages file validation, temporary files, and coordinates with EELSDataProcessor
+    for scientific data operations.
+    """
     
     def __init__(self, model):
         self.model = model
     
     def process_upload(self, filename: str, file_content: bytes):
-        """
-        Process file upload from bytes content.
-        
-        Args:
-            filename: Name of the uploaded file
-            file_content: Binary content of the uploaded file
-            
-        Returns:
-            xarray.Dataset or None: Processed dataset or None if error
-        """
+        """Process uploaded file bytes into EELS dataset."""
         # Get the correct file extension from the uploaded filename
         file_extension = Path(filename).suffix
         
@@ -55,7 +48,7 @@ class FileService:
                 return None
     
     def load_dm_file(self, filepath):
-        """Load DM3/DM4 file and convert to xarray dataset"""
+        """Load DM3/DM4 file and convert to xarray dataset with metadata."""
         try:
             # Check file size first
             if not self._validate_file_size(filepath):

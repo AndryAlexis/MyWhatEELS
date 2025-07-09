@@ -1,11 +1,26 @@
 """
-EELS Data Processor for handling scientific data processing operations.
+EELS Data Processor for scientific data processing operations.
 
-This processor handles all EELS data processing operations including:
-- Data reshaping and coordinate generation
-- NaN/inf value cleaning
-- xarray Dataset manipulation
-- Data validation and transformation
+This processor handles all scientific data manipulation and transformation operations
+for EELS (Electron Energy Loss Spectroscopy) datasets. It focuses purely on data
+processing logic without any file I/O dependencies, making it reusable and testable.
+
+Key Responsibilities:
+- Data reshaping and dimensional transformations (1D → 2D → 3D)
+- Coordinate system generation for spatial and energy axes
+- NaN/infinity value cleaning and data sanitization
+- xarray Dataset format standardization
+- Dataset type classification (Single Spectrum, Spectrum Line, Spectrum Image)
+- Scientific data validation and quality control
+
+Supported Data Types:
+- 1D: Single spectrum (energy only)
+- 2D: Spectrum line (position × energy)  
+- 3D: Spectrum image (y × x × energy)
+
+Data Flow:
+Raw numpy arrays → Dimensional analysis → Coordinate generation → 
+Data cleaning → xarray Dataset → Type classification
 """
 
 import numpy as np
@@ -13,33 +28,14 @@ import xarray as xr
 
 class EELSDataProcessor:
     """
-    Processes and cleans EELS electron count data for xarray datasets.
+    Processes EELS data arrays into standardized xarray datasets.
     
-    This processor handles EELS data of various dimensionalities (1D, 2D, 3D) and
-    converts them to a standardized format compatible with xarray datasets. It also
-    provides data cleaning utilities to handle NaN/inf values common in scientific data.
-    
-    Key Operations:
-    - Reshapes data from DM file format to xarray format
-    - Generates appropriate spatial coordinates
-    - Cleans NaN/inf values from data and coordinates
-    - Handles spectrum images, spectrum lines, and single spectra
+    Handles 1D/2D/3D data reshaping, coordinate generation, and data cleaning.
+    No file I/O dependencies - pure data transformation operations.
     """
     
     def process_data_for_xarray(self, electron_count_data, energy_axis):
-        """
-        Process and reshape data for xarray dataset creation.
-        
-        This method handles EELS data of different dimensionalities and converts
-        them to a standardized format compatible with xarray datasets.
-        
-        Args:
-            electron_count_data: Raw electron count data (1D, 2D, or 3D numpy array)
-            energy_axis: Energy axis data (1D numpy array)
-            
-        Returns:
-            tuple: (processed_data, x_coordinates, y_coordinates) or None if error
-        """
+        """Process raw EELS data into xarray format (y, x, energy)."""
         # Route to appropriate processing method based on data dimensionality
         if len(electron_count_data.shape) == 3:
             return self._process_3d_data(electron_count_data)
@@ -52,12 +48,7 @@ class EELSDataProcessor:
             return None
     
     def _process_3d_data(self, electron_count_data):
-        """
-        Process 3D data (spectrum image: y × x × energy).
-        
-        For spectrum images, we need to transpose from the typical DM file format
-        (energy, y, x) to xarray format (y, x, energy).
-        """
+        """Process 3D spectrum image: transpose (energy, y, x) → (y, x, energy)."""
         # Transpose from (energy, y, x) to (y, x, energy) for xarray compatibility
         electron_count_data = electron_count_data.transpose((1, 2, 0))
         
@@ -68,12 +59,7 @@ class EELSDataProcessor:
         return electron_count_data, x_coordinates, y_coordinates
     
     def _process_2d_data(self, electron_count_data, energy_axis):
-        """
-        Process 2D data (spectrum line: position × energy).
-        
-        2D data can be oriented as either (energy, position) or (position, energy).
-        We need to determine the correct orientation and reshape it for xarray.
-        """
+        """Process 2D spectrum line: detect orientation and reshape to (y=1, x, energy)."""
         # Determine data orientation by comparing dimensions with energy axis
         if electron_count_data.shape[0] == len(energy_axis):
             # Data is (energy, position) - transpose to (position, energy)
@@ -90,12 +76,7 @@ class EELSDataProcessor:
         return electron_count_data, x_coordinates, y_coordinates
     
     def _process_1d_data(self, electron_count_data):
-        """
-        Process 1D data (single spectrum: energy only).
-        
-        Single spectra need to be reshaped to fit the standard xarray format
-        with artificial spatial coordinates.
-        """
+        """Process 1D single spectrum: add spatial dims to create (y=1, x=1, energy)."""
         # Create artificial spatial coordinates (single point at origin)
         x_coordinates = np.array([0], dtype=np.int32)  # Single point in x
         y_coordinates = np.array([0], dtype=np.int32)  # Single point in y
@@ -108,13 +89,7 @@ class EELSDataProcessor:
         return electron_count_data, x_coordinates, y_coordinates
     
     def clean_dataset(self, dataset):
-        """
-        Clean dataset by replacing NaN/inf values with zeros.
-        
-        Scientific data often contains NaN or infinite values that can cause
-        issues in visualization and analysis. This method sanitizes the data
-        by replacing problematic values with zeros.
-        """
+        """Replace NaN/inf values with zeros in data and coordinates."""
         try:
             # Clean the main electron count data array
             electron_count = dataset.ElectronCount.values
@@ -145,20 +120,7 @@ class EELSDataProcessor:
             return dataset
     
     def determine_dataset_type(self, dataset: xr.Dataset) -> str:
-        """
-        Determine the type of dataset based on dimensions.
-        
-        This method analyzes the dataset coordinates to classify it as:
-        - Single Spectrum: 1x1 spatial dimensions
-        - Spectrum Line: 1D spatial scan
-        - Spectrum Image: 2D spatial scan
-        
-        Args:
-            dataset: xarray Dataset with EELS data
-            
-        Returns:
-            str: Dataset type constant ('SSp', 'SLi', or 'SIm')
-        """
+        """Classify dataset as Single Spectrum, Spectrum Line, or Spectrum Image based on spatial dimensions."""
         # Import constants from model
         from ..model import Model
         

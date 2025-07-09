@@ -1,6 +1,6 @@
 from .model import Model
 from .view import View
-from .services import FileService, EELSDataProcessor
+from .services import EELSFileProcessor, EELSDataProcessor
 from .handlers import InteractionHandler
 
 class Controller:
@@ -15,7 +15,7 @@ class Controller:
         self.view = view
         
         # Initialize services
-        self.file_service = FileService(model)
+        self.file_service = EELSFileProcessor(model)
         self.data_service = EELSDataProcessor()
         self.interaction_handler = InteractionHandler(model, view)
     
