@@ -1,7 +1,7 @@
 import logging, re
 import numpy as np
 
-from ...errors.exception import *
+from ...errors import *
 from ...helpers.decorders import decoders as dec
 from ...helpers.file_reader.abstract_classes import IDM_Parser, IDM_EELS_DataHandler
 
