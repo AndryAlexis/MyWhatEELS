@@ -12,11 +12,13 @@ hv.extension("bokeh", logo=False)
 class SingleSpectrumVisualizer:
     """Composes single spectrum visualizations from EELS data"""
     
+    # Constants for sizing modes
+    _STRETCH_WIDTH = 'stretch_width'
+    _STRETCH_BOTH = 'stretch_both'
+    
     def __init__(self, model):
         self.model = model
-        self._STRETCH_WIDTH = 'stretch_width'
-        self._STRETCH_BOTH = 'stretch_both'
-    
+
     def create_layout(self):
         """Create layout for single spectrum visualization"""
         # Create spectrum plot

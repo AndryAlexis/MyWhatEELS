@@ -28,6 +28,7 @@ class App:
             str(self._DEFAULT_CSS_PATH / "login.css"),
             str(self._DEFAULT_CSS_PATH / "custom_page.css"),
         ])
+        
         # Define the pages for the application
         pages = {
             "/": Home(),

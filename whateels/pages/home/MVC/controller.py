@@ -33,29 +33,35 @@ class Controller:
         # Delegate to file service
         dataset = self.file_service.process_upload(filename, file_content)
         
-        if dataset is not None:
-            # Reset interaction state for new file
-            self.interaction_handler.reset_click_state()
-            
-            # Set dataset in model with type from dataset metadata
-            dataset_type = dataset.attrs.get('dataset_type', None)
-            self.model.set_dataset(dataset, dataset_type)
-            
-            # Create visualization based on dataset type
-            visualization_component = self.view.create_eels_visualization(self.model.dataset_type)
-            
-            # Setup interaction callbacks - use tap instead of hover
-            if hasattr(self.view, 'tap_stream') and self.view.tap_stream:
-                self.interaction_handler.setup_tap_callback(self.view.tap_stream)
-            
-            # Update the view with the new visualization
-            self.view.update_visualization(visualization_component)
-            print(f'Successfully loaded and visualized: {filename}')
-        else:
+        if dataset is None:
             # Reset to placeholder on error
             self.interaction_handler.reset_click_state()
-            self.view.reset_visualization()
+            self.view.reset_plot_display()
             print(f'Error loading file: {filename}')
+            return 
+
+        # Reset interaction state for new file
+        self.interaction_handler.reset_click_state()
+        
+        # Set dataset in model with type from dataset metadata
+        dataset_type = dataset.attrs.get('dataset_type', None)
+        self.model.set_dataset(dataset, dataset_type)
+        
+        # Create plot based on dataset type
+        eels_plots = self.view.create_eels_plot(self.model.dataset_type)
+        
+        # If plots creation failed, view already shows error so we're done
+        if eels_plots is None:
+            print(f'Error visualizing file: {filename}')
+            return
+            
+        # Setup interaction callbacks - use tap instead of hover
+        if hasattr(self.view, 'tap_stream') and self.view.tap_stream:
+            self.interaction_handler.setup_tap_callback(self.view.tap_stream)
+        
+        # Update the view with the new plot
+        self.view.update_plot_display(eels_plots)
+        print(f'Successfully loaded and visualized: {filename}')
 
     def handle_file_removed(self, filename: str):
         """
@@ -69,6 +75,6 @@ class Controller:
         # Reset interaction state
         self.interaction_handler.reset_click_state()
         
-        # Reset visualization to placeholder when file is removed
-        self.view.reset_visualization()
+        # Reset plot display to placeholder when file is removed
+        self.view.reset_plot_display()
         
