@@ -8,7 +8,7 @@ Implements the Factory Pattern to:
 - Handle errors in a single location
 """
 
-from .visualizations import SingleSpectrumVisualizer, SpectrumLineVisualizer, SpectrumImageVisualizer
+from .eels_plots import SingleSpectrumVisualizer, SpectrumLineVisualizer, SpectrumImageVisualizer
 
 class EELSPlotFactory:
     """Factory for creating appropriate EELS plots and visualizations
