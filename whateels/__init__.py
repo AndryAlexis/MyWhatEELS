@@ -2,7 +2,7 @@ import panel as pn
 from pathlib import Path
 
 # Configure Panel with theme support (only called once here)
-pn.extension('filedropper', 'tabulator', theme='default')
+pn.extension('filedropper', 'floatpanel', theme='default')
 
 from whateels.helpers import LoadCSS
 from whateels.pages import Home, NLLS, Login

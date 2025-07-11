@@ -110,7 +110,7 @@ class InteractionHandler:
             ).opts(
                 width=600,
                 height=400,
-                color=self.model.Colors.BLACK,
+                color=self.model.Colors.RED,
                 line_width=2,
                 xlabel='Energy Loss (eV)',
                 ylabel='Electron Count',
