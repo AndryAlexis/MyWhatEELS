@@ -22,9 +22,9 @@ class EELSPlotFactory:
         self.view = view
         self.current_plot_renderer = None  # Store reference to active plotter
         self._all_plots = {
-            model.Constants.SINGLE_SPECTRUM: SingleSpectrumVisualizer,
-            model.Constants.SPECTRUM_LINE: SpectrumLineVisualizer,
-            model.Constants.SPECTRUM_IMAGE: SpectrumImageVisualizer
+            model.constants.SINGLE_SPECTRUM: SingleSpectrumVisualizer,
+            model.constants.SPECTRUM_LINE: SpectrumLineVisualizer,
+            model.constants.SPECTRUM_IMAGE: SpectrumImageVisualizer
         }
     
     def create_plots(self, dataset_type: str):

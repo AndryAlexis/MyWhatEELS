@@ -15,6 +15,7 @@ class SpectrumImageVisualizer:
     """Composes spectrum image (datacube) visualizations from EELS data"""
     
     def __init__(self, model):
+        print("Initializing SpectrumImageVisualizer")
         self.model = model
         self._STRETCH_WIDTH = 'stretch_width'
         self._STRETCH_BOTH = 'stretch_both'
@@ -24,23 +25,23 @@ class SpectrumImageVisualizer:
     def create_layout(self):
         """Create layout for spectrum image (datacube) visualization"""
         # Create reference image (sum over energy loss)
-        image_data = self.model.dataset.ElectronCount.sum(self.model.Constants.ELOSS)
+        image_data = self.model.dataset.ElectronCount.sum(self.model.constants.ELOSS)
         
         # Clean image data
         image_data = image_data.fillna(0.0)
         image_data = image_data.where(np.isfinite(image_data), 0.0)
         
         # Clean coordinates
-        x_coords = self.model.dataset.coords[self.model.Constants.AXIS_X]
-        y_coords = self.model.dataset.coords[self.model.Constants.AXIS_Y]
+        x_coords = self.model.dataset.coords[self.model.constants.AXIS_X]
+        y_coords = self.model.dataset.coords[self.model.constants.AXIS_Y]
         
         x_coords = x_coords.where(np.isfinite(x_coords), 0.0)
         y_coords = y_coords.where(np.isfinite(y_coords), 0.0)
         
         # Create clean dataset
         clean_image_data = image_data.assign_coords({
-            self.model.Constants.AXIS_X: x_coords,
-            self.model.Constants.AXIS_Y: y_coords
+            self.model.constants.AXIS_X: x_coords,
+            self.model.constants.AXIS_Y: y_coords
         })
         
         # Create components
@@ -72,11 +73,11 @@ class SpectrumImageVisualizer:
         
         return hv.Image(
             clean_image_data,
-            kdims=[self.model.Constants.AXIS_X, self.model.Constants.AXIS_Y]
+            kdims=[self.model.constants.AXIS_X, self.model.constants.AXIS_Y]
         ).opts(
             width=500,
             height=500,
-            cmap=self.model.Colors.GREYS_R,
+            cmap=self.model.colors.GREYS_R,
             xlabel='X Position',
             ylabel='Y Position',
             title='EELS Image (Sum over Energy)',
@@ -89,7 +90,7 @@ class SpectrumImageVisualizer:
     
     def _create_empty_spectrum(self):
         """Create empty spectrum for interaction"""
-        eloss_coords = self.model.dataset.coords[self.model.Constants.ELOSS]
+        eloss_coords = self.model.dataset.coords[self.model.constants.ELOSS]
         empty_data = xr.zeros_like(eloss_coords)
         
         if len(eloss_coords) == 0:
@@ -97,12 +98,12 @@ class SpectrumImageVisualizer:
         
         return hv.Curve(
             (eloss_coords, empty_data),
-            kdims=[self.model.Constants.ELOSS],
-            vdims=[self.model.Constants.ELECTRON_COUNT]
+            kdims=[self.model.constants.ELOSS],
+            vdims=[self.model.constants.ELECTRON_COUNT]
         ).opts(
             width=600,
             height=400,
-            color=self.model.Colors.BLACK,
+            color=self.model.colors.BLACK,
             line_width=2,
             xlabel='Energy Loss (eV)',
             ylabel='Electron Count',

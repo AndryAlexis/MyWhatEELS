@@ -1,4 +1,4 @@
-from .model import Model
+from ..model import Model
 from .eels_plot_factory import EELSPlotFactory
 import panel as pn
 import holoviews as hv
@@ -90,14 +90,14 @@ class View:
         """
         # Placeholder for when no file is loaded
         self._no_file_placeholder = pn.pane.HTML(
-            self.model.Placeholders.NO_FILE_LOADED,
+            self.model.placeholders.NO_FILE_LOADED,
             sizing_mode=self._STRETCH_BOTH
         )
         
         # Loading placeholder for when file is being processed
         self._loading_placeholder = pn.Column(
             pn.pane.HTML(
-                self.model.Placeholders.LOADING_FILE,
+                self.model.placeholders.LOADING_FILE,
                 sizing_mode=self._STRETCH_BOTH
             ),
             sizing_mode=self._STRETCH_BOTH,
@@ -105,19 +105,19 @@ class View:
         
         # Error placeholder for when an error occurs
         self._error_placeholder = pn.pane.HTML(
-            self.model.Placeholders.ERROR_FILE,
+            self.model.placeholders.ERROR_FILE,
             sizing_mode=self._STRETCH_BOTH
         )
     
     def _sidebar_layout(self):
         """Create and return the sidebar layout"""
         file_dropper = FileDropper(
-            valid_extensions=Model.FileDropper.VALID_EXTENSIONS,
-            reject_message=Model.FileDropper.REJECT_MESSAGE,
-            success_message=Model.FileDropper.SUCCESS_MESSAGE,
-            feedback_message=Model.FileDropper.FEEDBACK_MESSAGE,
-            on_file_uploaded_callback=self.callbacks.get(Model.Callbacks.FILE_UPLOADED),
-            on_file_removed_callback=self.callbacks.get(Model.Callbacks.FILE_REMOVED)
+            valid_extensions=self.model.file_dropper.VALID_EXTENSIONS,
+            reject_message=self.model.file_dropper.REJECT_MESSAGE,
+            success_message=self.model.file_dropper.SUCCESS_MESSAGE,
+            feedback_message=self.model.file_dropper.FEEDBACK_MESSAGE,
+            on_file_uploaded_callback=self.callbacks.get(self.model.callbacks.FILE_UPLOADED),
+            on_file_removed_callback=self.callbacks.get(self.model.callbacks.FILE_REMOVED)
         )
         
         return pn.Column(file_dropper, sizing_mode=self._STRETCH_WIDTH)
@@ -178,12 +178,12 @@ class View:
         spectrum_data = visualizer.get_spectrum_data()
         spectrum_curve = hv.Curve(
             spectrum_data,
-            kdims=[self.model.Constants.ELOSS],
-            vdims=[self.model.Constants.ELECTRON_COUNT]
+            kdims=[self.model.constants.ELOSS],
+            vdims=[self.model.constants.ELECTRON_COUNT]
         ).opts(
             width=800,
             height=400,
-            color=self.model.Colors.BLACK,
+            color=self.model.colors.BLACK,
             line_width=2,
             xlabel='Energy Loss (eV)',
             ylabel='Electron Count',

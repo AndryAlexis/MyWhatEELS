@@ -53,9 +53,9 @@ class InteractionHandler:
         self._last_click_coords = (x, y)
             
         try:
-            if self.model.dataset_type == self.model.Constants.SPECTRUM_IMAGE:
+            if self.model.dataset_type == self.model.constants.SPECTRUM_IMAGE:
                 self._handle_spectrum_image_click(x, y)
-            elif self.model.dataset_type == self.model.Constants.SPECTRUM_LINE:
+            elif self.model.dataset_type == self.model.constants.SPECTRUM_LINE:
                 self._handle_spectrum_line_click(x, y)
         except Exception as e:
             # Don't print errors for click events as they happen frequently
@@ -72,7 +72,7 @@ class InteractionHandler:
         self.update_spectrum_display(spectrum)
         
         # Update click feedback
-        click_text = self.model.Constants.CLICK_TEXT_2D_TEMPLATE.format(int(x), int(y))
+        click_text = self.model.constants.CLICK_TEXT_2D_TEMPLATE.format(int(x), int(y))
         if hasattr(self.view, 'click_feedback_widget') and self.view.click_feedback_widget:
             self.view.click_feedback_widget.value = click_text
     
@@ -87,7 +87,7 @@ class InteractionHandler:
         self.update_spectrum_display(spectrum)
         
         # Update click feedback
-        click_text = self.model.Constants.CLICK_TEXT_1D_TEMPLATE.format(int(x))
+        click_text = self.model.constants.CLICK_TEXT_1D_TEMPLATE.format(int(x))
         if hasattr(self.view, 'click_feedback_widget') and self.view.click_feedback_widget:
             self.view.click_feedback_widget.value = click_text
     
@@ -105,12 +105,12 @@ class InteractionHandler:
             # Create new spectrum curve
             spectrum_curve = hv.Curve(
                 spectrum_data,
-                kdims=[self.model.Constants.ELOSS],
-                vdims=[self.model.Constants.ELECTRON_COUNT]
+                kdims=[self.model.constants.ELOSS],
+                vdims=[self.model.constants.ELECTRON_COUNT]
             ).opts(
                 width=600,
                 height=400,
-                color=self.model.Colors.RED,
+                color=self.model.colors.RED,
                 line_width=2,
                 xlabel='Energy Loss (eV)',
                 ylabel='Electron Count',

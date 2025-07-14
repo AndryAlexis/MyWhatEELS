@@ -2,7 +2,6 @@
 Single spectrum visualization composer.
 """
 
-import panel as pn
 import holoviews as hv
 import numpy as np
 
@@ -17,6 +16,7 @@ class SingleSpectrumVisualizer:
     _STRETCH_BOTH = 'stretch_both'
     
     def __init__(self, model):
+        print("Initializing SingleSpectrumVisualizer")
         self.model = model
 
     def get_clean_spectrum_data(self):

@@ -14,10 +14,28 @@ hv.extension("bokeh", logo=False)
 class SpectrumLineVisualizer:
     """Composes spectrum line visualizations from EELS data"""
     
+    # Text and label constants (specific to each plot)
+    _IMAGE_X_LABEL = 'Position'
+    _IMAGE_Y_LABEL = 'Energy Loss (eV)'
+    _IMAGE_TITLE = 'EELS Spectrum Line'
+    _SPECTRUM_X_LABEL = 'Energy Loss (eV)'
+    _SPECTRUM_Y_LABEL = 'Electron Count'
+    _SPECTRUM_TITLE = 'Selected Spectrum'
+    _ERR_EMPTY_ELOSS = 'Energy loss coordinates are empty'
+
+    # Constants for sizing modes and plot configuration
+    _STRETCH_BOTH = 'stretch_both'
+    _STRETCH_WIDTH = 'stretch_width'
+
+    # Visualization configuration constants
+    _MAX_PLOT_SIZE = 600
+    _FOCUS_RATIO = 0.5
+    _SPECTRUM_WIDTH = 600
+    _SPECTRUM_HEIGHT = 300
+    
     def __init__(self, model):
+        print("Initializing SpectrumLineVisualizer")
         self.model = model
-        self._STRETCH_WIDTH = 'stretch_width'
-        self._STRETCH_BOTH = 'stretch_both'
         self.tap_stream = None
         self.spectrum_pane = None
     
@@ -31,16 +49,16 @@ class SpectrumLineVisualizer:
         image_data = image_data.where(np.isfinite(image_data), 0.0)
         
         # Clean coordinates
-        x_coords = self.model.dataset.coords[self.model.Constants.AXIS_X]
-        eloss_coords = self.model.dataset.coords[self.model.Constants.ELOSS]
+        x_coords = self.model.dataset.coords[self.model.constants.AXIS_X]
+        eloss_coords = self.model.dataset.coords[self.model.constants.ELOSS]
         
         x_coords = x_coords.where(np.isfinite(x_coords), 0.0)
         eloss_coords = eloss_coords.where(np.isfinite(eloss_coords), 0.0)
         
         # Create clean dataset for the image
         clean_image_data = image_data.assign_coords({
-            self.model.Constants.AXIS_X: x_coords,
-            self.model.Constants.ELOSS: eloss_coords
+            self.model.constants.AXIS_X: x_coords,
+            self.model.constants.ELOSS: eloss_coords
         })
         
         # Create image and spectrum components
@@ -68,30 +86,28 @@ class SpectrumLineVisualizer:
         # Calculate dimensions
         data_width = len(x_coords)
         data_height = len(eloss_coords)
-        
-        scale_factor = min(600 / data_width, 600 / data_height)
+        scale_factor = min(self._MAX_PLOT_SIZE / data_width, self._MAX_PLOT_SIZE / data_height)
         plot_width = int(data_width * scale_factor)
         plot_height = int(data_height * scale_factor)
-        
+
         # Focus on energy range
         eloss_min, eloss_max = float(eloss_coords.min()), float(eloss_coords.max())
         eloss_range = eloss_max - eloss_min
-        focus_ratio = 0.5
-        focused_range = eloss_range * focus_ratio
+        focused_range = eloss_range * self._FOCUS_RATIO
         eloss_center = (eloss_min + eloss_max) / 2
         focused_ylim = (eloss_center - focused_range/2, eloss_center + focused_range/2)
-        
+
         return hv.Image(
             clean_image_data,
-            kdims=[self.model.Constants.AXIS_X, self.model.Constants.ELOSS]
+            kdims=[self.model.constants.AXIS_X, self.model.constants.ELOSS]
         ).opts(
             width=plot_width,
             height=plot_height,
             ylim=focused_ylim,
-            cmap=self.model.Colors.GREYS_R,
-            xlabel='Position',
-            ylabel='Energy Loss (eV)',
-            title='EELS Spectrum Line',
+            cmap=self.model.colors.GREYS_R,
+            xlabel=self._IMAGE_X_LABEL,
+            ylabel=self._IMAGE_Y_LABEL,
+            title=self._IMAGE_TITLE,
             invert_yaxis=True,
             tools=['hover', 'tap'],
             margin=0,
@@ -103,20 +119,20 @@ class SpectrumLineVisualizer:
         empty_data = xr.zeros_like(eloss_coords)
         
         if len(eloss_coords) == 0:
-            raise ValueError("Energy loss coordinates are empty")
+            raise ValueError(self._ERR_EMPTY_ELOSS)
         
         return hv.Curve(
             (eloss_coords, empty_data),
-            kdims=[self.model.Constants.ELOSS],
-            vdims=[self.model.Constants.ELECTRON_COUNT]
+            kdims=[self.model.constants.ELOSS],
+            vdims=[self.model.constants.ELECTRON_COUNT]
         ).opts(
-            width=600,
-            height=300,
-            color=self.model.Colors.BLACK,
+            width=self._SPECTRUM_WIDTH,
+            height=self._SPECTRUM_HEIGHT,
+            color=self.model.colors.BLACK,
             line_width=2,
-            xlabel='Energy Loss (eV)',
-            ylabel='Electron Count',
-            title='Selected Spectrum'
+            xlabel=self._SPECTRUM_X_LABEL,
+            ylabel=self._SPECTRUM_Y_LABEL,
+            title=self._SPECTRUM_TITLE
         )
     
     def _trigger_refresh(self, image_pane):

@@ -27,7 +27,7 @@ class EELSFileProcessor:
         file_extension = Path(filename).suffix
         
         # Create temporary file that will be automatically cleaned up
-        with TempFile(suffix=file_extension, prefix=self.model.Constants.TEMP_PREFIX) as temp_path:
+        with TempFile(suffix=file_extension, prefix=self.model.constants.TEMP_PREFIX) as temp_path:
             try:
                 # Write the file content to a temporary file
                 with open(temp_path, 'wb') as f:
@@ -101,7 +101,7 @@ class EELSFileProcessor:
     
     def _create_dataset_from_data(self, electron_count_data, energy_axis, spectrum_image, filepath):
         """Create xarray dataset from processed data"""
-        eels_data_processor = EELSDataProcessor()
+        eels_data_processor = EELSDataProcessor(self.model)
         
         # Process the data using DataService
         processed_data = eels_data_processor.process_data_for_xarray(electron_count_data, energy_axis)

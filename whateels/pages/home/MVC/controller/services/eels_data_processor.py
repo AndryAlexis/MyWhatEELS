@@ -25,7 +25,6 @@ Data cleaning → xarray Dataset → Type classification
 
 import numpy as np
 import xarray as xr
-from whateels.pages.home.MVC.model import Model
 
 class EELSDataProcessor:
     """
@@ -35,6 +34,10 @@ class EELSDataProcessor:
     No file I/O dependencies - pure data transformation operations.
     """
     
+    def __init__(self, model):
+        """Initialize the processor with a Model instance for constants/config."""
+        self.model = model
+
     def process_data_for_xarray(self, electron_count_data, energy_axis):
         """Process raw EELS data into xarray format (y, x, energy)."""
         # Route to appropriate processing method based on data dimensionality
@@ -122,13 +125,11 @@ class EELSDataProcessor:
     
     def determine_dataset_type(self, dataset: xr.Dataset) -> str:
         """Classify dataset as Single Spectrum, Spectrum Line, or Spectrum Image based on spatial dimensions."""
-        
-        x_size = len(dataset.coords[Model.Constants.AXIS_X])
-        y_size = len(dataset.coords[Model.Constants.AXIS_Y])
-        
+        x_size = len(dataset.coords[self.model.constants.AXIS_X])
+        y_size = len(dataset.coords[self.model.constants.AXIS_Y])
         if x_size == 1 and y_size == 1:
-            return Model.Constants.SINGLE_SPECTRUM
+            return self.model.constants.SINGLE_SPECTRUM
         elif y_size == 1:
-            return Model.Constants.SPECTRUM_LINE
+            return self.model.constants.SPECTRUM_LINE
         else:
-            return Model.Constants.SPECTRUM_IMAGE
+            return self.model.constants.SPECTRUM_IMAGE
