@@ -53,22 +53,29 @@ class EELSFileProcessor:
             # Check file size first
             if not self._validate_file_size(filepath):
                 return None
+            
             # Use the DM_EELS_Reader from the whatEELS library
             spectrum_image = DM_EELS_Reader(filepath).read_data()
+            
             # Get data and energy axis
             electron_count_data = spectrum_image.data
             energy_axis = spectrum_image.energy_axis
+            
             # Check for NaN/inf in raw data
             self._log_data_quality(electron_count_data, energy_axis)
+            
             # Clean energy axis for NaN/inf values
             energy_axis = np.nan_to_num(energy_axis, nan=0.0, posinf=0.0, neginf=0.0)
+            
             # Clean electron count data
             electron_count_data = np.nan_to_num(electron_count_data, nan=0.0, posinf=0.0, neginf=0.0)
+            
             # Add metadata and return
             dataset = self._create_dataset_from_data(electron_count_data, energy_axis, spectrum_image, filepath)
             return dataset
+            
         except Exception as exception:
-            return self._handle_file_error(exception, filepath)
+            return self._handle_file_error(exception)
     
     def _validate_file_size(self, filepath):
         """Validate file size for DM files"""
@@ -131,16 +138,15 @@ class EELSFileProcessor:
         
         return dataset
     
-    def _handle_file_error(self, exception, filepath=None):
-        """Handle file loading errors and show which file caused the error"""
+    def _handle_file_error(self, exception):
+        """Handle file loading errors"""
         error_message = str(exception)
-        file_info = f" [File: {filepath}]" if filepath else ""
         if "Expected versions 3 or 4" in error_message:
-            print(f"Error loading DM file - Invalid or corrupted DM3/DM4 file: {exception}{file_info}")
+            print(f"Error loading DM file - Invalid or corrupted DM3/DM4 file: {exception}")
             return None
         elif "File size" in error_message and "too small" in error_message:
-            print(f"Error loading DM file - File too small: {exception}{file_info}")
+            print(f"Error loading DM file - File too small: {exception}")
             return None
         else:
-            print(f"Error loading DM file: {exception}{file_info}")
+            print(f"Error loading DM file: {exception}")
             return None

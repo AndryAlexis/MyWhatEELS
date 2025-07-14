@@ -124,6 +124,7 @@ class View:
     
     def _main_layout(self):
         """Create and return the main content area"""
+    
         self._main_container_layout = pn.Column(
             self._no_file_placeholder,
             sizing_mode=self._STRETCH_BOTH
@@ -172,3 +173,26 @@ class View:
         self.active_plotter = self.eels_plot_factory.current_plot_renderer
         
         return plot_result
+    
+    def show_single_spectrum(self, visualizer):
+        spectrum_data = visualizer.get_spectrum_data()
+        spectrum_curve = hv.Curve(
+            spectrum_data,
+            kdims=[self.model.Constants.ELOSS],
+            vdims=[self.model.Constants.ELECTRON_COUNT]
+        ).opts(
+            width=800,
+            height=400,
+            color=self.model.Colors.BLACK,
+            line_width=2,
+            xlabel='Energy Loss (eV)',
+            ylabel='Electron Count',
+            title='EELS Spectrum'
+        )
+        spectrum_pane = pn.pane.HoloViews(spectrum_curve, sizing_mode=self._STRETCH_WIDTH)
+        self.update_plot_display(
+            pn.Column(
+                spectrum_pane,
+                sizing_mode=self._STRETCH_BOTH
+            )
+        )

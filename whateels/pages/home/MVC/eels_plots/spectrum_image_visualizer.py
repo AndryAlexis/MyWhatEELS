@@ -20,7 +20,6 @@ class SpectrumImageVisualizer:
         self._STRETCH_BOTH = 'stretch_both'
         self.tap_stream = None
         self.spectrum_pane = None
-        self.click_feedback_widget = None
     
     def create_layout(self):
         """Create layout for spectrum image (datacube) visualization"""
@@ -51,12 +50,6 @@ class SpectrumImageVisualizer:
         # Setup interaction
         self.tap_stream = streams.Tap(x=0, y=0, source=image)
         
-        # Setup click feedback
-        self.click_feedback_widget = pn.widgets.StaticText(
-            value=self.model.Constants.CLICK_TEXT_2D_NONE,
-            name='Click Position'
-        )
-        
         # Convert to Panel
         image_pane = pn.pane.HoloViews(image, sizing_mode=self._STRETCH_WIDTH)
         self.spectrum_pane = pn.pane.HoloViews(empty_spectrum, sizing_mode=self._STRETCH_WIDTH)
@@ -64,7 +57,6 @@ class SpectrumImageVisualizer:
         return pn.Row(
             pn.Column(
                 image_pane,
-                self.click_feedback_widget,
                 sizing_mode=self._STRETCH_WIDTH
             ),
             self.spectrum_pane,

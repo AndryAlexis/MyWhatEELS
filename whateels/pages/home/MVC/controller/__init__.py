@@ -1,5 +1,5 @@
-from .model import Model
-from .view import View
+from ..model import Model
+from ..view import View
 from .services import EELSFileProcessor, EELSDataProcessor
 from .handlers import InteractionHandler
 
