@@ -1,120 +1,137 @@
-<div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; 
-            background: linear-gradient(135deg, #fff5f5 0%, #ffe6e6 100%); border-radius: 8px; min-height: 400px;">
-    
+<div class="error-file-container">
     <!-- EELS Error Animation -->
-    <div style="position: relative; width: 200px; height: 120px; margin-bottom: 30px;">
+    <div class="error-spectrum-animation">
         <!-- Broken Spectrum Visualization -->
         <div class="broken-spectrum-container">
             <div class="broken-spectrum-axis-x"></div>
             <div class="broken-spectrum-axis-y"></div>
-            
             <!-- Broken spectrum pieces -->
-            <div class="broken-spectrum-piece" style="left: 20px; animation-delay: 0s;"></div>
-            <div class="broken-spectrum-piece" style="left: 60px; animation-delay: 0.2s;"></div>
-            <div class="broken-spectrum-piece" style="left: 100px; animation-delay: 0.4s;"></div>
-            <div class="broken-spectrum-piece" style="left: 140px; animation-delay: 0.6s;"></div>
-            
+            <div class="broken-spectrum-piece piece-1"></div>
+            <div class="broken-spectrum-piece piece-2"></div>
+            <div class="broken-spectrum-piece piece-3"></div>
+            <div class="broken-spectrum-piece piece-4"></div>
             <!-- Error flash -->
             <div class="error-flash"></div>
-            
             <!-- Error icon -->
             <div class="error-icon">⚠️</div>
         </div>
     </div>
-    
     <!-- Error text -->
-    <div style="text-align: center;">
-        <h3 style="color: #c0392b; margin: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; font-size: 2.2rem;">
-            EELS Plot Error
-        </h3>
-        <p style="color: #7f8c8d; margin: 10px 0 0 0; font-size: 1.3rem;">
-            Could not process the EELS data
-        </p>
-        <p style="color: #e74c3c; margin: 10px 0 0 0; font-size: 1.1rem;" class="blink-text">
-            Please check the file format and try again
-        </p>
+    <div class="error-file-text">
+        <h3>EELS Plot Error</h3>
+        <p class="error-desc">Could not process the EELS data</p>
+        <p class="blink-text">Please check the file format and try again</p>
     </div>
 </div>
 
 <style>
-    .broken-spectrum-container {
-        position: relative;
-        width: 200px;
-        height: 120px;
-        border-left: 2px solid #e74c3c;
-        border-bottom: 2px solid #e74c3c;
-        box-shadow: 0 0 15px rgba(231, 76, 60, 0.5);
-    }
-    
-    .broken-spectrum-axis-x {
-        position: absolute;
-        bottom: -2px;
-        left: 0;
-        width: 100%;
-        height: 2px;
-        background-color: #e74c3c;
-    }
-    
-    .broken-spectrum-axis-y {
-        position: absolute;
-        bottom: 0;
-        left: -2px;
-        width: 2px;
-        height: 100%;
-        background-color: #e74c3c;
-    }
-    
-    .broken-spectrum-piece {
-        position: absolute;
-        bottom: 0;
-        width: 5px;
-        background: linear-gradient(to top, #e74c3c, #c0392b);
-        border-radius: 2px 2px 0 0;
-        animation: broken-spectrum-shake 2s ease-in-out infinite;
-        transform-origin: bottom center;
-        height: 60px;
-    }
-    
-    .error-flash {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background-color: rgba(231, 76, 60, 0.2);
-        animation: error-flash 3s ease-in-out infinite;
-    }
-    
-    .error-icon {
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        font-size: 2.2rem;
-        animation: pulse-grow 2s ease-in-out infinite;
-    }
-    
-    .blink-text {
-        animation: blink-text 1.5s ease-in-out infinite;
-    }
-    
-    @keyframes broken-spectrum-shake {
-        0%, 100% { transform: rotate(-5deg); height: 40px; }
-        50% { transform: rotate(5deg); height: 60px; }
-    }
-    
-    @keyframes error-flash {
-        0%, 100% { opacity: 0; }
-        50% { opacity: 0.3; }
-    }
-    
-    @keyframes pulse-grow {
-        0%, 100% { transform: translate(-50%, -50%) scale(1); }
-        50% { transform: translate(-50%, -50%) scale(1.2); }
-    }
-    
-    @keyframes blink-text {
-        0%, 100% { opacity: 1; }
-        50% { opacity: 0.3; }
-    }
+  .error-file-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    min-height: 25rem;
+    background: linear-gradient(135deg, #fff5f5 0%, #ffe6e6 100%);
+    border-radius: 0.5rem;
+    box-sizing: border-box;
+    overflow: hidden;
+  }
+  .error-spectrum-animation {
+    position: relative;
+    width: 12.5rem;
+    height: 7.5rem;
+    margin-bottom: 1.875rem;
+  }
+  .broken-spectrum-container {
+    position: relative;
+    width: 12.5rem;
+    height: 7.5rem;
+    border-left: 0.125rem solid #e74c3c;
+    border-bottom: 0.125rem solid #e74c3c;
+    box-shadow: 0 0 0.9375rem rgba(231, 76, 60, 0.5);
+  }
+  .broken-spectrum-axis-x {
+    position: absolute;
+    bottom: -0.125rem;
+    left: 0;
+    width: 100%;
+    height: 0.125rem;
+    background-color: #e74c3c;
+  }
+  .broken-spectrum-axis-y {
+    position: absolute;
+    bottom: 0;
+    left: -0.125rem;
+    width: 0.125rem;
+    height: 100%;
+    background-color: #e74c3c;
+  }
+  .broken-spectrum-piece {
+    position: absolute;
+    bottom: 0;
+    width: 0.3125rem;
+    background: linear-gradient(to top, #e74c3c, #c0392b);
+    border-radius: 0.125rem 0.125rem 0 0;
+    animation: broken-spectrum-shake 2s ease-in-out infinite;
+    transform-origin: bottom center;
+    height: 3.75rem;
+  }
+  .piece-1 { left: 1.25rem; animation-delay: 0s; }
+  .piece-2 { left: 3.75rem; animation-delay: 0.125s; }
+  .piece-3 { left: 6.25rem; animation-delay: 0.25s; }
+  .piece-4 { left: 8.75rem; animation-delay: 0.375s; }
+  .error-flash {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(231, 76, 60, 0.2);
+    animation: error-flash 3s ease-in-out infinite;
+  }
+  .error-icon {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 2.2rem;
+    animation: pulse-grow 2s ease-in-out infinite;
+  }
+  .error-file-text {
+    text-align: center;
+  }
+  .error-file-text h3 {
+    color: #c0392b;
+    margin: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-size: 2.2rem;
+  }
+  .error-desc {
+    color: #7f8c8d;
+    margin: 0.625rem 0 0 0;
+    font-size: 1.3rem;
+  }
+  .blink-text {
+    color: #e74c3c;
+    margin: 0.625rem 0 0 0;
+    font-size: 1.1rem;
+    animation: blink-text 1.5s ease-in-out infinite;
+  }
+  @keyframes broken-spectrum-shake {
+    0%, 100% { transform: rotate(-5deg); height: 2.5rem; }
+    50% { transform: rotate(5deg); height: 3.75rem; }
+  }
+  @keyframes error-flash {
+    0%, 100% { opacity: 0; }
+    50% { opacity: 0.3; }
+  }
+  @keyframes pulse-grow {
+    0%, 100% { transform: translate(-50%, -50%) scale(1); }
+    50% { transform: translate(-50%, -50%) scale(1.2); }
+  }
+  @keyframes blink-text {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
 </style>
