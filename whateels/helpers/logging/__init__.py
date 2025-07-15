@@ -45,5 +45,7 @@ class Logger:
                 stream_handler.setFormatter(formatter)
                 logger.addHandler(stream_handler)
 
+        logger.propagate = False  # Prevent logs from propagating to the root logger
+        # Ensure logger is not already in the loggers dictionary
         cls._loggers[logger_key] = logger
         return logger

@@ -16,12 +16,11 @@ DM_EELS_Reader : Main reader class for DM3/DM4 files containing EELS data
 import os
 
 from .abstract_classes import IDM_Parser, IDM_EELS_DataHandler, IFileReader
-from ..parsers.dm34 import DM_InfoParser, DM_EELS_data
+from ..parsers import DM_InfoParser, DM_EELS_data
 from ..logging import Logger
 
 _logger = Logger.get_logger("dm_file_reader.log", __name__)
 
-# class DM_Reader(IFileReader):
 class DM_EELS_Reader(IFileReader):
     """
     Reader class for DM3/DM4 files containing EELS (Electron Energy Loss Spectroscopy) data.
