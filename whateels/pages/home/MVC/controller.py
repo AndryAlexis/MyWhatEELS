@@ -62,32 +62,29 @@ class Controller:
         dataset_type = dataset.attrs.get('dataset_type', None)
         self.model.set_dataset(dataset, dataset_type)
         
-        # Create plot based on dataset type
-        eels_plots = self.view.create_eels_plot(self.model.dataset_type)
+        # # Create plot based on dataset type
+        # eels_plots = self.view.create_eels_plot(self.model.dataset_type)
         
-        # If plots creation failed, view already shows error so we're done
-        if eels_plots is None:
-            print(f'Error visualizing file: {filename}')
-            return
+        # # If plots creation failed, view already shows error so we're done
+        # if eels_plots is None:
+        #     print(f'Error visualizing file: {filename}')
+        #     return
             
-        # Setup interaction callbacks - use tap instead of hover
-        if hasattr(self.view, 'tap_stream') and self.view.tap_stream:
-            self.interaction_handler.setup_tap_callback(self.view.tap_stream)
+        # # Setup interaction callbacks - use tap instead of hover
+        # if hasattr(self.view, 'tap_stream') and self.view.tap_stream:
+        #     self.interaction_handler.setup_tap_callback(self.view.tap_stream)
         
-        # Update the view with the new plot
-        self.view.update_plot_display(eels_plots)
-        print(f'Successfully loaded and visualized: {filename}')
+        # # Update the view with the new plot
+        # self.view.update_plot_display(eels_plots)
+        # print(f'Successfully loaded and visualized: {filename}')
 
         # Initialize Vanessa
         self.vanessa = Vanessa(self.model)
 
         # Generate layout for Vanessa
         vanessa_layout = self.vanessa.create_layout()
-        print("Updating view with Vanessa's layout")
         self.view.update_plot_display(vanessa_layout)
         # Removed invalid call to self.view.param.trigger('plot_display')
-        print("View update triggered")
-        # Added debug prints to trace layout update flow
 
     def handle_file_removed(self, filename: str):
         """
@@ -109,9 +106,6 @@ class Vanessa:
         self.model = model
         self._STRETCH_WIDTH = 'stretch_width'
         self._STRETCH_BOTH = 'stretch_both'
-        self.tap_stream = None
-        self.spectrum_pane = None
-        self.click_feedback_widget = None
         
         self.image = None
         self.clean_dataset = None        
@@ -120,15 +114,19 @@ class Vanessa:
         self.last_selected = {'x': 0, 'y': 0}
         self.hover_candidate = {'x': None, 'y': None, 'timestamp': 0}
         self.current_ranges = {'x_range': None, 'y_range': None}
-        # Debounce state
-        self._last_update_time = 0.0
-        self._debounce_interval = 0.1  # seconds
+
+        # self._last_update_time = 0.0
+        # self._debounce_interval = 0.1  # seconds
+        
+        pn.extension()
         
         # Inicializar componentes
         self._setup_widgets()
         self._setup_streams()
+        self._setup_plots()
         self._setup_callbacks()
-        self.create_layout()
+        # Construir layout y almacenarlo
+        self.layout = self.create_layout()
         
     def _setup_widgets(self):
         """Configura los widgets de la interfaz."""
@@ -146,33 +144,8 @@ class Vanessa:
         """Configura los streams de HoloViews."""
         self.range_stream = RangeXY(source=None)
 
-    def _setup_callbacks(self):
-        """Configura los callbacks y subscribers."""
-        # Configurar streams de interacción
-        Tap(source=self.image).add_subscriber(self._on_tap)
-        PointerXY(source=self.image).add_subscriber(self._on_hover)
-        
-        # Configurar callback periódico para debounce
-        pn.state.add_periodic_callback(self._debounce_callback, period=100)
-    
-    def _capture_reset_hook(self, plot, element):
-        def on_reset(event):
-            self.current_ranges['x_range'] = None
-            self.current_ranges['y_range'] = None
-            print("Reset pressed: restoring full range.")
-
-        plot.state.on_event('reset', on_reset)
-
-    @staticmethod
-    @jit
-    def powerlaw(x, A, k):
-        return A * x ** k
-
-    def create_layout(self):
-        """Create layout for spectrum image (datacube) visualization"""
-        # Create reference image (sum over energy loss)
+    def _setup_plots(self):
         image_data = self.model.dataset.ElectronCount.sum(self.model.Constants.ELOSS)
-        self.model.dataset.coords[self.model.Constants.ELOSS].values
         
         # Clean image data
         image_data = image_data.fillna(0.0)
@@ -190,38 +163,30 @@ class Vanessa:
             self.model.Constants.AXIS_X: x_coords,
             self.model.Constants.AXIS_Y: y_coords
         })
-        
-        self.range_slider = pn.widgets.RangeSlider(
-            name='Range', start=float(self.e_axis[0]), end=float(self.e_axis[-1]),
-            value=(float(self.e_axis[0]), float(self.e_axis[-1]))
-        )
-        
-        # Create components
-        # HoloViews element for the image
+
+        # Initialize panes
         self.image = self._create_image(self.clean_dataset)
-        # Panel pane for the spectrum, allowing dynamic updates via .object
         spec_hv = self._create_spectrum(0, 0, self.range_slider.value)
         self.spectrum_pane = pn.pane.HoloViews(spec_hv, sizing_mode=self._STRETCH_WIDTH)
-        
-        # Setup interaction
-        self.tap_stream = streams.Tap(x=0, y=0, source=self.image)
-        
-        # Setup click feedback
-        self.click_feedback_widget = pn.widgets.StaticText(
-            value=self.model.Constants.CLICK_TEXT_2D_NONE,
-            name='Click Position'
-        )
-        
-        # Watch range slider changes
-        self.range_slider.param.watch(self._update_range, 'value')
 
-        # Setup streams
+    
+    def _setup_callbacks(self):
+        """Configura los callbacks y subscribers."""
+        # Configurar streams de interacción
         Tap(source=self.image).add_subscriber(self._on_tap)
         PointerXY(source=self.image).add_subscriber(self._on_hover)
         
+        # Configurar callback periódico para debounce
         pn.state.add_periodic_callback(self._debounce_callback, period=100)
+    
+    @staticmethod
+    @jit
+    def powerlaw(x, A, k):
+        return A * x ** k
 
-        # Define layout
+    def create_layout(self):
+        """Create layout for Vanessa visualization"""
+        # Only define layout here, callbacks handled elsewhere
         layout = pn.Row(
             pn.Column(self.range_slider),
             self.image,
@@ -237,6 +202,13 @@ class Vanessa:
             tools=['hover', 'tap'], invert_yaxis=True
         )
     
+    def _capture_reset_hook(self, plot, element):
+        def on_reset(event):
+            self.current_ranges['x_range'] = None
+            self.current_ranges['y_range'] = None
+            print("Reset pressed: restoring full range.")
+
+        plot.state.on_event('reset', on_reset)
 
     # --- Plot Matrix B ---
     def _create_spectrum(self, x, y, range_values):
@@ -314,10 +286,7 @@ class Vanessa:
         if (x, y) == (self.last_selected['x'], self.last_selected['y']):
             return  # Skip redundant updates
         self.last_selected['x'], self.last_selected['y'] = x, y
-        print(f"Updating spectrum_pane with slice at ({x}, {y})")
         self.spectrum_pane.object = self._create_spectrum(x, y, self.range_slider.value)
-        # Trigger pane to update frontend
-        self.spectrum_pane.param.trigger('object')
 
     # --- Callbacks ---
     def _on_tap(self, **kwargs):
@@ -331,28 +300,18 @@ class Vanessa:
             self.hover_candidate['timestamp'] = time.time()
 
     def _debounce_callback(self):
-        # Debounce hover updates to avoid excessive redraws
-        x_cand = self.hover_candidate['x']
-        y_cand = self.hover_candidate['y']
-        if x_cand is None or y_cand is None:
+        """Callback con debounce para el hover."""
+        if self.hover_candidate['x'] is None: 
             return
-        now = time.time()
-        # Only update if hover position stabilized and interval passed
-        if now - self.hover_candidate['timestamp'] >= self._debounce_interval and now - self._last_update_time >= self._debounce_interval:
-            print(f"Debounce callback updating spectrum at ({x_cand}, {y_cand})")
-            self._update_create_spectrum(x_cand, y_cand)
-            # record last update time and clear candidate
-            self._last_update_time = now
+        if time.time() - self.hover_candidate['timestamp'] > 0.001:
+            self._update_create_spectrum(self.hover_candidate['x'], self.hover_candidate['y'])
             self.hover_candidate['x'] = None
-            self.hover_candidate['y'] = None
 
     # --- Rango del slider ---
     def _update_range(self, event=None):
         x = self.last_selected['x']
         y = self.last_selected['y']
         self.spectrum_pane.object = self._create_spectrum(x, y, self.range_slider.value)
-        # Trigger pane to update frontend
-        self.spectrum_pane.param.trigger('object')
     
     def get_current_spectrum(self):
         """Retorna el espectro actualmente seleccionado."""

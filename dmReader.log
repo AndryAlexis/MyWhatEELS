@@ -2877,3 +2877,27 @@ NoneType: None
 2025-07-15 12:50:33,829 : whateels.helpers.parsers.dm34 :     WARNING : read_string : Failed reading with an encoding utf8
 2025-07-15 12:51:39,342 : whateels.helpers.parsers.dm34 :     INFO : process_file_header : DM version = 3 - File size (Bytes) = 57434879 - little endian
 2025-07-15 12:51:39,357 : whateels.helpers.parsers.dm34 :     WARNING : read_string : Failed reading with an encoding utf8
+2025-07-15 15:28:44,671 : whateels.helpers.parsers.dm34 :     INFO : process_file_header : DM version = 3 - File size (Bytes) = 57434879 - little endian
+2025-07-15 15:28:44,677 : whateels.helpers.parsers.dm34 :     WARNING : read_string : Failed reading with an encoding utf8
+2025-07-15 15:31:06,544 : whateels.helpers.parsers.dm34 :     INFO : process_file_header : DM version = 3 - File size (Bytes) = 57434879 - little endian
+2025-07-15 15:31:06,550 : whateels.helpers.parsers.dm34 :     WARNING : read_string : Failed reading with an encoding utf8
+2025-07-15 15:31:54,476 : whateels.helpers.parsers.dm34 :     INFO : process_file_header : DM version = 3 - File size (Bytes) = 57434879 - little endian
+2025-07-15 15:31:54,483 : whateels.helpers.parsers.dm34 :     WARNING : read_string : Failed reading with an encoding utf8
+2025-07-15 15:37:05,926 : whateels.helpers.parsers.dm34 :     INFO : process_file_header : DM version = 3 - File size (Bytes) = 57434879 - little endian
+2025-07-15 15:37:05,933 : whateels.helpers.parsers.dm34 :     WARNING : read_string : Failed reading with an encoding utf8
+2025-07-15 15:38:43,551 : whateels.helpers.parsers.dm34 :     INFO : process_file_header : DM version = 3 - File size (Bytes) = 57434879 - little endian
+2025-07-15 15:38:43,558 : whateels.helpers.parsers.dm34 :     WARNING : read_string : Failed reading with an encoding utf8
+2025-07-15 15:40:14,153 : whateels.helpers.parsers.dm34 :     INFO : process_file_header : DM version = 3 - File size (Bytes) = 57434879 - little endian
+2025-07-15 15:40:14,164 : whateels.helpers.parsers.dm34 :     WARNING : read_string : Failed reading with an encoding utf8
+2025-07-15 15:47:29,617 : whateels.helpers.parsers.dm34 :     INFO : process_file_header : DM version = 3 - File size (Bytes) = 57434879 - little endian
+2025-07-15 15:47:29,622 : whateels.helpers.parsers.dm34 :     WARNING : read_string : Failed reading with an encoding utf8
+2025-07-15 15:51:37,088 : whateels.helpers.parsers.dm34 :     INFO : process_file_header : DM version = 3 - File size (Bytes) = 57434879 - little endian
+2025-07-15 15:51:37,095 : whateels.helpers.parsers.dm34 :     WARNING : read_string : Failed reading with an encoding utf8
+2025-07-15 15:59:00,712 : whateels.helpers.parsers.dm34 :     INFO : process_file_header : DM version = 3 - File size (Bytes) = 57434879 - little endian
+2025-07-15 15:59:00,719 : whateels.helpers.parsers.dm34 :     WARNING : read_string : Failed reading with an encoding utf8
+2025-07-15 16:10:43,747 : whateels.helpers.parsers.dm34 :     INFO : process_file_header : DM version = 3 - File size (Bytes) = 57434879 - little endian
+2025-07-15 16:10:43,753 : whateels.helpers.parsers.dm34 :     WARNING : read_string : Failed reading with an encoding utf8
+2025-07-15 16:13:42,361 : whateels.helpers.parsers.dm34 :     INFO : process_file_header : DM version = 3 - File size (Bytes) = 57434879 - little endian
+2025-07-15 16:13:42,367 : whateels.helpers.parsers.dm34 :     WARNING : read_string : Failed reading with an encoding utf8
+2025-07-15 16:51:30,361 : whateels.helpers.parsers.dm34 :     INFO : process_file_header : DM version = 3 - File size (Bytes) = 57434879 - little endian
+2025-07-15 16:51:30,367 : whateels.helpers.parsers.dm34 :     WARNING : read_string : Failed reading with an encoding utf8
