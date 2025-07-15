@@ -82,8 +82,6 @@ class SpectrumImageVisualizer:
             clean_image_data,
             kdims=[self.model.Constants.AXIS_X, self.model.Constants.AXIS_Y]
         ).opts(
-            width=500,
-            height=500,
             cmap=self.model.Colors.GREYS_R,
             xlabel='X Position',
             ylabel='Y Position',
@@ -98,18 +96,16 @@ class SpectrumImageVisualizer:
     def _create_empty_spectrum(self):
         """Create empty spectrum for interaction"""
         eloss_coords = self.model.dataset.coords[self.model.Constants.ELOSS]
-        empty_data = xr.zeros_like(eloss_coords)
+        empty_data = np.zeros_like(eloss_coords.values)
         
         if len(eloss_coords) == 0:
             raise ValueError("Energy loss coordinates are empty")
         
-        return hv.Curve(
-            (eloss_coords, empty_data),
+        return hv.Area(
+            (eloss_coords.values, empty_data),
             kdims=[self.model.Constants.ELOSS],
             vdims=[self.model.Constants.ELECTRON_COUNT]
         ).opts(
-            width=600,
-            height=400,
             color=self.model.Colors.BLACK,
             line_width=2,
             xlabel='Energy Loss (eV)',
