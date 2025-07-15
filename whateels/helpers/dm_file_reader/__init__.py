@@ -13,29 +13,13 @@ Classes
 DM_EELS_Reader : Main reader class for DM3/DM4 files containing EELS data
 """
 
-import logging
 import os
 
 from .abstract_classes import IDM_Parser, IDM_EELS_DataHandler, IFileReader
 from ..parsers.dm34 import DM_InfoParser, DM_EELS_data
+from ..logging import Logger
 
-####################################################
-# Setting up the logging system for this module
-_log_fname = "dmReader.log"
-_logger = logging.getLogger(__name__)
-# _logger.setLevel(logging.INFO)
-_logger.setLevel(logging.ERROR)
-# These formatter keywords are not fstrings, but they work better
-# with the logging module
-_formatter = logging.Formatter(
-    "%(asctime)s : %(name)s : \
-    %(levelname)s : %(funcName)s : %(message)s"
-)
-_fhandler = logging.FileHandler(_log_fname)
-_fhandler.setFormatter(_formatter)
-_logger.addHandler(_fhandler)
-#####################################################
-
+_logger = Logger.get_logger("dm_file_reader.log", __name__)
 
 # class DM_Reader(IFileReader):
 class DM_EELS_Reader(IFileReader):

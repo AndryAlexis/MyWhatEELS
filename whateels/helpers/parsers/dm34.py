@@ -1,30 +1,13 @@
-import logging, re
-import numpy as np
+import numpy as np, re
 
 from ...errors import *
-from ...helpers.decorders import decoders as dec
-from ...helpers.file_reader.abstract_classes import IDM_Parser, IDM_EELS_DataHandler
+from ...helpers.decoders import decoders as dec
+from ...helpers.dm_file_reader.abstract_classes import IDM_Parser, IDM_EELS_DataHandler
 
 from typing import List, Tuple
+from ..logging import Logger
 
-####################################################
-# Setting up the logging system for this module
-_log_fname = "dmReader.log"
-_logger = logging.getLogger(__name__)
-_logger.setLevel(logging.INFO)
-# These formatter keywords are not fstrings, but they work better
-# with the logging module
-_formatter = logging.Formatter(
-    "%(asctime)s : %(name)s : \
-    %(levelname)s : %(funcName)s : %(message)s"
-)
-_fhandler = logging.FileHandler(_log_fname)
-_fhandler.setFormatter(_formatter)
-_shandler = logging.StreamHandler()
-_shandler.setFormatter(_formatter)
-# _logger.addHandler(_shandler)
-_logger.addHandler(_fhandler)
-#####################################################
+_logger = Logger.get_logger("dm34.log", __name__)
 
 # from .decoders import decoders as dec
 
