@@ -15,7 +15,6 @@ class Constants:
     CLICK_TEXT = 'click_text'
 
     # Dataset types
-    SINGLE_SPECTRUM = 'SSp'
     SPECTRUM_LINE = 'SLi'
     SPECTRUM_IMAGE = 'SIm'
     

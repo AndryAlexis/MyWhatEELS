@@ -2,12 +2,10 @@
 Visualization factories for different EELS data types.
 """
 
-from .single_spectrum_visualizer import SingleSpectrumVisualizer
-from .spectrum_line_visualizer import SpectrumLineVisualizer
-from .spectrum_image_visualizer import SpectrumImageVisualizer
+from .dm4_plots import DM4Plots
+from .dm3_plots import DM3Plots
 
 __all__ = [
-    'SingleSpectrumVisualizer',
-    'SpectrumLineVisualizer', 
-    'SpectrumImageVisualizer'
+    'DM4Plots', 
+    'DM3Plots'
 ]

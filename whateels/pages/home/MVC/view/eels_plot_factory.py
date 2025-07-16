@@ -8,7 +8,7 @@ Implements the Factory Pattern to:
 - Handle errors in a single location
 """
 
-from .eels_plots import SingleSpectrumVisualizer, SpectrumLineVisualizer, SpectrumImageVisualizer
+from .eels_plots import DM4Plots, DM3Plots
 
 class EELSPlotFactory:
     """Factory for creating appropriate EELS plots and visualizations
@@ -22,9 +22,8 @@ class EELSPlotFactory:
         self.view = view
         self.current_plot_renderer = None  # Store reference to active plotter
         self._all_plots = {
-            model.constants.SINGLE_SPECTRUM: SingleSpectrumVisualizer,
-            model.constants.SPECTRUM_LINE: SpectrumLineVisualizer,
-            model.constants.SPECTRUM_IMAGE: SpectrumImageVisualizer
+            model.constants.SPECTRUM_LINE: DM4Plots,
+            model.constants.SPECTRUM_IMAGE: DM3Plots
         }
     
     def create_plots(self, dataset_type: str):
