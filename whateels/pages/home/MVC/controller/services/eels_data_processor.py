@@ -34,6 +34,10 @@ class EELSDataProcessor:
     No file I/O dependencies - pure data transformation operations.
     """
     
+    # Constants for dataset types
+    _AXIS_X = 'x'
+    _AXIS_Y = 'y'
+    
     def __init__(self, model):
         """Initialize the processor with a Model instance for constants/config."""
         self.model = model
@@ -125,8 +129,8 @@ class EELSDataProcessor:
     
     def determine_dataset_type(self, dataset: xr.Dataset) -> str:
         """Classify dataset as Single Spectrum, Spectrum Line, or Spectrum Image based on spatial dimensions."""
-        x_size = len(dataset.coords[self.model.constants.AXIS_X])
-        y_size = len(dataset.coords[self.model.constants.AXIS_Y])
+        x_size = len(dataset.coords[self._AXIS_X])
+        y_size = len(dataset.coords[self._AXIS_Y])
         if x_size == 1 and y_size == 1:
             return self.model.constants.SINGLE_SPECTRUM
         elif y_size == 1:

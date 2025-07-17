@@ -10,3 +10,6 @@ class Colors:
     GHOSTWHITE = 'ghostwhite'
     ORANGERED = 'orangered'
     DARKRED = 'darkred'
+    CRIMSON = 'crimson'
+    ROYALBLUE = 'royalblue'
+    LIGHTSALMON = 'lightsalmon'
