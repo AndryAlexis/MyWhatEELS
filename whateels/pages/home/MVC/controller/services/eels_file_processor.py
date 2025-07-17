@@ -21,7 +21,7 @@ class EELSFileProcessor:
     def __init__(self, model):
         self.model = model
     
-    def process_upload(self, filename: str, file_content: bytes):
+    def process_upload(self, filename: str, file_content: bytes) -> xr.Dataset:
         """Process uploaded file bytes into EELS dataset."""
         # Get the correct file extension from the uploaded filename
         file_extension = Path(filename).suffix

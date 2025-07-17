@@ -11,7 +11,7 @@ import xarray as xr
 # Initialize HoloViews with Bokeh backend
 hv.extension("bokeh", logo=False)
 
-class DM4Plots:
+class SpectrumLineVisualizer:
     """Composes spectrum line visualizations from EELS data"""
     
     # Text and label constants (specific to each plot)
