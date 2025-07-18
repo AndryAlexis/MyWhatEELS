@@ -35,6 +35,7 @@ class SpectrumImageVisualizer:
     _LABEL_SUBTRACTION = 'Background Subtraction'
     _XLABEL = 'Energy Loss'
     _YLABEL = 'Intensity (A.U.)'
+
     # Color constants removed; use self.model.colors for all color references
     _VLINE_DASH = 'dashed'
     _POWERLAW_DASH = 'solid'
@@ -92,8 +93,8 @@ class SpectrumImageVisualizer:
 
     # --- Callback Setup ---
     def _setup_callbacks(self):
-        streams.Tap(source=self.image).add_subscriber(self._on_tap)
-        streams.PointerXY(source=self.image).add_subscriber(self._on_hover)
+        # streams.Tap(source=self.image).add_subscriber(self._on_tap)
+        # streams.PointerXY(source=self.image).add_subscriber(self._on_hover)
         pn.state.add_periodic_callback(self._debounce_callback, period=100)
 
     # --- Math Utility ---
@@ -219,16 +220,27 @@ class SpectrumImageVisualizer:
         self.spectrum_pane.object = self._create_spectrum(x, y, self.range_slider.value)
 
     # --- Tap Callback ---
-    def _on_tap(self, **kwargs):
-        if kwargs[self._X_AXIS] is not None and kwargs[self._Y_AXIS] is not None:
-            self._update_create_spectrum(kwargs[self._X_AXIS], kwargs[self._Y_AXIS])
+    # def _on_tap(self, **kwargs):
+    #     if kwargs[self._X_AXIS] is not None and kwargs[self._Y_AXIS] is not None:
+    #         self._update_create_spectrum(kwargs[self._X_AXIS], kwargs[self._Y_AXIS])
 
     # --- Hover Callback ---
     def _on_hover(self, **kwargs):
-        if kwargs[self._X_AXIS] is not None and kwargs[self._Y_AXIS] is not None:
-            self.hover_candidate[self._X_AXIS] = kwargs[self._X_AXIS]
-            self.hover_candidate[self._Y_AXIS] = kwargs[self._Y_AXIS]
-            self.hover_candidate[self._TIMESTAMP] = time.time()
+
+        coord_x = kwargs.get(self._X_AXIS)
+        coord_y = kwargs.get(self._Y_AXIS)
+
+        print(f"Hover at: {coord_x}, {coord_y}")
+
+        if coord_x is None or coord_y is None:
+            return
+
+        self.hover_candidate[self._X_AXIS] = coord_x
+        self.hover_candidate[self._Y_AXIS] = coord_y
+        self.hover_candidate[self._TIMESTAMP] = time.time()
+        
+        self._update_create_spectrum(self.hover_candidate[self._X_AXIS], self.hover_candidate[self._Y_AXIS])
+        # self.hover_candidate[self._X_AXIS] = None
 
     # --- Debounce Callback ---
     def _debounce_callback(self):
