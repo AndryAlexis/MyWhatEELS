@@ -15,14 +15,16 @@ hv.extension("bokeh", logo=False)
 
 
 class SpectrumImageVisualizer:
+    """
+    Interactive spectrum image (datacube) visualization for DM3 files, based on Vanessa class.
+    """
+    
     _X_AXIS = 'x'
     _Y_AXIS = 'y'
     _TIMESTAMP = 'timestamp'
     _X_RANGE = 'x_range'
     _Y_RANGE = 'y_range'
-    """
-    Interactive spectrum image (datacube) visualization for DM3 files, based on Vanessa class.
-    """
+    
     # Stretch modes for layout
     _STRETCH_WIDTH = 'stretch_width'
     _STRETCH_BOTH = 'stretch_both'
@@ -56,9 +58,8 @@ class SpectrumImageVisualizer:
         self.hover_candidate = {self._X_AXIS: None, self._Y_AXIS: None, self._TIMESTAMP: 0}
         self.current_ranges = {self._X_RANGE: None, self._Y_RANGE: None}
 
-        # Setup widgets, streams, plots, and callbacks
+        # Setup widgets, plots, and callbacks
         self._setup_widgets()
-        self._setup_streams()
         self._setup_plots()
         self._setup_callbacks()
 
@@ -71,10 +72,6 @@ class SpectrumImageVisualizer:
             value=(float(self.e_axis[0]), float(self.e_axis[-1]))
         )
         self.range_slider.param.watch(self._update_range, 'value')
-
-    # --- Stream Setup ---
-    def _setup_streams(self):
-        self.range_stream = streams.RangeXY(source=None)
 
     # --- Plot Setup ---
     def _setup_plots(self):
@@ -201,15 +198,6 @@ class SpectrumImageVisualizer:
                     print(f"{e} No se pudo realizar el ajuste para el rango {range_values}.")
                     # If fit fails, just show the experimental data and range markers
                     pass
-
-        # Apply zoom/limits if set
-        if self.range_stream.x_range is not None:
-            overlays = overlays.opts(xlim=self.range_stream.x_range)
-        if self.range_stream.y_range is not None:
-            overlays = overlays.opts(ylim=self.range_stream.y_range)
-
-        # Update stream source
-        self.range_stream.source = overlays
 
         # Plot options
         opts = dict(
