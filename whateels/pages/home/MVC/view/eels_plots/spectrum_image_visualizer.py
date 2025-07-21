@@ -13,6 +13,15 @@ from holoviews import streams
 # Initialize HoloViews with Bokeh backend
 hv.extension("bokeh", logo=False)
 
+pn.config.raw_css.append("""
+.spectrum-image-visualizer {
+    border: 1.5px solid #e0e0e0;
+    border-radius: 5px;
+    padding: 10px;
+    background-color: #f5f5f5;
+}
+""")
+
 
 class SpectrumImageVisualizer:
     """
@@ -70,7 +79,8 @@ class SpectrumImageVisualizer:
             name='Range',
             start=float(self.e_axis[0]),
             end=float(self.e_axis[-1]),
-            value=(float(self.e_axis[0]), float(self.e_axis[-1]))
+            value=(float(self.e_axis[0]), float(self.e_axis[-1])),
+            sizing_mode=self._STRETCH_WIDTH,
         )
         self.range_slider.param.watch(self._update_range, 'value')
 
@@ -89,13 +99,11 @@ class SpectrumImageVisualizer:
         })
         self.image = self._create_image(self.clean_dataset)
         spec_hv = self._create_spectrum(0, 0, self.range_slider.value)
-        self.spectrum_pane = pn.pane.HoloViews(spec_hv, sizing_mode=self._STRETCH_WIDTH)
+        self.spectrum_pane = pn.pane.HoloViews(spec_hv, sizing_mode=self._STRETCH_BOTH)
 
     # --- Callback Setup ---
     def _setup_callbacks(self):
-        # streams.Tap(source=self.image).add_subscriber(self._on_tap)
-        # streams.PointerXY(source=self.image).add_subscriber(self._on_hover)
-        pn.state.add_periodic_callback(self._debounce_callback, period=100)
+        streams.PointerXY(source=self.image).add_subscriber(self._on_hover)
 
     # --- Math Utility ---
     @staticmethod
@@ -105,19 +113,47 @@ class SpectrumImageVisualizer:
 
     # --- Layout ---
     def create_layout(self):
+        beam_energy = pn.widgets.Select(name='BeamEnergy-E0 keV', options=[0, 1, 2, 3, 4, 5], value=0)
+        convergence_angle = pn.widgets.Select(name='Convergence-α mrad', options=[0, 1, 2, 3, 4, 5], value=0)
+
+
         return pn.Row(
-            pn.Column(self.range_slider),
-            self.image,
-            self.spectrum_pane
+            pn.Column(
+                self.image,
+                sizing_mode=self._STRETCH_BOTH,
+                css_classes=['spectrum-image-visualizer'],
+                margin=(0, 10, 0, 0)
+            ),
+            pn.Column(
+                self.spectrum_pane,
+                self.range_slider,
+                sizing_mode=self._STRETCH_BOTH,
+                css_classes=['spectrum-image-visualizer']
+            )
         )
 
     # --- Image Plot ---
     def _create_image(self, clean_dataset):
-        return hv.Image((np.arange(clean_dataset.shape[1]), np.arange(clean_dataset.shape[0]), clean_dataset)).opts(
-            cmap='gray', colorbar=False,
-            xlim=(0, clean_dataset.shape[1]-1), ylim=(0, clean_dataset.shape[0]-1),
-            tools=['hover', 'tap'], invert_yaxis=True
+        """
+        Create a HoloViews image plot from the cleaned dataset.
+        Args:
+            clean_dataset: 2D array-like, shape (height, width)
+        Returns:
+            hv.Image: Interactive image plot with hover/tap tools.
+        """
+        height, width = clean_dataset.shape
+        x_axis = np.arange(width)
+        y_axis = np.arange(height)
+        image = hv.Image((x_axis, y_axis, clean_dataset)).opts(
+            cmap='gray',
+            colorbar=False,
+            xlim=(0, width - 1),
+            ylim=(0, height - 1),
+            tools=['hover', 'tap'],
+            invert_yaxis=True,
+            responsive=True,
         )
+        return image
 
     # --- Reset Button Callback ---
     def _capture_reset_hook(self, plot, element):
