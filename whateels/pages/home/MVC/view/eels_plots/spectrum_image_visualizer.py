@@ -6,6 +6,7 @@ import panel as pn
 import holoviews as hv
 import numpy as np
 import time
+
 from numba import jit
 from scipy.optimize import curve_fit
 from holoviews import streams
@@ -13,31 +14,7 @@ from holoviews import streams
 # Initialize HoloViews with Bokeh backend
 hv.extension("bokeh", logo=False)
 
-pn.config.raw_css.append("""
-.spectrum-image-visualizer {
-    border: 1.5px solid #e0e0e0;
-    border-radius: 5px;
-    padding: 10px;
-    background-color: #f5f5f5;
-}
-.test {
-    padding: 0px;
-}
-""")
-
-
 class SpectrumImageVisualizer:
-    def _inconsistent_overlay_opts(self, overlays, x, y):
-        """
-        Return overlays with options for inconsistent data length or fit failure.
-        """
-        return overlays.opts(
-            title=f"{self._LABEL_SPECTRUM} ({x}, {y}) - {self._LABEL_INCONSISTENT}",
-            height=self._SPECTRUM_HEIGHT,
-            responsive=True,
-            show_grid=True,
-            legend_position=self._LEGEND_POSITION
-        )
     """
     Interactive spectrum image (datacube) visualization for DM3 files, based on Vanessa class.
     """
@@ -51,6 +28,7 @@ class SpectrumImageVisualizer:
     # Stretch modes for layout
     _STRETCH_WIDTH = 'stretch_width'
     _STRETCH_BOTH = 'stretch_both'
+    _STRETCH_HEIGHT = 'stretch_height'
 
     # Plot labels and style constants
     _LABEL_EXPERIMENTAL = 'Experimental Data'
@@ -148,23 +126,29 @@ class SpectrumImageVisualizer:
                 beam_energy,
                 convergence_angle,
                 sizing_mode=self._STRETCH_WIDTH,
-                css_classes=['spectrum-image-visualizer']
+                css_classes=['generic-container']
             ),
             pn.Row(
                 pn.Column(
                     self.image,
-                    sizing_mode=self._STRETCH_BOTH,
-                    css_classes=['spectrum-image-visualizer'],
+                    css_classes=['generic-container'],
+                    sizing_mode=self._STRETCH_HEIGHT,
                     margin=(0, 10, 0, 0)
                 ),
                 pn.Column(
-                    self.spectrum_pane,
-                    self.range_slider,
+                    pn.Row(
+                        self.spectrum_pane,
+                        sizing_mode=self._STRETCH_BOTH,
+                    ),
+                    pn.Row(
+                        self.range_slider,
+                        sizing_mode=self._STRETCH_WIDTH,
+                        margin=(0, 26, 0, 70)
+                    ),
                     sizing_mode=self._STRETCH_BOTH,
-                    css_classes=['spectrum-image-visualizer']
+                    css_classes=['generic-container']
                 ),
                 sizing_mode=self._STRETCH_BOTH,
-                css_classes=['test'],
                 margin=(10, 0, 0, 0)
             )
         )
@@ -186,9 +170,11 @@ class SpectrumImageVisualizer:
             colorbar=False,
             xlim=(0, width - 1),
             ylim=(0, height - 1),
-            tools=['hover', 'tap'],
+            tools=['hover'],
+            height=400,
             invert_yaxis=True,
-            responsive=True,
+            responsive=False,
+            aspect='equal'  # Ensure square pixels
         )
         return image
 
@@ -305,18 +291,11 @@ class SpectrumImageVisualizer:
         # Update the spectrum pane with the new spectrum
         self.spectrum_pane.object = self._create_spectrum(x_idx, y_idx, self.range_slider.value)
 
-    # --- Tap Callback ---
-    # def _on_tap(self, **kwargs):
-    #     if kwargs[self._X_AXIS] is not None and kwargs[self._Y_AXIS] is not None:
-    #         self._update_create_spectrum(kwargs[self._X_AXIS], kwargs[self._Y_AXIS])
-
     # --- Hover Callback ---
     def _on_hover(self, **kwargs):
 
         coord_x = kwargs.get(self._X_AXIS)
         coord_y = kwargs.get(self._Y_AXIS)
-
-        print(f"Hover at: {coord_x}, {coord_y}")
 
         if coord_x is None or coord_y is None:
             return
@@ -326,15 +305,26 @@ class SpectrumImageVisualizer:
         self.hover_candidate[self._TIMESTAMP] = time.time()
         
         self._update_create_spectrum(self.hover_candidate[self._X_AXIS], self.hover_candidate[self._Y_AXIS])
-        # self.hover_candidate[self._X_AXIS] = None
+
+    def _inconsistent_overlay_opts(self, overlays, x, y):
+        """
+        Return overlays with options for inconsistent data length or fit failure.
+        """
+        return overlays.opts(
+            title=f"{self._LABEL_SPECTRUM} ({x}, {y}) - {self._LABEL_INCONSISTENT}",
+            height=self._SPECTRUM_HEIGHT,
+            responsive=True,
+            show_grid=True,
+            legend_position=self._LEGEND_POSITION
+        )
 
     # --- Debounce Callback ---
-    def _debounce_callback(self):
-        if self.hover_candidate[self._X_AXIS] is None:
-            return
-        if time.time() - self.hover_candidate[self._TIMESTAMP] > 0.001:
-            self._update_create_spectrum(self.hover_candidate[self._X_AXIS], self.hover_candidate[self._Y_AXIS])
-            self.hover_candidate[self._X_AXIS] = None
+    # def _debounce_callback(self):
+    #     if self.hover_candidate[self._X_AXIS] is None:
+    #         return
+    #     if time.time() - self.hover_candidate[self._TIMESTAMP] > 0.001:
+    #         self._update_create_spectrum(self.hover_candidate[self._X_AXIS], self.hover_candidate[self._Y_AXIS])
+    #         self.hover_candidate[self._X_AXIS] = None
 
     # --- Range Slider Callback ---
     def _update_range(self, event=None):
