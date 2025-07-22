@@ -20,10 +20,24 @@ pn.config.raw_css.append("""
     padding: 10px;
     background-color: #f5f5f5;
 }
+.test {
+    padding: 0px;
+}
 """)
 
 
 class SpectrumImageVisualizer:
+    def _inconsistent_overlay_opts(self, overlays, x, y):
+        """
+        Return overlays with options for inconsistent data length or fit failure.
+        """
+        return overlays.opts(
+            title=f"{self._LABEL_SPECTRUM} ({x}, {y}) - {self._LABEL_INCONSISTENT}",
+            height=self._SPECTRUM_HEIGHT,
+            responsive=True,
+            show_grid=True,
+            legend_position=self._LEGEND_POSITION
+        )
     """
     Interactive spectrum image (datacube) visualization for DM3 files, based on Vanessa class.
     """
@@ -42,6 +56,8 @@ class SpectrumImageVisualizer:
     _LABEL_EXPERIMENTAL = 'Experimental Data'
     _LABEL_POWERLAW = 'PowerLaw Fit'
     _LABEL_SUBTRACTION = 'Background Subtraction'
+    _LABEL_INCONSISTENT = 'Inconsistent Data Length'
+    _LABEL_SPECTRUM = 'Spectrum at'
     _XLABEL = 'Energy Loss'
     _YLABEL = 'Intensity (A.U.)'
 
@@ -113,22 +129,43 @@ class SpectrumImageVisualizer:
 
     # --- Layout ---
     def create_layout(self):
-        beam_energy = pn.widgets.Select(name='BeamEnergy-E0 keV', options=[0, 1, 2, 3, 4, 5], value=0)
-        convergence_angle = pn.widgets.Select(name='Convergence-α mrad', options=[0, 1, 2, 3, 4, 5], value=0)
+        beam_energy = pn.widgets.Select(
+            name='BeamEnergy-E0 keV', 
+            options=[0, 1, 2, 3, 4, 5], 
+            value=0,
+            sizing_mode=self._STRETCH_WIDTH
+        )
+        convergence_angle = pn.widgets.Select(
+            name='Convergence-α mrad', 
+            options=[0, 1, 2, 3, 4, 5], 
+            value=0,
+            sizing_mode=self._STRETCH_WIDTH
+        )
 
 
-        return pn.Row(
-            pn.Column(
-                self.image,
-                sizing_mode=self._STRETCH_BOTH,
-                css_classes=['spectrum-image-visualizer'],
-                margin=(0, 10, 0, 0)
-            ),
-            pn.Column(
-                self.spectrum_pane,
-                self.range_slider,
-                sizing_mode=self._STRETCH_BOTH,
+        return pn.Column(
+            pn.Row(
+                beam_energy,
+                convergence_angle,
+                sizing_mode=self._STRETCH_WIDTH,
                 css_classes=['spectrum-image-visualizer']
+            ),
+            pn.Row(
+                pn.Column(
+                    self.image,
+                    sizing_mode=self._STRETCH_BOTH,
+                    css_classes=['spectrum-image-visualizer'],
+                    margin=(0, 10, 0, 0)
+                ),
+                pn.Column(
+                    self.spectrum_pane,
+                    self.range_slider,
+                    sizing_mode=self._STRETCH_BOTH,
+                    css_classes=['spectrum-image-visualizer']
+                ),
+                sizing_mode=self._STRETCH_BOTH,
+                css_classes=['test'],
+                margin=(10, 0, 0, 0)
             )
         )
 
@@ -190,55 +227,58 @@ class SpectrumImageVisualizer:
         vline1 = hv.VLine(range_values[0]).opts(color=self.model.colors.CRIMSON, line_dash=self._VLINE_DASH)
         vline2 = hv.VLine(range_values[1]).opts(color=self.model.colors.CRIMSON, line_dash=self._VLINE_DASH)
         overlays = area * vline1 * vline2
+        
+        if len(self.e_axis) != len(selected_spectrum):
+            return self._inconsistent_overlay_opts(overlays, x, y)
 
         # Powerlaw fit and subtraction (if possible)
-        if len(self.e_axis) == len(selected_spectrum):
-            # Mask for selected range
-            mask = (self.e_axis >= range_values[0]) & (self.e_axis <= range_values[1])
-            x_fit = self.e_axis[mask]
-            y_fit = selected_spectrum[mask]
+        # Mask for selected range
+        mask = (self.e_axis >= range_values[0]) & (self.e_axis <= range_values[1])
+        x_fit = self.e_axis[mask]
+        y_fit = selected_spectrum[mask]
 
-            if len(x_fit) > 1:
-                try:
-                    # Fit powerlaw to selected range
-                    params, _ = curve_fit(self.powerlaw, x_fit, y_fit)
-                    y_fit_curve = self.powerlaw(self.e_axis, *params)
-                    y_subtracted = selected_spectrum - y_fit_curve
+        if len(x_fit) <= 0:
+            return self._inconsistent_overlay_opts(overlays, x, y)
 
-                    # Powerlaw fit curve
-                    fit_curve = hv.Curve(
-                        (self.e_axis, y_fit_curve),
-                        self._XLABEL, self._YLABEL,
-                        label=self._LABEL_POWERLAW
-                    ).opts(
-                        color=self.model.colors.CRIMSON,
-                        line_dash=self._POWERLAW_DASH,
-                        line_width=self._POWERLAW_LINE_WIDTH,
-                        alpha=self._POWERLAW_ALPHA
-                    )
+        try:
+            # Fit powerlaw to selected range
+            params, _ = curve_fit(self.powerlaw, x_fit, y_fit)
+            y_fit_curve = self.powerlaw(self.e_axis, *params)
+            y_subtracted = selected_spectrum - y_fit_curve
 
-                    # Background subtraction area
-                    subtraction_area = hv.Area(
-                        (self.e_axis, y_subtracted),
-                        self._XLABEL, self._YLABEL,
-                        label=self._LABEL_SUBTRACTION
-                    ).opts(
-                        fill_alpha=self._SUBTRACTION_ALPHA,
-                        fill_color=self.model.colors.LIGHTSALMON,
-                        line_color=self.model.colors.LIGHTSALMON,
-                        line_width=self._SUBTRACTION_LINE_WIDTH,
-                        line_alpha=self._SUBTRACTION_LINE_ALPHA
-                    )
+            # Powerlaw fit curve
+            fit_curve = hv.Curve(
+                (self.e_axis, y_fit_curve),
+                self._XLABEL, self._YLABEL,
+                label=self._LABEL_POWERLAW
+            ).opts(
+                color=self.model.colors.CRIMSON,
+                line_dash=self._POWERLAW_DASH,
+                line_width=self._POWERLAW_LINE_WIDTH,
+                alpha=self._POWERLAW_ALPHA
+            )
 
-                    overlays *= fit_curve * subtraction_area
-                except (RuntimeError, ValueError, TypeError) as e:
-                    print(f"{e} No se pudo realizar el ajuste para el rango {range_values}.")
-                    # If fit fails, just show the experimental data and range markers
-                    pass
+            # Background subtraction area
+            subtraction_area = hv.Area(
+                (self.e_axis, y_subtracted),
+                self._XLABEL, self._YLABEL,
+                label=self._LABEL_SUBTRACTION
+            ).opts(
+                fill_alpha=self._SUBTRACTION_ALPHA,
+                fill_color=self.model.colors.LIGHTSALMON,
+                line_color=self.model.colors.LIGHTSALMON,
+                line_width=self._SUBTRACTION_LINE_WIDTH,
+                line_alpha=self._SUBTRACTION_LINE_ALPHA
+            )
+
+            overlays *= fit_curve * subtraction_area
+        except (RuntimeError, ValueError, TypeError) as e:
+            print(f"{e} No se pudo realizar el ajuste para el rango {range_values}.")
+            return self._inconsistent_overlay_opts(overlays, x, y)
 
         # Plot options
         opts = dict(
-            title=f"Spectrum at ({x}, {y})",
+            title=f"{self._LABEL_SPECTRUM} ({x}, {y})",
             height=self._SPECTRUM_HEIGHT,
             responsive=True,
             show_grid=True,
@@ -248,12 +288,22 @@ class SpectrumImageVisualizer:
 
     # --- Interactive Spectrum Update ---
     def _update_create_spectrum(self, x, y):
-        x = int(np.clip(round(x), 0, self.clean_dataset.shape[1]-1))
-        y = int(np.clip(round(y), 0, self.clean_dataset.shape[0]-1))
-        if (x, y) == (self.last_selected[self._X_AXIS], self.last_selected[self._Y_AXIS]):
+        # Clamp and round coordinates to valid integer indices
+        max_x = self.clean_dataset.shape[1] - 1
+        max_y = self.clean_dataset.shape[0] - 1
+        x_idx = int(np.clip(round(x), 0, max_x))
+        y_idx = int(np.clip(round(y), 0, max_y))
+
+        # Only update if the selection has changed
+        if (x_idx, y_idx) == (self.last_selected[self._X_AXIS], self.last_selected[self._Y_AXIS]):
             return
-        self.last_selected[self._X_AXIS], self.last_selected[self._Y_AXIS] = x, y
-        self.spectrum_pane.object = self._create_spectrum(x, y, self.range_slider.value)
+
+        # Store last selected coordinates
+        self.last_selected[self._X_AXIS] = x_idx
+        self.last_selected[self._Y_AXIS] = y_idx
+
+        # Update the spectrum pane with the new spectrum
+        self.spectrum_pane.object = self._create_spectrum(x_idx, y_idx, self.range_slider.value)
 
     # --- Tap Callback ---
     # def _on_tap(self, **kwargs):
