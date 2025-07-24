@@ -120,7 +120,6 @@ class SpectrumImageVisualizer:
             sizing_mode=self._STRETCH_WIDTH
         )
 
-
         return pn.Column(
             pn.Row(
                 beam_energy,

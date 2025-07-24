@@ -120,7 +120,11 @@ class View:
             on_file_removed_callback=self.callbacks.get(self.model.callbacks.FILE_REMOVED)
         )
         
-        return pn.Column(file_dropper, sizing_mode=self._STRETCH_WIDTH)
+        return pn.Column(
+            file_dropper,
+            
+            sizing_mode=self._STRETCH_WIDTH
+        )
     
     def _main_layout(self):
         """Create and return the main content area"""
