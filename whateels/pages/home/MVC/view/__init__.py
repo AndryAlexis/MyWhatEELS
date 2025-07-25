@@ -168,71 +168,129 @@ class View:
             if an error occurred (in which case the view will already show an error)
         """
         plot_result = self.eels_plot_factory.create_plots(dataset_type)
-        
+
         if plot_result is None:
-            # Factory encountered an error, view already updated to show error
-            # Just return None to signal that no new component is needed
             return None
-            
-        # Store reference to active plotter for interaction access
-        # Store reference to active plotter for interaction access
+
         self.active_plotter = self.eels_plot_factory.current_plot_renderer
-        # Populate dataset info pane with widget controls if available
-        # Actualizar panel de información con valores de E0, alpha y beta
+
         try:
             self._dataset_info_pane.clear()
             attrs = self.model.dataset.attrs if self.model.dataset else {}
             image_name = attrs.get('image_name', '')
             shape = attrs.get('shape', [])
-            shape = [shape[1], shape[0], shape[2]]
+            shape = [shape[1], shape[0], shape[2]] if len(shape) == 3 else shape
             e0 = attrs.get('beam_energy', 0)
             alpha = attrs.get('convergence_angle', 0)
             beta = attrs.get('collection_angle', 0)
-            # HTML table with inputs for dataset attributes
-            html_rows = [
-                '<tr>'
-                '<td style="border:none;padding:2px;width:120px;"><b>Image Info</b></td>'
-                '<td style="border:none;padding:2px;">'
-                '<button style="font-size:11px;width:100%;">more ...</button>'
-                '</td>'
-                '</tr>',
-                f'<tr>'
-                '<td style="border:none;padding:2px;"><b>Name:</b></td>'
-                f'<td style="border:none;padding:2px;">{image_name}</td>'
-                '</tr>',
-                f'<tr>'
-                '<td style="border:none;padding:2px;"><b>Shape:</b></td>'
-                f'<td style="border:none;padding:2px;">{shape}</td>'
-                '</tr>',
-                f'<tr>'
-                '<td style="border:none;padding:2px;"><b>Beam Energy:</b></td>'
-                f'<td style="border:none;padding:2px;text-align:right;">'
-                f'<input type="text" inputmode="decimal" value="{e0}" style="font-size:12px;width:100%;">'
-                '</td>'
-                '</tr>',
-                f'<tr>'
-                '<td style="border:none;padding:2px;"><b>Convergence Angle:</b></td>'
-                f'<td style="border:none;padding:2px;text-align:right;">'
-                f'<input type="text" inputmode="decimal" value="{alpha}" style="font-size:12px;width:100%;">'
-                '</td>'
-                '</tr>',
-                f'<tr>'
-                '<td style="border:none;padding:2px;"><b>Collection Angle:</b></td>'
-                f'<td style="border:none;padding:2px;text-align:right;">'
-                f'<input type="text" inputmode="decimal" value="{beta}" style="font-size:12px;width:100%;">'
-                '</td>'
-                '</tr>',
-            ]
-            html_table = (
-                '<table style="border-collapse:collapse;font-size:12px;">'
-                + ''.join(html_rows) +
-                '</table>'
+
+            # Estilo común para todos los widgets
+            widget_style = {
+                "font-size": "11px",
+                "height": "24px",
+                "margin": "0px",
+                "padding": "0px 5px",
+                "line-height": "24px",
+                "box-sizing": "border-box"
+            }
+
+            # Widgets interactivos con estilo unificado
+            literal_e0 = pn.widgets.LiteralInput(
+                name='', value=e0, type=float, 
+                styles=widget_style, width=120
             )
-            self._dataset_info_pane.append(pn.pane.HTML(html_table, sizing_mode=self._STRETCH_WIDTH))
-        except Exception:
-            # No interrumpir si falla la obtención de atributos
+            literal_alpha = pn.widgets.LiteralInput(
+                name='', value=alpha, type=float,
+                styles=widget_style, width=120
+            )
+            literal_beta = pn.widgets.LiteralInput(
+                name='', value=beta, type=float,
+                styles=widget_style, width=120
+            )
+
+            # Botón con ajustes especiales para alineación
+            more_button = pn.widgets.Button(
+                name="more ...",
+                button_type="default",
+                styles={
+                    **widget_style,
+                    "padding": "0px",  # Padding reducido para botones
+                    "display": "flex",
+                    "align-items": "center",
+                    "justify-content": "center"
+                },
+                width=120,
+                height=24
+            )
+
+            # Texto de shape con contenedor ajustado
+            shape_str = pn.pane.Str(
+                str(shape),
+                styles={
+                    "font-size": "11px",
+                    "margin": "0px",
+                    "height": "24px",
+                    "line-height": "24px",
+                    "padding": "3px 5px"  # Compensa diferencias de alineación
+                },
+                width=120
+            )
+
+            # Estilo para etiquetas Markdown
+            md_style = {
+                "font-size": "11px",
+                "margin": "0px",
+                "height": "24px",
+                "line-height": "24px",
+                "padding": "3px 0px"  # Compensación vertical
+            }
+
+            # Etiquetas con estilo consistente
+            md_labels = [
+                pn.pane.Markdown("**Image Info**", styles=md_style, width=140),
+                pn.pane.Markdown("**Shape:**", styles=md_style, width=140),
+                pn.pane.Markdown("**Beam Energy:**", styles=md_style, width=140),
+                pn.pane.Markdown("**Convergence Angle:**", styles=md_style, width=140),
+                pn.pane.Markdown("**Collection Angle:**", styles=md_style, width=140),
+            ]
+
+            # Valores correspondientes (misma orden que las etiquetas)
+            values = [
+                more_button,
+                shape_str,
+                literal_e0,
+                literal_alpha,
+                literal_beta
+            ]
+
+            # Crear la tabla con GridBox ajustado
+            table_grid = pn.GridBox(
+                *(item for pair in zip(md_labels, values) for item in pair),
+                ncols=2,
+                sizing_mode="stretch_width",
+                styles={
+                    "grid-row-gap": "0px",  # Eliminar espacio entre filas
+                    "align-items": "center"  # Alineación vertical centrada
+                }
+            )
+
+            # Añadir la tabla al sidebar
+            self._dataset_info_pane.append(table_grid)
+            # Crear FloatPanel con la misma tabla, inicialmente oculto
+            # Crear FloatPanel con la misma tabla, inicialmente oculto (usar 'name' en lugar de 'title')
+            float_panel = pn.layout.FloatPanel(
+                table_grid, name='Metadata Details', width=350, height=200, visible=False
+            )
+            self._dataset_info_pane.append(float_panel)
+            # Mostrar FloatPanel al hacer click en more_button
+            more_button.on_click(lambda event: setattr(float_panel, 'visible', True))
+
+        except Exception as e:
+            print(f"Error al crear la interfaz: {str(e)}")
             pass
+
         return plot_result
+
     
     def show_single_spectrum(self, visualizer):
         spectrum_data = visualizer.get_spectrum_data()
