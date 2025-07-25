@@ -73,8 +73,9 @@ class CustomPage(pn.template.FastListTemplate):
             List of Markdown panes configured as navigation links
         """
         navigation_links = [
-            ("[NLLS](/nlls)", "Non-Linear Least Squares analysis"),
             ("[Home](/)", "Home page with file upload"),
+            ("[GOS](/gos)", "GOS graph page"),
+            ("[NLLS](/nlls)", "Non-Linear Least Squares analysis"),
             ("[Login](/login)", "User authentication"),
         ]
         

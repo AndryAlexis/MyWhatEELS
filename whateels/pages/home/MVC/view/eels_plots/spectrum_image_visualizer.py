@@ -77,6 +77,19 @@ class SpectrumImageVisualizer:
             sizing_mode=self._STRETCH_WIDTH,
         )
         self.range_slider.param.watch(self._update_range, 'value')
+        # Widgets adicionales movidos al panel de info de datos
+        self.beam_energy = pn.widgets.Select(
+            name='BeamEnergy-E0 keV',
+            options=[0, 1, 2, 3, 4, 5],
+            value=0,
+            sizing_mode=self._STRETCH_WIDTH
+        )
+        self.convergence_angle = pn.widgets.Select(
+            name='Convergence-α mrad',
+            options=[0, 1, 2, 3, 4, 5],
+            value=0,
+            sizing_mode=self._STRETCH_WIDTH
+        )
 
     # --- Plot Setup ---
     def _setup_plots(self):
@@ -107,26 +120,14 @@ class SpectrumImageVisualizer:
 
     # --- Layout ---
     def create_layout(self):
-        beam_energy = pn.widgets.Select(
-            name='BeamEnergy-E0 keV', 
-            options=[0, 1, 2, 3, 4, 5], 
-            value=0,
-            sizing_mode=self._STRETCH_WIDTH
-        )
-        convergence_angle = pn.widgets.Select(
-            name='Convergence-α mrad', 
-            options=[0, 1, 2, 3, 4, 5], 
-            value=0,
-            sizing_mode=self._STRETCH_WIDTH
-        )
-
         return pn.Column(
-            pn.Row(
-                beam_energy,
-                convergence_angle,
-                sizing_mode=self._STRETCH_WIDTH,
-                css_classes=['generic-container']
-            ),
+            # Removed the Row containing beam_energy and convergence_angle
+            # pn.Row(
+            #     self.beam_energy,
+            #     self.convergence_angle,
+            #     sizing_mode=self._STRETCH_WIDTH,
+            #     css_classes=['generic-container']
+            # ),
             pn.Row(
                 pn.Column(
                     self.image,

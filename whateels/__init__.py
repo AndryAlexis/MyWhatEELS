@@ -5,7 +5,7 @@ from pathlib import Path
 pn.extension('filedropper', 'floatpanel', theme='default')
 
 from whateels.helpers import LoadCSS
-from whateels.pages import Home, NLLS, Login
+from whateels.pages import Home, NLLS, Login, GOS
 
 class App:
     """
@@ -25,6 +25,7 @@ class App:
         # Load CSS files only once
         LoadCSS([
             str(self._DEFAULT_CSS_PATH / "home.css"),
+            str(self._DEFAULT_CSS_PATH / "gos.css"),
             str(self._DEFAULT_CSS_PATH / "login.css"),
             str(self._DEFAULT_CSS_PATH / "custom_page.css"),
         ])
@@ -32,6 +33,7 @@ class App:
         # Define the pages for the application
         pages = {
             "/": Home(),
+            "/gos": GOS(),
             "/nlls": NLLS(),
             "/login": Login(),
         }

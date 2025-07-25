@@ -135,6 +135,17 @@ class EELSFileProcessor:
         dataset.attrs['beam_energy'] = getattr(spectrum_image, 'beam_energy', 0)
         dataset.attrs['collection_angle'] = getattr(spectrum_image, 'collection_angle', 0.0)
         dataset.attrs['convergence_angle'] = getattr(spectrum_image, 'convergence_angle', 0.0)
+        # Nombre de la imagen extraído del metadata
+        try:
+            image_name = spectrum_image.spectralInfo.get('Name', '')
+        except Exception:
+            image_name = ''
+        dataset.attrs['image_name'] = image_name
+        # Agregar shape de la imagen al metadata
+        try:
+            dataset.attrs['shape'] = list(dataset['ElectronCount'].shape)
+        except Exception:
+            pass
         
         return dataset
     

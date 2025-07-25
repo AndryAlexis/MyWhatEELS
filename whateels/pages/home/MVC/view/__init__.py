@@ -27,7 +27,8 @@ class View:
     def __init__(self, model: Model):
         # Callbacks dictionary to hold event handlers
         self.callbacks = {}
-        
+        # Placeholder for dataset attributes info in sidebar (widgets will be placed here)
+        self._dataset_info_pane = pn.Column(sizing_mode=self._STRETCH_WIDTH)
         self.model = model
 
         # Factory for creating EELS plots
@@ -122,7 +123,7 @@ class View:
         
         return pn.Column(
             file_dropper,
-            
+            self._dataset_info_pane,  # Información de datos debajo del file_dropper
             sizing_mode=self._STRETCH_WIDTH
         )
     
@@ -174,8 +175,63 @@ class View:
             return None
             
         # Store reference to active plotter for interaction access
+        # Store reference to active plotter for interaction access
         self.active_plotter = self.eels_plot_factory.current_plot_renderer
-        
+        # Populate dataset info pane with widget controls if available
+        # Actualizar panel de información con valores de E0, alpha y beta
+        try:
+            self._dataset_info_pane.clear()
+            attrs = self.model.dataset.attrs if self.model.dataset else {}
+            image_name = attrs.get('image_name', '')
+            shape = attrs.get('shape', [])
+            shape = [shape[1], shape[0], shape[2]]
+            e0 = attrs.get('beam_energy', 0)
+            alpha = attrs.get('convergence_angle', 0)
+            beta = attrs.get('collection_angle', 0)
+            # HTML table with inputs for dataset attributes
+            html_rows = [
+                '<tr>'
+                '<td style="border:none;padding:2px;width:120px;"><b>Image Info</b></td>'
+                '<td style="border:none;padding:2px;">'
+                '<button style="font-size:11px;width:100%;">more ...</button>'
+                '</td>'
+                '</tr>',
+                f'<tr>'
+                '<td style="border:none;padding:2px;"><b>Name:</b></td>'
+                f'<td style="border:none;padding:2px;">{image_name}</td>'
+                '</tr>',
+                f'<tr>'
+                '<td style="border:none;padding:2px;"><b>Shape:</b></td>'
+                f'<td style="border:none;padding:2px;">{shape}</td>'
+                '</tr>',
+                f'<tr>'
+                '<td style="border:none;padding:2px;"><b>Beam Energy:</b></td>'
+                f'<td style="border:none;padding:2px;text-align:right;">'
+                f'<input type="text" inputmode="decimal" value="{e0}" style="font-size:12px;width:100%;">'
+                '</td>'
+                '</tr>',
+                f'<tr>'
+                '<td style="border:none;padding:2px;"><b>Convergence Angle:</b></td>'
+                f'<td style="border:none;padding:2px;text-align:right;">'
+                f'<input type="text" inputmode="decimal" value="{alpha}" style="font-size:12px;width:100%;">'
+                '</td>'
+                '</tr>',
+                f'<tr>'
+                '<td style="border:none;padding:2px;"><b>Collection Angle:</b></td>'
+                f'<td style="border:none;padding:2px;text-align:right;">'
+                f'<input type="text" inputmode="decimal" value="{beta}" style="font-size:12px;width:100%;">'
+                '</td>'
+                '</tr>',
+            ]
+            html_table = (
+                '<table style="border-collapse:collapse;font-size:12px;">'
+                + ''.join(html_rows) +
+                '</table>'
+            )
+            self._dataset_info_pane.append(pn.pane.HTML(html_table, sizing_mode=self._STRETCH_WIDTH))
+        except Exception:
+            # No interrumpir si falla la obtención de atributos
+            pass
         return plot_result
     
     def show_single_spectrum(self, visualizer):

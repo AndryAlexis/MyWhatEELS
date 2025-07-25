@@ -77,4 +77,8 @@ class Controller:
         
         # Reset plot display to placeholder when file is removed
         self.view.reset_plot_display()
-        
+        # Limpiar información de datos del sidebar cuando se elimina el archivo
+        try:
+            self.view._dataset_info_pane.clear()
+        except Exception:
+            pass
