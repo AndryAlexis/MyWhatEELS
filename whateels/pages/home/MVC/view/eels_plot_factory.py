@@ -8,10 +8,12 @@ Features:
 - Handles errors robustly by raising exceptions with clear messages.
 """
 
-import panel as pn
 from .eels_plots import SpectrumLineVisualizer, SpectrumImageVisualizer
-from ..model import Model
-from . import View
+
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from ..model import Model
+    from . import View
 
 import traceback
 
@@ -28,7 +30,7 @@ class EELSPlotFactory:
     _UNKNOWN_TYPE_ERROR = "[EELSPlotFactory] Unknown dataset type: '{}'. Supported types: {}"
     _EXCEPTION_ERROR = "[EELSPlotFactory] Exception while creating plot for dataset type '{}': {}"
     
-    def __init__(self, model: Model, view: View) -> None:
+    def __init__(self, model: "Model", view: "View") -> None:
         self._model = model
         self._view = view
         self._current_spectrum_visualizer_renderer = None  # Store reference to active plotter
@@ -36,8 +38,8 @@ class EELSPlotFactory:
             model.constants.SPECTRUM_LINE: SpectrumLineVisualizer,
             model.constants.SPECTRUM_IMAGE: SpectrumImageVisualizer
         }
-
-    def create_plots(self, dataset_type: str) -> pn.panel.Panel:
+    
+    def create_plots(self, dataset_type: str):
         """
         Create and return an EELS plot visualizer for the given dataset type.
         

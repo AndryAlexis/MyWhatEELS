@@ -6,7 +6,7 @@
 .fdw-box-title {
     font-size: 1em;
     font-weight: bold;
-    margin: .5em 0 .2em 0;
+    margin: .5em 0 .2em 1em;
     padding: 0;
 
     h5 {
@@ -15,10 +15,28 @@
 }
 
 .feedback-message {
-    padding: 0 .5em .5em .5em;
+    padding: 0 .5em .5em 1em;
     margin: 0;
     opacity: .8;
     font-style: italic;
+}
+
+#input:has(ul:empty) {
+    animation: highlight-dropper 1.2s ease-in-out 5s infinite;
+    cursor: pointer;
+}
+
+
+@keyframes highlight-dropper {
+    0% {
+        box-shadow: 0 0 0 0 rgba(52, 152, 219, 0.5); /* light blue */
+    }
+    50% {
+        box-shadow: 0 0 12px 3px rgba(46, 204, 113, 0.4); /* soft green */
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(52, 152, 219, 0.0);
+    }
 }
 
 .generic-container {
