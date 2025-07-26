@@ -1,56 +1,76 @@
 """
-Factory for creating EELS plots based on dataset type.
+EELSPlotFactory: Centralized factory for creating EELS visualizer components based on dataset type.
 
-Implements the Factory Pattern to:
-- Create appropriate visualizers based on dataset type
-- Centralize object creation logic
-- Provide a consistent interface for visualization components
-- Handle errors in a single location
+Features:
+- Uses the Factory Pattern to decouple visualization creation from the View.
+- Supports extensible mapping of dataset types to visualizer classes.
+- Provides a consistent interface for visualization components.
+- Handles errors robustly by raising exceptions with clear messages.
 """
 
+import panel as pn
 from .eels_plots import SpectrumLineVisualizer, SpectrumImageVisualizer
+from ..model import Model
+from . import View
+
+import traceback
 
 class EELSPlotFactory:
-    """Factory for creating appropriate EELS plots and visualizations
+    """
+    Centralized factory for creating EELS visualizer components.
     
-    I'm using the Factory Pattern because it decouples visualization creation
-    from the View and makes adding new visualizer types easier.
+    - Decouples visualization creation from the View.
+    - Maps dataset types to visualizer classes.
+    - Raises exceptions for unknown types or plot creation errors.
     """
     
-    def __init__(self, model, view):
-        self.model = model
-        self.view = view
-        self.current_plot_renderer = None  # Store reference to active plotter
-        self._all_plots = {
+    # Error message constants
+    _UNKNOWN_TYPE_ERROR = "[EELSPlotFactory] Unknown dataset type: '{}'. Supported types: {}"
+    _EXCEPTION_ERROR = "[EELSPlotFactory] Exception while creating plot for dataset type '{}': {}"
+    
+    def __init__(self, model: Model, view: View) -> None:
+        self._model = model
+        self._view = view
+        self._current_spectrum_visualizer_renderer = None  # Store reference to active plotter
+        self._all_spectrum_visualizer = {
             model.constants.SPECTRUM_LINE: SpectrumLineVisualizer,
             model.constants.SPECTRUM_IMAGE: SpectrumImageVisualizer
         }
-    
-    def create_plots(self, dataset_type: str):
-        """Create EELS plots based on dataset type
+
+    def create_plots(self, dataset_type: str) -> pn.panel.Panel:
+        """
+        Create and return an EELS plot visualizer for the given dataset type.
         
         Args:
-            dataset_type: Type of dataset (SSp, SLi, or SIm)
-            
+            dataset_type (str): Type of dataset (e.g., SSp, SLi, SIm).
+        
         Returns:
-            Panel component with the appropriate plot visualization, or None if there was an error
-            (in which case the View will have been updated to show an error display)
+            Panel component with the appropriate plot visualization.
+        
+        Raises:
+            ValueError: If the dataset type is unknown.
+            RuntimeError: If an error occurs during plot creation.
         """
         try:
-            visualizer_class = self._all_plots.get(dataset_type)
-            if visualizer_class:
-                self.current_plot_renderer = visualizer_class(self.model)
-                return self.current_plot_renderer.create_layout()
+            chosed_spectrum_visualizer = self._all_spectrum_visualizer.get(dataset_type)
+            if chosed_spectrum_visualizer:
+                self._current_spectrum_visualizer_renderer = chosed_spectrum_visualizer(self._model)
+                return self._current_spectrum_visualizer_renderer.create_layout()
             else:
-                self.current_plot_renderer = None
-                # Just log the error, View will handle showing it
-                print(f"Unknown dataset type: {dataset_type}")
-                # We don't return anything as the View will update itself
-                self.view.show_error()
-                return None
+                self._current_spectrum_visualizer_renderer = None
+                error_msg = self._UNKNOWN_TYPE_ERROR.format(dataset_type, list(self._all_spectrum_visualizer.keys()))
+                raise ValueError(error_msg)
         except Exception as e:
-            print(f"Error creating plot: {e}")
-            self.current_plot_renderer = None
-            # Just log the error, View will handle showing it
-            self.view.show_error()
-            return None
+            self._current_spectrum_visualizer_renderer = None
+            error_msg = self._EXCEPTION_ERROR.format(dataset_type, e)
+            traceback.print_exc()
+            raise RuntimeError(error_msg) from e
+
+    @property
+    def current_spectrum_visualizer_renderer(self) -> SpectrumLineVisualizer | SpectrumImageVisualizer | None:
+        """
+        Get the current spectrum visualizer renderer instance.
+        Returns:
+            The active visualizer renderer, or None if not set.
+        """
+        return self._current_spectrum_visualizer_renderer

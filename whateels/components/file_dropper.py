@@ -77,7 +77,7 @@ class FileDropper(pn.WidgetBox):
     def _create_title(self) -> pn.pane.HTML:
         """Create the title header for the upload box."""
         return pn.pane.HTML(
-            "<h3 class='fdw-box-title'>Upload EELS data file</h3>"
+            "<h5 class='fdw-box-title'>Upload EELS data file</h5>"
         )
     
     def _create_feedback_pane(self) -> pn.pane.HTML:

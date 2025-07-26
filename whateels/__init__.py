@@ -25,7 +25,6 @@ class App:
         # Load CSS files only once
         LoadCSS([
             str(self._DEFAULT_CSS_PATH / "home.css"),
-            str(self._DEFAULT_CSS_PATH / "gos.css"),
             str(self._DEFAULT_CSS_PATH / "login.css"),
             str(self._DEFAULT_CSS_PATH / "custom_page.css"),
         ])

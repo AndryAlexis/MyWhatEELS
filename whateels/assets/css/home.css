@@ -4,12 +4,12 @@
 }
 
 .fdw-box-title {
-    font-size: 1.2em;
+    font-size: 1em;
     font-weight: bold;
     margin: .5em 0 .2em 0;
     padding: 0;
 
-    h3 {
+    h5 {
         margin: 0;
     }
 }

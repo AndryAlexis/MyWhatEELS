@@ -36,7 +36,7 @@ class Controller:
         if dataset is None:
             # Reset to placeholder on error
             self.interaction_handler.reset_click_state()
-            self.view.reset_plot_display()
+            self.view.reset_main_layout()
             print(f'Error loading file: {filename}')
             return 
 
@@ -60,7 +60,7 @@ class Controller:
             self.interaction_handler.setup_tap_callback(self.view.tap_stream)
         
         # Update the view with the new plot
-        self.view.update_plot_display(eels_plots)
+        self.view.update_main_layout(eels_plots)
         print(f'Successfully loaded and visualized: {filename}')
 
     def handle_file_removed(self, filename: str):
@@ -76,7 +76,7 @@ class Controller:
         self.interaction_handler.reset_click_state()
         
         # Reset plot display to placeholder when file is removed
-        self.view.reset_plot_display()
+        self.view.reset_main_layout()
         # Limpiar información de datos del sidebar cuando se elimina el archivo
         try:
             self.view._dataset_info_pane.clear()

@@ -121,11 +121,39 @@ class View:
             on_file_removed_callback=self.callbacks.get(self.model.callbacks.FILE_REMOVED)
         )
         
-        return pn.Column(
-            file_dropper,
-            self._dataset_info_pane,  # Información de datos debajo del file_dropper
-            sizing_mode=self._STRETCH_WIDTH
+        return pn.Accordion(
+            ("File Dropper", file_dropper),  # File dropper component
+            #self._dataset_info_pane,  # Información de datos debajo del file_dropper
+            sizing_mode=self._STRETCH_WIDTH,
+            active=[0],  # Start with file dropper open
+            toggle=True
         )
+
+    def add_sidebar_component(self, panel_tuple: tuple):
+        """
+        Add a new panel to the sidebar Accordion.
+        panel_tuple: tuple of (str, pn.Widget)
+        """
+        if not (isinstance(panel_tuple, tuple) and len(panel_tuple) == 2):
+            raise ValueError("Argument must be a tuple: (title: str, component: pn.Widget)")
+        title, component = panel_tuple
+        if not isinstance(title, str):
+            raise ValueError("First element must be a string (panel title)")
+        if not isinstance(component, pn.Widget):
+            raise ValueError("Second element must be a Panel Widget")
+        self._sidebar_layout().append(panel_tuple)
+        
+    def remove_sidebar_component_by_title(self, title: str):
+        """
+        Remove the first sidebar panel with the given title from the Accordion.
+        """
+        sidebar = self._sidebar_layout()
+        # Find the first index with matching title
+        for i, (panel_title, _) in enumerate(sidebar):
+            if panel_title == title:
+                sidebar.pop(i)
+                return
+        raise ValueError(f"No sidebar panel found with title: {title}")
     
     def _main_layout(self):
         """Create and return the main content area"""
@@ -136,7 +164,7 @@ class View:
         )
         return self._main_container_layout
 
-    def update_plot_display(self, plot_component):
+    def update_main_layout(self, plot_component):
         """Update the main area with a new plot component"""
         self._main_container_layout.clear()
         self._main_container_layout.append(plot_component)
@@ -146,7 +174,7 @@ class View:
         self._main_container_layout.clear()
         self._main_container_layout.append(self._loading_placeholder)
     
-    def reset_plot_display(self):
+    def reset_main_layout(self):
         """Reset the main area to show the placeholder"""
         self._main_container_layout.clear()
         self._main_container_layout.append(self._no_file_placeholder)
@@ -172,7 +200,7 @@ class View:
         if plot_result is None:
             return None
 
-        self.active_plotter = self.eels_plot_factory.current_plot_renderer
+        self.active_plotter = self.eels_plot_factory.current_spectrum_visualizer_renderer
 
         try:
             self._dataset_info_pane.clear()
@@ -308,7 +336,7 @@ class View:
             title='EELS Spectrum'
         )
         spectrum_pane = pn.pane.HoloViews(spectrum_curve, sizing_mode=self._STRETCH_WIDTH)
-        self.update_plot_display(
+        self.update_main_layout(
             pn.Column(
                 spectrum_pane,
                 sizing_mode=self._STRETCH_BOTH
