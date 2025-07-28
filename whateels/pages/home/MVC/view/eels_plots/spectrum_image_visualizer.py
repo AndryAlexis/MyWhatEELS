@@ -10,11 +10,13 @@ import time
 from numba import jit
 from scipy.optimize import curve_fit
 from holoviews import streams
+from .abstract_eels_visualizer import AbstractEELSVisualizer
+from typing import override
 
 # Initialize HoloViews with Bokeh backend
 hv.extension("bokeh", logo=False)
 
-class SpectrumImageVisualizer:
+class SpectrumImageVisualizer(AbstractEELSVisualizer):
     """
     Interactive spectrum image (datacube) visualization for DM3 files, based on Vanessa class.
     """
@@ -118,16 +120,10 @@ class SpectrumImageVisualizer:
     def powerlaw(x, A, k):
         return A * x ** k
 
-    # --- Layout ---
-    def create_layout(self):
+    @override
+    def create_plots(self):
+        """Create the main layout for the spectrum image visualizer."""
         return pn.Column(
-            # Removed the Row containing beam_energy and convergence_angle
-            # pn.Row(
-            #     self.beam_energy,
-            #     self.convergence_angle,
-            #     sizing_mode=self._STRETCH_WIDTH,
-            #     css_classes=['generic-container']
-            # ),
             pn.Row(
                 pn.Column(
                     self.image,
@@ -152,6 +148,30 @@ class SpectrumImageVisualizer:
                 margin=(10, 0, 0, 0)
             )
         )
+    
+    @override
+    def create_dataset_info(self):
+        attrs = self.model.dataset.attrs if self.model.dataset is not None else {}
+        shape = attrs.get('shape', 'N/A')
+        beam_energy = attrs.get('beam_energy', 'N/A')
+        convergence_angle = attrs.get('convergence_angle', 'N/A')
+        collection_angle = attrs.get('collection_angle', 'N/A')
+
+        dataset_info = pn.Column(
+            pn.Row(
+                pn.pane.HTML("<h5 class=\"dataset-info-title\">Dataset Information</h5>", sizing_mode=self._STRETCH_WIDTH),
+                pn.widgets.ButtonIcon(icon="plus", size="2em", description="Show more info"),
+                sizing_mode=self._STRETCH_WIDTH,
+                css_classes=['dataset-info-header']
+            ),
+            pn.pane.Str(f"**Shape:** {shape}"),
+            pn.pane.Str(f"**Beam Energy:** {beam_energy} keV"),
+            pn.pane.Str(f"**Convergence Angle:** {convergence_angle} mrad"),
+            pn.pane.Str(f"**Collection Angle:** {collection_angle} mrad"),
+            sizing_mode=self._STRETCH_WIDTH,
+            css_classes=['dataset-info', 'animated']
+        )
+        return dataset_info
 
     # --- Image Plot ---
     def _create_image(self, clean_dataset):

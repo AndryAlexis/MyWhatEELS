@@ -4,14 +4,17 @@ Spectrum line visualization composer.
 
 import panel as pn
 import holoviews as hv
-from holoviews import streams
 import numpy as np
 import xarray as xr
+
+from holoviews import streams
+from .abstract_eels_visualizer import AbstractEELSVisualizer
+from typing import override
 
 # Initialize HoloViews with Bokeh backend
 hv.extension("bokeh", logo=False)
 
-class SpectrumLineVisualizer:
+class SpectrumLineVisualizer(AbstractEELSVisualizer):
     """Composes spectrum line visualizations from EELS data"""
     
     # Text and label constants (specific to each plot)
@@ -38,8 +41,9 @@ class SpectrumLineVisualizer:
         self.model = model
         self.tap_stream = None
         self.spectrum_pane = None
-    
-    def create_layout(self):
+
+    @override
+    def create_plots(self):
         """Create layout for spectrum line visualization"""
         # Sum over y dimension to create image
         image_data = self.model.dataset.ElectronCount.squeeze()
@@ -80,6 +84,24 @@ class SpectrumLineVisualizer:
             self.spectrum_pane,
             sizing_mode=self._STRETCH_BOTH
         )
+    
+    @override
+    def create_dataset_info(self):
+        attrs = self.model.dataset.attrs if self.model.dataset is not None else {}
+        shape = attrs.get('shape', 'N/A')
+        beam_energy = attrs.get('beam_energy', 'N/A')
+        convergence_angle = attrs.get('convergence_angle', 'N/A')
+        collection_angle = attrs.get('collection_angle', 'N/A')
+
+        dataset_info = pn.Column(
+            pn.pane.HTML("<h5 class='fdw-box-title'>Dataset Information</h5>", sizing_mode=self._STRETCH_WIDTH),
+            pn.pane.Markdown(f"**Shape:** {shape}"),
+            pn.pane.Markdown(f"**Beam Energy:** {beam_energy} keV"),
+            pn.pane.Markdown(f"**Convergence Angle:** {convergence_angle} mrad"),
+            pn.pane.Markdown(f"**Collection Angle:** {collection_angle} mrad"),
+            sizing_mode=self._STRETCH_WIDTH
+        )
+        return dataset_info
     
     def _create_image(self, clean_image_data, x_coords, eloss_coords):
         """Create the spectrum line image"""

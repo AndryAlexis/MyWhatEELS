@@ -33,46 +33,37 @@ class EELSPlotFactory:
     def __init__(self, model: "Model", view: "View") -> None:
         self._model = model
         self._view = view
-        self._current_spectrum_visualizer_renderer = None  # Store reference to active plotter
         self._all_spectrum_visualizer = {
             model.constants.SPECTRUM_LINE: SpectrumLineVisualizer,
-            model.constants.SPECTRUM_IMAGE: SpectrumImageVisualizer
+            model.constants.SPECTRUM_IMAGE: SpectrumImageVisualizer,
+            model.constants.SINGLE_SPECTRUM: SpectrumLineVisualizer,  # TODO Assuming single spectrum uses line visualizer
         }
     
-    def create_plots(self, dataset_type: str):
+    def choose_spectrum(self, dataset_type: str) -> SpectrumLineVisualizer | SpectrumImageVisualizer | None:
         """
-        Create and return an EELS plot visualizer for the given dataset type.
-        
+        Instantiates and returns the appropriate EELS visualizer for the specified dataset type.
+
         Args:
-            dataset_type (str): Type of dataset (e.g., SSp, SLi, SIm).
-        
+            dataset_type (str): The dataset type key (e.g., model.constants.SPECTRUM_LINE or SPECTRUM_IMAGE).
+
         Returns:
-            Panel component with the appropriate plot visualization.
-        
+            SpectrumLineVisualizer | SpectrumImageVisualizer: An instance of the corresponding visualizer class.
+
         Raises:
-            ValueError: If the dataset type is unknown.
-            RuntimeError: If an error occurs during plot creation.
+            ValueError: If the dataset type is not recognized (not mapped in _all_spectrum_visualizer).
+            RuntimeError: If an exception occurs during visualizer instantiation.
         """
         try:
             chosed_spectrum_visualizer = self._all_spectrum_visualizer.get(dataset_type)
             if chosed_spectrum_visualizer:
-                self._current_spectrum_visualizer_renderer = chosed_spectrum_visualizer(self._model)
-                return self._current_spectrum_visualizer_renderer.create_layout()
+                chosed_spectrum_visualizer = chosed_spectrum_visualizer(self._model)
+                return chosed_spectrum_visualizer
             else:
-                self._current_spectrum_visualizer_renderer = None
+                chosed_spectrum_visualizer = None
                 error_msg = self._UNKNOWN_TYPE_ERROR.format(dataset_type, list(self._all_spectrum_visualizer.keys()))
                 raise ValueError(error_msg)
         except Exception as e:
-            self._current_spectrum_visualizer_renderer = None
+            chosed_spectrum_visualizer = None
             error_msg = self._EXCEPTION_ERROR.format(dataset_type, e)
             traceback.print_exc()
             raise RuntimeError(error_msg) from e
-
-    @property
-    def current_spectrum_visualizer_renderer(self) -> SpectrumLineVisualizer | SpectrumImageVisualizer | None:
-        """
-        Get the current spectrum visualizer renderer instance.
-        Returns:
-            The active visualizer renderer, or None if not set.
-        """
-        return self._current_spectrum_visualizer_renderer

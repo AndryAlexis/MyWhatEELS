@@ -18,6 +18,7 @@ class Controller:
         self.file_service = EELSFileProcessor(model)
         self.data_service = EELSDataProcessor(self.model)
         self.interaction_handler = InteractionHandler(model, view)
+
     
     def handle_file_uploaded(self, filename: str, file_content: bytes):
         """
@@ -47,20 +48,28 @@ class Controller:
         dataset_type = dataset.attrs.get('dataset_type', None)
         self.model.set_dataset(dataset, dataset_type)
         
-        # Create plot based on dataset type
-        eels_plots = self.view.create_eels_plot(self.model.dataset_type)
+        # Create plots and dataset info based on dataset type
+        eels_plots, spectrum_dataset_info = self.view.create_eels_plot(self.model.dataset_type)
         
+        # If dataset info creation failed, view already shows error so we're done
+        if spectrum_dataset_info is None:
+            print(f'Error visualizing file: {filename}')
+            return
         # If plots creation failed, view already shows error so we're done
         if eels_plots is None:
             print(f'Error visualizing file: {filename}')
             return
             
+            
+        
         # Setup interaction callbacks - use tap instead of hover
         if hasattr(self.view, 'tap_stream') and self.view.tap_stream:
             self.interaction_handler.setup_tap_callback(self.view.tap_stream)
         
         # Update the view with the new plot
         self.view.update_main_layout(eels_plots)
+        self.view.add_component_to_sidebar_layout(spectrum_dataset_info)
+
         print(f'Successfully loaded and visualized: {filename}')
 
     def handle_file_removed(self, filename: str):
@@ -74,6 +83,8 @@ class Controller:
         
         # Reset interaction state
         self.interaction_handler.reset_click_state()
+        
+        self.view.remove_last_dataset_info_from_sidebar()
         
         # Reset plot display to placeholder when file is removed
         self.view.reset_main_layout()
