@@ -1,8 +1,11 @@
-from ..model import Model
 from .eels_plot_factory import EELSPlotFactory
 import panel as pn
 import holoviews as hv
 from whateels.components import FileDropper
+
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from ..model import Model
 
 # Initialize HoloViews with Bokeh backend
 hv.extension("bokeh", logo=False)
@@ -24,7 +27,7 @@ class View:
     _STRETCH_WIDTH = 'stretch_width'
     _STRETCH_BOTH = 'stretch_both'
 
-    def __init__(self, model: Model):
+    def __init__(self, model: "Model") -> None:
         # Callbacks dictionary to hold event handlers
         self.callbacks = {}
         # Placeholder for dataset attributes info in sidebar (widgets will be placed here)
@@ -32,7 +35,7 @@ class View:
         self.model = model
 
         # Factory for creating EELS plots
-        self.eels_plot_factory = EELSPlotFactory(model, self)
+        self.eels_plot_factory = None
         
         # Main layout that will switch between UI states
         self._main_container_layout = None
@@ -195,6 +198,7 @@ class View:
             Panel component with the appropriate plot visualization, or None
             if an error occurred (in which case the view will already show an error)
         """
+        self.eels_plot_factory = EELSPlotFactory(self.model, self)
         plot_result = self.eels_plot_factory.create_plots(dataset_type)
 
         if plot_result is None:

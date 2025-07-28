@@ -23,6 +23,13 @@
 
 #input:has(ul:empty) {
     animation: highlight-dropper 1.2s ease-in-out 5s infinite;
+
+    * {
+        cursor: pointer;
+    }
+}
+
+#input:has(ul:not(:empty)) button {
     cursor: pointer;
 }
 
