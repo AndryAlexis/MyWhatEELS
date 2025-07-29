@@ -158,10 +158,8 @@ class SpectrumImageVisualizer(AbstractEELSVisualizer):
         collection_angle = attrs.get('collection_angle', 'N/A')
 
         # Main info panel
-        more_info_btn = pn.widgets.ButtonIcon(icon="plus", size="2em", description="Show more info")
         header = pn.Row(
             pn.pane.HTML("<h5 class=\"dataset-info-title\">Dataset Information</h5>", sizing_mode=self._STRETCH_WIDTH),
-            more_info_btn,
             sizing_mode=self._STRETCH_WIDTH,
             css_classes=['dataset-info-header']
         )
@@ -183,11 +181,6 @@ class SpectrumImageVisualizer(AbstractEELSVisualizer):
             contained=False,  # This makes it always on top and modal
             position="center"
         )
-
-        def open_panel(event):
-            float_panel.visible = True
-
-        more_info_btn.on_click(open_panel)
 
         dataset_info = pn.Column(
             header,

@@ -1,6 +1,6 @@
 import xarray as xr
 
-from .constants import Constants, Callbacks, Colors, FileDropper, Placeholders
+from .constants import Constants, Colors, FileDropper, Placeholders
 
 class Model:
     """
@@ -14,7 +14,6 @@ class Model:
 
         # Shared configuration and constants
         self._constants = Constants()
-        self._callbacks = Callbacks()
         self._colors = Colors()
         self._file_dropper = FileDropper()
         self._placeholders = Placeholders()
@@ -34,9 +33,6 @@ class Model:
     @property
     def constants(self) -> Constants:
         return self._constants
-    @property
-    def callbacks(self) -> Callbacks:
-        return self._callbacks
     @property
     def colors(self) -> Colors:
         return self._colors

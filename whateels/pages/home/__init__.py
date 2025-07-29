@@ -14,14 +14,6 @@ class Home(CustomPage):
         
         title = title or self.model.constants.TITLE
         
-        # Setup callbacks after controller exists
-        callbacks = {
-            self.model.callbacks.FILE_UPLOADED : self.controller.handle_file_uploaded,
-            self.model.callbacks.FILE_REMOVED : self.controller.handle_file_removed,
-            # Add more callbacks as needed
-        }
-        self.view.callbacks = callbacks
-        
         super().__init__(
             title=title,
             main=[self.view.main],

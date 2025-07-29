@@ -28,12 +28,12 @@ class View:
     _STRETCH_BOTH = 'stretch_both'
 
     def __init__(self, model: "Model"):
-        # Callbacks dictionary to hold event handlers
-        self.callbacks = {}
         self.model = model
 
         # Factory for creating EELS plots
         self.eels_plot_factory = None
+        
+        self._sidebar = None
 
         # Main layout that will switch between UI states
         self._main_container_layout = None
@@ -51,33 +51,29 @@ class View:
         self._last_dataset_info_component = None
 
         # Last float panel added to main layout (for removal)
-        self._float_panel = None
+        # self._float_panel = None
+        
+        self._file_dropper = None
 
         # Initialize UI components
         self._init_visualization_components()
 
     # --- Properties ---
     @property
-    def sidebar(self) -> pn.Accordion:
-        return self._sidebar_layout()
+    def sidebar(self) -> pn.viewable.Viewable:
+        return self._sidebar
 
     @property
     def main(self) -> pn.Column:
         return self._main_layout()
     
+    # @property
+    # def float_panel(self) -> pn.layout.FloatPanel:
+    #     return self._float_panel_modal()
+    
     @property
-    def float_panel(self) -> pn.layout.FloatPanel:
-        return self._float_panel_modal()
-
-    @property
-    def callbacks(self) -> dict:
-        return self._callbacks
-
-    @callbacks.setter
-    def callbacks(self, value: dict):
-        if not isinstance(value, dict):
-            raise ValueError("Callbacks must be a dictionary")
-        self._callbacks = value
+    def file_dropper(self) -> FileDropper:
+        return self._file_dropper
 
     @property
     def tap_stream(self):
@@ -121,6 +117,8 @@ class View:
             self.model.placeholders.ERROR_FILE,
             sizing_mode=self._STRETCH_BOTH
         )
+        
+        self._sidebar = self._sidebar_layout()
 
     def _sidebar_layout(self):
         """Create and return the sidebar layout"""
@@ -129,11 +127,13 @@ class View:
             reject_message=self.model.file_dropper.REJECT_MESSAGE,
             success_message=self.model.file_dropper.SUCCESS_MESSAGE,
             feedback_message=self.model.file_dropper.FEEDBACK_MESSAGE,
-            on_file_uploaded_callback=self.callbacks.get(self.model.callbacks.FILE_UPLOADED),
-            on_file_removed_callback=self.callbacks.get(self.model.callbacks.FILE_REMOVED)
         )
+        
+        # Store the file dropper for later access
+        self._file_dropper = file_dropper
+
         self._sidebar_container_layout = pn.Column(
-            file_dropper,
+            self._file_dropper,
             pn.layout.Divider(),
             pn.Spacer(height=10),
             sizing_mode=self._STRETCH_WIDTH
@@ -148,41 +148,41 @@ class View:
         )
         return self._main_container_layout
     
-    def _float_panel_modal(self):
-        float_panel = pn.layout.FloatPanel(
-            visible=False,  # Start hidden
-            sizing_mode=self._STRETCH_BOTH,
-            width=800,
-            height=600,
-        )
-        self._float_panel = float_panel
+    # def _float_panel_modal(self):
+    #     float_panel = pn.layout.FloatPanel(
+    #         visible=False,  # Start hidden
+    #         sizing_mode=self._STRETCH_BOTH,
+    #         width=800,
+    #         height=600,
+    #     )
+    #     self._float_panel = float_panel
         
-    def add_contain_to_float_panel(self, content: pn.viewable.Viewable, title: str = "Details"):
-        """
-        Add content to the FloatPanel and set its title.
+    # def add_contain_to_float_panel(self, content: pn.viewable.Viewable, title: str = "Details"):
+    #     """
+    #     Add content to the FloatPanel and set its title.
         
-        Args:
-            content: Content to display in the FloatPanel
-            title: Title of the FloatPanel
-        """
-        if not isinstance(content, pn.viewable.Viewable):
-            raise ValueError("Content must be a Panel Viewable")
+    #     Args:
+    #         content: Content to display in the FloatPanel
+    #         title: Title of the FloatPanel
+    #     """
+    #     if not isinstance(content, pn.viewable.Viewable):
+    #         raise ValueError("Content must be a Panel Viewable")
         
-        self._float_panel.content = content
-        self._float_panel.title = title
-        self._float_panel.visible = True
+    #     self._float_panel.content = content
+    #     self._float_panel.title = title
+    #     self._float_panel.visible = True
     
-    def toggle_float_panel(self, visible: bool):
-        """
-        Toggle visibility of the last float panel added to the main layout.
+    # def toggle_float_panel(self, visible: bool):
+    #     """
+    #     Toggle visibility of the last float panel added to the main layout.
         
-        Args:
-            visible: True to show, False to hide
-        """
-        if self._float_panel:
-            self._float_panel.visible = visible
-        else:
-            raise ValueError("No float panel exists to toggle visibility")
+    #     Args:
+    #         visible: True to show, False to hide
+    #     """
+    #     if self._float_panel:
+    #         self._float_panel.visible = visible
+    #     else:
+    #         raise ValueError("No float panel exists to toggle visibility")
 
     # --- Public UI/State Management Methods ---
     def add_component_to_sidebar(self, component):
@@ -197,8 +197,8 @@ class View:
     def update_main_layout(self, plot_component):
         """Update the main area with a new plot component"""
         self._main_container_layout.clear()
-        if self._float_panel:
-            self._main_container_layout.insert(0, self._float_panel)
+        # if self._float_panel:
+        #     self._main_container_layout.insert(0, self._float_panel)
         self._main_container_layout.append(plot_component)
 
     def show_loading(self):
@@ -209,8 +209,8 @@ class View:
     def reset_main_layout(self):
         """Reset the main area to show the placeholder, and remove the FloatPanel if present."""
         self._main_container_layout.clear()
-        if self._float_panel and self._float_panel in self._main_container_layout:
-            self._main_container_layout.remove(self._float_panel)
+        # if self._float_panel and self._float_panel in self._main_container_layout:
+        #     self._main_container_layout.remove(self._float_panel)
         self._main_container_layout.append(self._no_file_placeholder)
 
     def show_error(self):

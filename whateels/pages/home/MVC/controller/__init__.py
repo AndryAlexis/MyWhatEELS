@@ -14,6 +14,10 @@ class Controller:
         self.model = model
         self.view = view
         
+        # Set up callbacks for file dropper events
+        self.view.file_dropper.on_file_uploaded_callback = self.handle_file_uploaded
+        self.view.file_dropper.on_file_removed_callback = self.handle_file_removed
+        
         # Initialize services
         self.file_service = EELSFileProcessor(model)
         self.data_service = EELSDataProcessor(self.model)

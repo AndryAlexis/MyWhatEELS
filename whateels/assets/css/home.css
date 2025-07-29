@@ -65,7 +65,7 @@
 }
 
 .dataset-info.animated {
-    animation: dataset-info-bounce-fadein 0.6s cubic-bezier(.68,-0.55,.27,1.55) .2s forwards;
+    animation: dataset-info-bounce-fadein 0.6s cubic-bezier(.68,-0.55,.27,1.55) 0s forwards;
 }
 
 @keyframes dataset-info-bounce-fadein {
