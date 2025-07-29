@@ -11,6 +11,24 @@ from whateels.helpers import TempFile, DM_EELS_Reader
 from .eels_data_processor import EELSDataProcessor
 
 class EELSFileProcessor:
+    def print_spectrum_image_attributes(self, spectrum_image):
+        """
+        Print all attributes of the spectrum_image object for debugging.
+        """
+        print("--- spectrum_image attributes ---")
+        for attr in dir(spectrum_image):
+            # Skip private/protected and methods
+            if attr.startswith("_"):
+                continue
+            try:
+                value = getattr(spectrum_image, attr)
+                # Skip methods
+                if callable(value):
+                    continue
+                print(f"{attr}: {value}")
+            except Exception as e:
+                print(f"{attr}: <error reading attribute: {e}>")
+        print("--- end of spectrum_image attributes ---")
     """
     Handles DM3/DM4 file I/O and orchestrates file-to-dataset processing.
     
@@ -56,6 +74,8 @@ class EELSFileProcessor:
             
             # Use the DM_EELS_Reader from the whatEELS library
             spectrum_image = DM_EELS_Reader(filepath).read_data()
+            
+            
             
             # Get data and energy axis
             electron_count_data = spectrum_image.data

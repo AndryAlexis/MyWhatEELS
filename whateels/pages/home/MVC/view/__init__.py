@@ -10,7 +10,6 @@ if TYPE_CHECKING:
 # Initialize HoloViews with Bokeh backend
 hv.extension("bokeh", logo=False)
 
-
 class View:
     """
     View class for the home page of the WhatEELS application.
@@ -31,8 +30,6 @@ class View:
     def __init__(self, model: "Model"):
         # Callbacks dictionary to hold event handlers
         self.callbacks = {}
-        # Placeholder for dataset attributes info in sidebar (widgets will be placed here)
-        self._dataset_info_pane = pn.Card(title='Dataset Information',sizing_mode=self._STRETCH_WIDTH)
         self.model = model
 
         # Factory for creating EELS plots
@@ -53,6 +50,9 @@ class View:
         # Last dataset info component added to sidebar (for removal)
         self._last_dataset_info_component = None
 
+        # Last float panel added to main layout (for removal)
+        self._float_panel = None
+
         # Initialize UI components
         self._init_visualization_components()
 
@@ -64,6 +64,10 @@ class View:
     @property
     def main(self) -> pn.Column:
         return self._main_layout()
+    
+    @property
+    def float_panel(self) -> pn.layout.FloatPanel:
+        return self._float_panel_modal()
 
     @property
     def callbacks(self) -> dict:
@@ -132,7 +136,6 @@ class View:
             file_dropper,
             pn.layout.Divider(),
             pn.Spacer(height=10),
-            # self._dataset_info_pane,
             sizing_mode=self._STRETCH_WIDTH
         )
         return self._sidebar_container_layout
@@ -144,6 +147,42 @@ class View:
             sizing_mode=self._STRETCH_BOTH
         )
         return self._main_container_layout
+    
+    def _float_panel_modal(self):
+        float_panel = pn.layout.FloatPanel(
+            visible=False,  # Start hidden
+            sizing_mode=self._STRETCH_BOTH,
+            width=800,
+            height=600,
+        )
+        self._float_panel = float_panel
+        
+    def add_contain_to_float_panel(self, content: pn.viewable.Viewable, title: str = "Details"):
+        """
+        Add content to the FloatPanel and set its title.
+        
+        Args:
+            content: Content to display in the FloatPanel
+            title: Title of the FloatPanel
+        """
+        if not isinstance(content, pn.viewable.Viewable):
+            raise ValueError("Content must be a Panel Viewable")
+        
+        self._float_panel.content = content
+        self._float_panel.title = title
+        self._float_panel.visible = True
+    
+    def toggle_float_panel(self, visible: bool):
+        """
+        Toggle visibility of the last float panel added to the main layout.
+        
+        Args:
+            visible: True to show, False to hide
+        """
+        if self._float_panel:
+            self._float_panel.visible = visible
+        else:
+            raise ValueError("No float panel exists to toggle visibility")
 
     # --- Public UI/State Management Methods ---
     def add_component_to_sidebar(self, component):
@@ -158,6 +197,8 @@ class View:
     def update_main_layout(self, plot_component):
         """Update the main area with a new plot component"""
         self._main_container_layout.clear()
+        if self._float_panel:
+            self._main_container_layout.insert(0, self._float_panel)
         self._main_container_layout.append(plot_component)
 
     def show_loading(self):
@@ -166,8 +207,10 @@ class View:
         self._main_container_layout.append(self._loading_placeholder)
 
     def reset_main_layout(self):
-        """Reset the main area to show the placeholder"""
+        """Reset the main area to show the placeholder, and remove the FloatPanel if present."""
         self._main_container_layout.clear()
+        if self._float_panel and self._float_panel in self._main_container_layout:
+            self._main_container_layout.remove(self._float_panel)
         self._main_container_layout.append(self._no_file_placeholder)
 
     def show_error(self):
@@ -208,6 +251,12 @@ class View:
         self.active_plotter = chosed_spectrum
         spectrum_plots_created = chosed_spectrum.create_plots()
         spectrum_dataset_info_created = chosed_spectrum.create_dataset_info()
+
+        # Remove previous float panel if it exists
+        # if self._float_panel and self._float_panel in self._main_container_layout:
+        #     self._main_container_layout.remove(self._float_panel)
+        # self._main_container_layout.insert(0, float_panel)
+        # self._float_panel = float_panel
 
         return spectrum_plots_created, spectrum_dataset_info_created
 

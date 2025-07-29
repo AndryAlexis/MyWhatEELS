@@ -18,7 +18,6 @@ class Controller:
         self.file_service = EELSFileProcessor(model)
         self.data_service = EELSDataProcessor(self.model)
         self.interaction_handler = InteractionHandler(model, view)
-
     
     def handle_file_uploaded(self, filename: str, file_content: bytes):
         """

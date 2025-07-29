@@ -157,17 +157,61 @@ class SpectrumImageVisualizer(AbstractEELSVisualizer):
         convergence_angle = attrs.get('convergence_angle', 'N/A')
         collection_angle = attrs.get('collection_angle', 'N/A')
 
-        dataset_info = pn.Column(
-            pn.Row(
-                pn.pane.HTML("<h5 class=\"dataset-info-title\">Dataset Information</h5>", sizing_mode=self._STRETCH_WIDTH),
-                pn.widgets.ButtonIcon(icon="plus", size="2em", description="Show more info"),
-                sizing_mode=self._STRETCH_WIDTH,
-                css_classes=['dataset-info-header']
+        # Main info panel
+        more_info_btn = pn.widgets.ButtonIcon(icon="plus", size="2em", description="Show more info")
+        header = pn.Row(
+            pn.pane.HTML("<h5 class=\"dataset-info-title\">Dataset Information</h5>", sizing_mode=self._STRETCH_WIDTH),
+            more_info_btn,
+            sizing_mode=self._STRETCH_WIDTH,
+            css_classes=['dataset-info-header']
+        )
+
+        # FloatPanel with more info (initially hidden)
+        float_panel = pn.layout.FloatPanel(
+            pn.Column(
+                pn.pane.Markdown("### More Dataset Details"),
+                pn.pane.Str(f"Shape: {shape}"),
+                pn.pane.Str(f"Beam Energy: {beam_energy} keV"),
+                pn.pane.Str(f"Convergence Angle: {convergence_angle} mrad"),
+                pn.pane.Str(f"Collection Angle: {collection_angle} mrad"),
+                pn.pane.Str(f"(Add more details here as needed)"),
             ),
-            pn.pane.Str(f"**Shape:** {shape}"),
-            pn.pane.Str(f"**Beam Energy:** {beam_energy} keV"),
-            pn.pane.Str(f"**Convergence Angle:** {convergence_angle} mrad"),
-            pn.pane.Str(f"**Collection Angle:** {collection_angle} mrad"),
+            name="Dataset Details",
+            width=350,
+            height=250,
+            visible=False,
+            contained=False,  # This makes it always on top and modal
+            position="center"
+        )
+
+        def open_panel(event):
+            float_panel.visible = True
+
+        more_info_btn.on_click(open_panel)
+
+        dataset_info = pn.Column(
+            header,
+            pn.Spacer(height=5),
+            pn.Row(
+                pn.pane.Str(f"Shape:"),
+                pn.pane.Str(shape),
+                sizing_mode=self._STRETCH_WIDTH
+            ),
+            pn.Row(
+                pn.pane.Str(f"Beam Energy:"),
+                pn.pane.Str(f"{beam_energy} keV"),
+                sizing_mode=self._STRETCH_WIDTH
+            ),
+            pn.Row(
+                pn.pane.Str(f"Convergence Angle:"),
+                pn.pane.Str(f"{convergence_angle} mrad"),
+                sizing_mode=self._STRETCH_WIDTH
+            ),
+            pn.Row(
+                pn.pane.Str(f"Collection Angle:"),
+                pn.pane.Str(f"{collection_angle} mrad"),
+                sizing_mode=self._STRETCH_WIDTH
+            ),
             sizing_mode=self._STRETCH_WIDTH,
             css_classes=['dataset-info', 'animated']
         )
