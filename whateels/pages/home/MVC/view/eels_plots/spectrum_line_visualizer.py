@@ -41,49 +41,77 @@ class SpectrumLineVisualizer(AbstractEELSVisualizer):
         self.model = model
         self.tap_stream = None
         self.spectrum_pane = None
+        # For tap/click throttling
+        self._last_click_x = None
+        self._click_tolerance = 0.5  # Minimum distance to trigger update
 
     @override
     def create_plots(self):
-        """Create layout for spectrum line visualization"""
+        """Create layout for spectrum line visualization with tap/click interaction."""
         # Sum over y dimension to create image
         image_data = self.model.dataset.ElectronCount.squeeze()
-        
-        # Clean image data for any remaining NaN/inf values
         image_data = image_data.fillna(0.0)
         image_data = image_data.where(np.isfinite(image_data), 0.0)
-        
-        # Clean coordinates
         x_coords = self.model.dataset.coords[self.model.constants.AXIS_X]
         eloss_coords = self.model.dataset.coords[self.model.constants.ELOSS]
-        
         x_coords = x_coords.where(np.isfinite(x_coords), 0.0)
         eloss_coords = eloss_coords.where(np.isfinite(eloss_coords), 0.0)
-        
-        # Create clean dataset for the image
         clean_image_data = image_data.assign_coords({
             self.model.constants.AXIS_X: x_coords,
             self.model.constants.ELOSS: eloss_coords
         })
-        
-        # Create image and spectrum components
         image = self._create_image(clean_image_data, x_coords, eloss_coords)
         empty_spectrum = self._create_empty_spectrum(eloss_coords)
-        
-        # Setup interaction
+        # Setup tap interaction
         self.tap_stream = streams.Tap(x=0, y=0, source=image)
-        
-        # Convert to Panel
+        self.tap_stream.add_subscriber(self._handle_tap_stream)
         image_pane = pn.pane.HoloViews(image, sizing_mode=self._STRETCH_BOTH)
         self.spectrum_pane = pn.pane.HoloViews(empty_spectrum, sizing_mode=self._STRETCH_BOTH)
-        
-        # Trigger refresh for square display
         self._trigger_refresh(image_pane)
-        
         return pn.Column(
             image_pane,
             self.spectrum_pane,
             sizing_mode=self._STRETCH_BOTH
         )
+
+    def _handle_tap_stream(self, x=None, y=None, **kwargs):
+        """Handle tap events from HoloViews streams for spectrum line."""
+        # Only update if x is valid and changed significantly
+        if x is None:
+            return
+        if self._last_click_x is not None and abs(x - self._last_click_x) < self._click_tolerance:
+            return
+        self._last_click_x = x
+        self._update_spectrum_display(x)
+
+    def _update_spectrum_display(self, x):
+        """Update the spectrum pane with the spectrum at the tapped x position."""
+        # Get spectrum at tapped x position
+        try:
+            spectrum = self.model.dataset.ElectronCount.sel(
+                x=x, method='nearest'
+            )
+            # Ensure the spectrum is 1D by reducing over 'y' if present
+            if 'y' in spectrum.dims:
+                spectrum = spectrum.mean(dim='y')
+        except Exception:
+            return
+        eloss_coords = self.model.dataset.coords[self.model.constants.ELOSS]
+        spectrum_curve = hv.Curve(
+            (eloss_coords, spectrum),
+            kdims=[self.model.constants.ELOSS],
+            vdims=[self.model.constants.ELECTRON_COUNT]
+        ).opts(
+            width=self._SPECTRUM_WIDTH,
+            height=self._SPECTRUM_HEIGHT,
+            color=self.model.colors.RED,
+            line_width=2,
+            xlabel=self._SPECTRUM_X_LABEL,
+            ylabel=self._SPECTRUM_Y_LABEL,
+            title=self._SPECTRUM_TITLE
+        )
+        if self.spectrum_pane is not None:
+            self.spectrum_pane.object = spectrum_curve
     
     @override
     def create_dataset_info(self):

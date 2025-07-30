@@ -1,7 +1,6 @@
 import traceback
 
 from .services import EELSFileProcessor, EELSDataProcessor
-from .handlers import InteractionHandler
 from ..view.eels_plot_factory import EELSPlotFactory
 import panel as pn
 
@@ -31,7 +30,6 @@ class Controller:
         # Initialize services
         self.file_service = EELSFileProcessor(model)
         self.data_service = EELSDataProcessor(self.model)
-        self.interaction_handler = InteractionHandler(model, view)
     
     def handle_file_uploaded(self, filename: str, file_content: bytes):
         """
@@ -56,13 +54,9 @@ class Controller:
         
         if dataset is None:
             # Reset to placeholder on error
-            self.interaction_handler.reset_click_state()
             self.reset_main_layout()
             print(f'Error loading file: {filename}')
             return 
-
-        # Reset interaction state for new file
-        self.interaction_handler.reset_click_state()
         
         # Set dataset in model with type from dataset metadata
         dataset_type = dataset.attrs.get('dataset_type', None)
@@ -71,9 +65,7 @@ class Controller:
         # Create EELS plots based on dataset type
         spectrum_plots_created, spectrum_dataset_info_created = self._create_eels_plot_and_dataset_info(dataset_type)
 
-        # Setup interaction callbacks - use tap instead of hover
-        if hasattr(self.view, 'tap_stream') and self.view.tap_stream:
-            self.interaction_handler.setup_tap_callback(self.view.tap_stream)
+        # (No tap callback setup needed; handled in visualizer if required)
         
         # Update the view with the new plot
         self.update_main_layout(spectrum_plots_created)
@@ -145,16 +137,10 @@ class Controller:
             filename: Name of the removed file
 
         Workflow:
-        - Reset interaction state
         - Remove last dataset info from sidebar
         - Reset main layout to placeholder
         """
         print('File removed', filename)
-        
-        # Reset interaction state
-        self.interaction_handler.reset_click_state()
-        
         self.remove_last_dataset_info_from_sidebar()
-        
         # Reset plot display to placeholder when file is removed
         self.reset_main_layout()

@@ -1,6 +1,5 @@
-import panel as pn, holoviews as hv, traceback
+import panel as pn, holoviews as hv
 
-from .eels_plot_factory import EELSPlotFactory
 from whateels.components import FileDropper
 from typing import TYPE_CHECKING
 
@@ -36,8 +35,8 @@ class View:
         self._loading_placeholder = None
         self._no_file_placeholder = None
         self._error_placeholder = None
-        self._active_plotter = None
-        self._last_dataset_info_component = None
+        self._chosed_spectrum = None
+        self._dataset_info = None
         self._file_dropper = None
         
         self._init_visualization_components()
@@ -81,45 +80,29 @@ class View:
     
 
     @property
-    def active_plotter(self):
+    def chosed_spectrum(self):
         """The currently active plotter/visualizer instance (set after file upload)."""
-        return self._active_plotter
+        return self._chosed_spectrum
 
 
     @property
-    def last_dataset_info_component(self) -> pn.viewable.Viewable:
+    def dataset_info(self) -> pn.viewable.Viewable:
         """Reference to the last dataset info component added to the sidebar."""
-        return self._last_dataset_info_component
+        return self._dataset_info
 
 
-    @last_dataset_info_component.setter
-    def last_dataset_info_component(self, component: pn.viewable.Viewable):
+    @dataset_info.setter
+    def dataset_info(self, component: pn.viewable.Viewable):
         """Set the last dataset info component (must be a Panel Viewable or None)."""
         if component is not None and not isinstance(component, pn.viewable.Viewable):
             raise ValueError("Component must be a Panel Viewable")
-        self._last_dataset_info_component = component
+        self._dataset_info = component
         
 
-    @active_plotter.setter
-    def active_plotter(self, plotter):
+    @chosed_spectrum.setter
+    def chosed_spectrum(self, plotter):
         """Set the active plotter/visualizer instance."""
-        self._active_plotter = plotter
-
-
-    @property
-    def tap_stream(self):
-        """Return the tap stream from the active plotter, if available."""
-        if self._active_plotter and hasattr(self._active_plotter, 'tap_stream'):
-            return self._active_plotter.tap_stream
-        return None
-
-
-    @property
-    def spectrum_pane(self):
-        """Return the spectrum pane from the active plotter, if available."""
-        if self._active_plotter and hasattr(self._active_plotter, 'spectrum_pane'):
-            return self._active_plotter.spectrum_pane
-        return None
+        self._chosed_spectrum = plotter
 
     # --- Private/Internal Setup Methods ---
 
@@ -173,26 +156,3 @@ class View:
             sizing_mode=self._STRETCH_BOTH
         )
         return self._main_container_layout
-
-    def show_single_spectrum(self, visualizer):
-        spectrum_data = visualizer.get_spectrum_data()
-        spectrum_curve = hv.Curve(
-            spectrum_data,
-            kdims=[self.model.constants.ELOSS],
-            vdims=[self.model.constants.ELECTRON_COUNT]
-        ).opts(
-            width=800,
-            height=400,
-            color=self.model.colors.BLACK,
-            line_width=2,
-            xlabel='Energy Loss (eV)',
-            ylabel='Electron Count',
-            title='EELS Spectrum'
-        )
-        spectrum_pane = pn.pane.HoloViews(spectrum_curve, sizing_mode=self._STRETCH_WIDTH)
-        self.update_main_layout(
-            pn.Column(
-                spectrum_pane,
-                sizing_mode=self._STRETCH_BOTH
-            )
-        )
