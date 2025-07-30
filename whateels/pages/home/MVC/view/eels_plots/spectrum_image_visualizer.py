@@ -388,13 +388,13 @@ class SpectrumImageVisualizer(AbstractEELSVisualizer):
             return
 
         now = time.time()
-        last_time = self.hover_candidate.get(self._TIMESTAMP, 0)
+        # last_time = self.hover_candidate.get(self._TIMESTAMP, 0)
         # Only update if at least _HOVER_DEBOUNCE_DELAY seconds have passed since last update
-        if now - last_time >= self._HOVER_DEBOUNCE_DELAY:
-            self.hover_candidate[self._X_AXIS] = coord_x
-            self.hover_candidate[self._Y_AXIS] = coord_y
-            self.hover_candidate[self._TIMESTAMP] = now
-            self._update_create_spectrum(coord_x, coord_y)
+        # if now - last_time >= self._HOVER_DEBOUNCE_DELAY:
+        self.hover_candidate[self._X_AXIS] = coord_x
+        self.hover_candidate[self._Y_AXIS] = coord_y
+        self.hover_candidate[self._TIMESTAMP] = now
+        self._update_create_spectrum(coord_x, coord_y)
 
     def _inconsistent_overlay_opts(self, overlays, x, y):
         """

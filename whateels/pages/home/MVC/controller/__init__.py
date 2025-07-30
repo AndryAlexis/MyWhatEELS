@@ -1,7 +1,7 @@
 import traceback
 
 from .services import EELSFileProcessor, EELSDataProcessor
-from ..view.eels_plot_factory import EELSPlotFactory
+from .eels_plot_factory import EELSPlotFactory
 import panel as pn
 
 from typing import TYPE_CHECKING
