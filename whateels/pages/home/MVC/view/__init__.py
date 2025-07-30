@@ -13,14 +13,14 @@ hv.extension("bokeh", logo=False)
 class View:
     """
     View class for the home page of the WhatEELS application.
-    
-    This class is responsible for:
-    - UI rendering and layout presentation
-    - Managing UI state transitions (placeholders, loading screens, plots)
-    - Coordinating with plot factories for EELS displays
-    
-    The View receives data from the Model and rendering commands from the Controller,
-    but does not make decisions about what to display - it only renders what it's told to.
+
+    Responsibilities:
+    - Render and manage the UI layout and state transitions (placeholders, loading, error, plots)
+    - Instantiate and expose UI components (sidebar, file dropper, main area)
+    - Coordinate with EELS plot factories for visualization
+    - Expose properties for Controller to interact with UI elements
+
+    The View does not make business logic decisions; it only renders what the Controller instructs.
     """
 
     # --- Class-level constants ---
@@ -43,71 +43,95 @@ class View:
         self._init_visualization_components()
 
     # --- Properties ---
+
     @property
     def sidebar(self) -> pn.viewable.Viewable:
+        """Sidebar layout containing the file dropper and additional controls."""
         return self._sidebar_container_layout
+
 
     @property
     def main(self) -> pn.Column:
+        """Main content area layout for displaying plots or placeholders."""
         return self._main_container_layout
+
 
     @property
     def loading_placeholder(self) -> pn.pane.HTML:
+        """HTML placeholder shown while a file is being processed."""
         return self._loading_placeholder
+
 
     @property
     def no_file_placeholder(self) -> pn.pane.HTML:
+        """HTML placeholder shown when no file is loaded."""
         return self._no_file_placeholder
+
 
     @property
     def error_placeholder(self) -> pn.pane.HTML:
+        """HTML placeholder shown when an error occurs."""
         return self._error_placeholder
+
 
     @property
     def file_dropper(self) -> FileDropper:
+        """FileDropper widget for file upload interactions."""
         return self._file_dropper
     
+
     @property
     def active_plotter(self):
+        """The currently active plotter/visualizer instance (set after file upload)."""
         return self._active_plotter
+
 
     @property
     def last_dataset_info_component(self) -> pn.viewable.Viewable:
+        """Reference to the last dataset info component added to the sidebar."""
         return self._last_dataset_info_component
+
 
     @last_dataset_info_component.setter
     def last_dataset_info_component(self, component: pn.viewable.Viewable):
+        """Set the last dataset info component (must be a Panel Viewable or None)."""
         if component is not None and not isinstance(component, pn.viewable.Viewable):
             raise ValueError("Component must be a Panel Viewable")
         self._last_dataset_info_component = component
         
+
     @active_plotter.setter
     def active_plotter(self, plotter):
+        """Set the active plotter/visualizer instance."""
         self._active_plotter = plotter
+
 
     @property
     def tap_stream(self):
-        """Get tap stream from active plotter"""
+        """Return the tap stream from the active plotter, if available."""
         if self._active_plotter and hasattr(self._active_plotter, 'tap_stream'):
             return self._active_plotter.tap_stream
         return None
 
+
     @property
     def spectrum_pane(self):
-        """Get spectrum pane from active plotter"""
+        """Return the spectrum pane from the active plotter, if available."""
         if self._active_plotter and hasattr(self._active_plotter, 'spectrum_pane'):
             return self._active_plotter.spectrum_pane
         return None
 
     # --- Private/Internal Setup Methods ---
+
     def _init_visualization_components(self):
         """
         Initialize main visualization container and placeholders.
-        
-        Creates:
-        - no_file_placeholder: shown when no file loaded
-        - loading_placeholder: shown during file processing  
-        - main_layout: container that switches between states
+
+        Sets up:
+        - no_file_placeholder: shown when no file is loaded
+        - loading_placeholder: shown during file processing
+        - error_placeholder: shown when an error occurs
+        - sidebar and main layout containers
         """
         self._no_file_placeholder = pn.pane.HTML(
             self.model.placeholders.NO_FILE_LOADED,

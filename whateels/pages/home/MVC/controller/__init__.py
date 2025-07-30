@@ -13,9 +13,12 @@ if TYPE_CHECKING:
 class Controller:
     """
     Controller class for the home page of the WhatEELS application.
-    This class orchestrates file upload events and coordinates between services.
-    It delegates specific operations to specialized services while maintaining
-    the overall workflow coordination.
+
+    Responsibilities:
+    - Orchestrate file upload and removal events
+    - Coordinate between services (file processing, data processing, interaction handling)
+    - Manage workflow and UI state transitions by instructing the View
+    - Delegate business logic to specialized services
     """
     def __init__(self, model: "Model", view: "View"):
         self.model = model
@@ -32,11 +35,18 @@ class Controller:
     
     def handle_file_uploaded(self, filename: str, file_content: bytes):
         """
-        🔽 FileDropper Event Handler: Handle file upload from the FileDropper component.
-        
+        Handle file upload event from the FileDropper component.
+
         Args:
             filename: Name of the uploaded file
             file_content: Binary content of the uploaded file
+
+        Workflow:
+        - Show loading placeholder
+        - Process file and update model
+        - Create EELS plots and dataset info
+        - Set up tap/click interaction callback if available
+        - Update main layout and sidebar
         """
         # Show loading screen immediately
         self.show_loading_placeholder_in_main_layout()
@@ -73,14 +83,13 @@ class Controller:
         
     def _create_eels_plot_and_dataset_info(self, dataset_type: str):
         """
-        Create EELS plots based on dataset type.
-        
+        Create EELS plots and dataset info component for the given dataset type.
+
         Args:
-            dataset_type: Type of dataset (SSp, SLi, or SIm)
-            
+            dataset_type: Type of dataset (e.g., SSp, SLi, SIm)
+
         Returns:
-            Panel component with the appropriate plot visualization, or None
-            if an error occurred (in which case the view will already show an error)
+            Tuple of (plot component, dataset info component), or None if error.
         """
         self.eels_plot_factory = EELSPlotFactory(self.model, self)
         chosed_spectrum = self.eels_plot_factory.choose_spectrum(dataset_type)
@@ -96,39 +105,49 @@ class Controller:
         return spectrum_plots_created, spectrum_dataset_info_created
 
     def show_loading_placeholder_in_main_layout(self):
+        """Show the loading placeholder in the main layout."""
         self.view.main.clear()
         self.view.main.append(self.view.loading_placeholder)
         
     def reset_main_layout(self):
+        """Reset the main layout to the no-file placeholder."""
         self.view.main.clear()
         self.view.main.append(self.view.no_file_placeholder)
 
     def update_main_layout(self, plot_component):
+        """Update the main layout with a new plot component."""
         self.view.main.clear()
         self.view.main.append(plot_component)
         
     def show_error_placeholder_in_main_layout(self):
+        """Show the error placeholder in the main layout."""
         self.view.main.clear()
         self.view.main.append(self.view.error_placeholder)
         
     def add_component_to_sidebar_layout(self, component: pn.viewable.Viewable):
+        """Add a component to the sidebar and track it as the last dataset info component."""
         self.view.sidebar.append(component)
         self.view.last_dataset_info_component = component
         
     def remove_last_dataset_info_from_sidebar(self):
+        """Remove the last dataset info component from the sidebar, if present."""
         if self.view.last_dataset_info_component is None:
             return
-        
         if self.view.last_dataset_info_component in self.view.sidebar:
             self.view.sidebar.remove(self.view.last_dataset_info_component)
             self.view.last_dataset_info_component = None
 
     def handle_file_removed(self, filename: str):
         """
-        🔽 FileDropper Event Handler: Handle file removal from the FileDropper component.
-        
+        Handle file removal event from the FileDropper component.
+
         Args:
             filename: Name of the removed file
+
+        Workflow:
+        - Reset interaction state
+        - Remove last dataset info from sidebar
+        - Reset main layout to placeholder
         """
         print('File removed', filename)
         
