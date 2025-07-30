@@ -3,6 +3,7 @@ Spectrum image (datacube) visualization composer.
 """
 
 import panel as pn
+import param
 import holoviews as hv
 import numpy as np
 import time
@@ -18,32 +19,50 @@ hv.extension("bokeh", logo=False)
 
 class SpectrumImageVisualizer(AbstractEELSVisualizer):
     """
-    Interactive spectrum image (datacube) visualization for DM3 files, based on Vanessa class.
+    Interactive spectrum image (datacube) visualization for DM3 files.
+    
+    Features:
+      - Interactive spectrum selection via hover (debounced with _HOVER_DEBOUNCE_DELAY).
+      - Efficient spectrum updates using HoloViews DynamicMap and custom stream.
+      - Powerlaw background fitting and subtraction in selected range.
+      - Responsive Panel layout with stretch sizing.
+      - Customizable range slider and dataset info panel.
+      - Designed for EELS data, based on the Vanessa class architecture.
     """
     
-    _X_AXIS = 'x'
-    _Y_AXIS = 'y'
-    _TIMESTAMP = 'timestamp'
-    _X_RANGE = 'x_range'
-    _Y_RANGE = 'y_range'
-    
-    # Stretch modes for layout
-    _STRETCH_WIDTH = 'stretch_width'
-    _STRETCH_BOTH = 'stretch_both'
-    _STRETCH_HEIGHT = 'stretch_height'
+    # Axis and range keys
+    _X_AXIS = "x"
+    _Y_AXIS = "y"
+    _TIMESTAMP = "timestamp"
+    _X_RANGE = "x_range"
+    _Y_RANGE = "y_range"
 
-    # Plot labels and style constants
-    _LABEL_EXPERIMENTAL = 'Experimental Data'
-    _LABEL_POWERLAW = 'PowerLaw Fit'
-    _LABEL_SUBTRACTION = 'Background Subtraction'
-    _LABEL_INCONSISTENT = 'Inconsistent Data Length'
-    _LABEL_SPECTRUM = 'Spectrum at'
-    _XLABEL = 'Energy Loss'
-    _YLABEL = 'Intensity (A.U.)'
+    # Panel sizing modes
+    _STRETCH_WIDTH = "stretch_width"
+    _STRETCH_BOTH = "stretch_both"
+    _STRETCH_HEIGHT = "stretch_height"
 
-    # Color constants removed; use self.model.colors for all color references
-    _VLINE_DASH = 'dashed'
-    _POWERLAW_DASH = 'solid'
+    # Widget names
+    _WIDGET_RANGE = "Range"
+    _WIDGET_BEAM_ENERGY = "BeamEnergy-E0 keV"
+    _WIDGET_CONV_ANGLE = "Convergence-α mrad"
+
+    # Widget options
+    _WIDGET_OPTIONS = [0, 1, 2, 3, 4, 5]
+    _WIDGET_DEFAULT = 0
+
+    # Plot labels
+    _LABEL_EXPERIMENTAL = "Experimental Data"
+    _LABEL_POWERLAW = "PowerLaw Fit"
+    _LABEL_SUBTRACTION = "Background Subtraction"
+    _LABEL_INCONSISTENT = "Inconsistent Data Length"
+    _LABEL_SPECTRUM = "Spectrum at"
+    _XLABEL = "Energy Loss"
+    _YLABEL = "Intensity (A.U.)"
+
+    # HoloViews style
+    _VLINE_DASH = "dashed"
+    _POWERLAW_DASH = "solid"
     _AREA_ALPHA = 0.7
     _AREA_LINE_ALPHA = 0.3
     _POWERLAW_ALPHA = 0.8
@@ -53,7 +72,27 @@ class SpectrumImageVisualizer(AbstractEELSVisualizer):
     _AREA_LINE_WIDTH = 2
     _POWERLAW_LINE_WIDTH = 2
     _SPECTRUM_HEIGHT = 350
-    _LEGEND_POSITION = 'top_right'
+    _LEGEND_POSITION = "top_right"
+    _HOVER_DEBOUNCE_DELAY = 0.15  # Debounce delay (seconds) for hover spectrum updates
+
+    # Miscellaneous
+    _IMAGE_CMAP = "gray"
+    _IMAGE_COLORBAR = False
+    _IMAGE_TOOLS = ["hover"]
+    _IMAGE_HEIGHT = 400
+    _IMAGE_INVERT_Y = True
+    _IMAGE_RESPONSIVE = False
+    _IMAGE_ASPECT = "equal"
+    _GENERIC_CONTAINER_CLASS = ["generic-container"]
+    _DATASET_INFO_HEADER_CLASS = ["dataset-info-header"]
+    _DATASET_INFO_CLASS = ["dataset-info", "animated"]
+    _DATASET_INFO_TITLE = "<h5 class=\"dataset-info-title\">Dataset Information</h5>"
+    _DATASET_DETAILS_NAME = "Dataset Details"
+    _DATASET_DETAILS_WIDTH = 350
+    _DATASET_DETAILS_HEIGHT = 250
+    _DATASET_DETAILS_POSITION = "center"
+    _DATASET_DETAILS_HEADER = "### More Dataset Details"
+    _DATASET_DETAILS_PLACEHOLDER = "(Add more details here as needed)"
 
     def __init__(self, model):
         self.model = model
@@ -72,7 +111,7 @@ class SpectrumImageVisualizer(AbstractEELSVisualizer):
     # --- Widget Setup ---
     def _setup_widgets(self):
         self.range_slider = pn.widgets.RangeSlider(
-            name='Range',
+            name=self._WIDGET_RANGE,
             start=float(self.e_axis[0]),
             end=float(self.e_axis[-1]),
             value=(float(self.e_axis[0]), float(self.e_axis[-1])),
@@ -81,15 +120,15 @@ class SpectrumImageVisualizer(AbstractEELSVisualizer):
         self.range_slider.param.watch(self._update_range, 'value')
         # Widgets adicionales movidos al panel de info de datos
         self.beam_energy = pn.widgets.Select(
-            name='BeamEnergy-E0 keV',
-            options=[0, 1, 2, 3, 4, 5],
-            value=0,
+            name=self._WIDGET_BEAM_ENERGY,
+            options=self._WIDGET_OPTIONS,
+            value=self._WIDGET_DEFAULT,
             sizing_mode=self._STRETCH_WIDTH
         )
         self.convergence_angle = pn.widgets.Select(
-            name='Convergence-α mrad',
-            options=[0, 1, 2, 3, 4, 5],
-            value=0,
+            name=self._WIDGET_CONV_ANGLE,
+            options=self._WIDGET_OPTIONS,
+            value=self._WIDGET_DEFAULT,
             sizing_mode=self._STRETCH_WIDTH
         )
 
@@ -107,8 +146,18 @@ class SpectrumImageVisualizer(AbstractEELSVisualizer):
             self.model.constants.AXIS_Y: y_coords
         })
         self.image = self._create_image(self.clean_dataset)
-        spec_hv = self._create_spectrum(0, 0, self.range_slider.value)
-        self.spectrum_pane = pn.pane.HoloViews(spec_hv, sizing_mode=self._STRETCH_BOTH)
+        # Use DynamicMap for efficient spectrum updates
+        self.spectrum_stream = streams.Stream.define(
+            self._LABEL_SPECTRUM.replace(" ", ""),
+            x=0,
+            y=0,
+            range_values=(float(self.e_axis[0]), float(self.e_axis[-1]))
+        )()
+        self.spectrum_dynamicmap = hv.DynamicMap(
+            lambda x, y, range_values: self._create_spectrum(x, y, range_values),
+            streams=[self.spectrum_stream]
+        )
+        self.spectrum_pane = pn.pane.HoloViews(self.spectrum_dynamicmap, sizing_mode=self._STRETCH_BOTH)
 
     # --- Callback Setup ---
     def _setup_callbacks(self):
@@ -127,7 +176,7 @@ class SpectrumImageVisualizer(AbstractEELSVisualizer):
             pn.Row(
                 pn.Column(
                     self.image,
-                    css_classes=['generic-container'],
+                    css_classes=self._GENERIC_CONTAINER_CLASS,
                     sizing_mode=self._STRETCH_HEIGHT,
                     margin=(0, 10, 0, 0)
                 ),
@@ -142,7 +191,7 @@ class SpectrumImageVisualizer(AbstractEELSVisualizer):
                         margin=(0, 26, 0, 70)
                     ),
                     sizing_mode=self._STRETCH_BOTH,
-                    css_classes=['generic-container']
+                    css_classes=self._GENERIC_CONTAINER_CLASS
                 ),
                 sizing_mode=self._STRETCH_BOTH,
                 margin=(10, 0, 0, 0)
@@ -159,54 +208,36 @@ class SpectrumImageVisualizer(AbstractEELSVisualizer):
 
         # Main info panel
         header = pn.Row(
-            pn.pane.HTML("<h5 class=\"dataset-info-title\">Dataset Information</h5>", sizing_mode=self._STRETCH_WIDTH),
+            pn.pane.HTML(self._DATASET_INFO_TITLE, sizing_mode=self._STRETCH_WIDTH),
             sizing_mode=self._STRETCH_WIDTH,
-            css_classes=['dataset-info-header']
-        )
-
-        # FloatPanel with more info (initially hidden)
-        float_panel = pn.layout.FloatPanel(
-            pn.Column(
-                pn.pane.Markdown("### More Dataset Details"),
-                pn.pane.Str(f"Shape: {shape}"),
-                pn.pane.Str(f"Beam Energy: {beam_energy} keV"),
-                pn.pane.Str(f"Convergence Angle: {convergence_angle} mrad"),
-                pn.pane.Str(f"Collection Angle: {collection_angle} mrad"),
-                pn.pane.Str(f"(Add more details here as needed)"),
-            ),
-            name="Dataset Details",
-            width=350,
-            height=250,
-            visible=False,
-            contained=False,  # This makes it always on top and modal
-            position="center"
+            css_classes=self._DATASET_INFO_HEADER_CLASS
         )
 
         dataset_info = pn.Column(
             header,
             pn.Spacer(height=5),
             pn.Row(
-                pn.pane.Str(f"Shape:"),
+                pn.pane.Str("Shape:"),
                 pn.pane.Str(shape),
                 sizing_mode=self._STRETCH_WIDTH
             ),
             pn.Row(
-                pn.pane.Str(f"Beam Energy:"),
+                pn.pane.Str("Beam Energy:"),
                 pn.pane.Str(f"{beam_energy} keV"),
                 sizing_mode=self._STRETCH_WIDTH
             ),
             pn.Row(
-                pn.pane.Str(f"Convergence Angle:"),
+                pn.pane.Str("Convergence Angle:"),
                 pn.pane.Str(f"{convergence_angle} mrad"),
                 sizing_mode=self._STRETCH_WIDTH
             ),
             pn.Row(
-                pn.pane.Str(f"Collection Angle:"),
+                pn.pane.Str("Collection Angle:"),
                 pn.pane.Str(f"{collection_angle} mrad"),
                 sizing_mode=self._STRETCH_WIDTH
             ),
             sizing_mode=self._STRETCH_WIDTH,
-            css_classes=['dataset-info', 'animated']
+            css_classes=self._DATASET_INFO_CLASS
         )
         return dataset_info
 
@@ -223,15 +254,15 @@ class SpectrumImageVisualizer(AbstractEELSVisualizer):
         x_axis = np.arange(width)
         y_axis = np.arange(height)
         image = hv.Image((x_axis, y_axis, clean_dataset)).opts(
-            cmap='gray',
-            colorbar=False,
+            cmap=self._IMAGE_CMAP,
+            colorbar=self._IMAGE_COLORBAR,
             xlim=(0, width - 1),
             ylim=(0, height - 1),
-            tools=['hover'],
-            height=400,
-            invert_yaxis=True,
-            responsive=False,
-            aspect='equal'  # Ensure square pixels
+            tools=self._IMAGE_TOOLS,
+            height=self._IMAGE_HEIGHT,
+            invert_yaxis=self._IMAGE_INVERT_Y,
+            responsive=self._IMAGE_RESPONSIVE,
+            aspect=self._IMAGE_ASPECT  # Ensure square pixels
         )
         return image
 
@@ -322,7 +353,6 @@ class SpectrumImageVisualizer(AbstractEELSVisualizer):
         # Plot options
         opts = dict(
             title=f"{self._LABEL_SPECTRUM} ({x}, {y})",
-            height=self._SPECTRUM_HEIGHT,
             responsive=True,
             show_grid=True,
             legend_position=self._LEGEND_POSITION
@@ -345,8 +375,8 @@ class SpectrumImageVisualizer(AbstractEELSVisualizer):
         self.last_selected[self._X_AXIS] = x_idx
         self.last_selected[self._Y_AXIS] = y_idx
 
-        # Update the spectrum pane with the new spectrum
-        self.spectrum_pane.object = self._create_spectrum(x_idx, y_idx, self.range_slider.value)
+        # Update the DynamicMap stream with new values
+        self.spectrum_stream.event(x=x_idx, y=y_idx, range_values=self.range_slider.value)
 
     # --- Hover Callback ---
     def _on_hover(self, **kwargs):
@@ -357,11 +387,14 @@ class SpectrumImageVisualizer(AbstractEELSVisualizer):
         if coord_x is None or coord_y is None:
             return
 
-        self.hover_candidate[self._X_AXIS] = coord_x
-        self.hover_candidate[self._Y_AXIS] = coord_y
-        self.hover_candidate[self._TIMESTAMP] = time.time()
-        
-        self._update_create_spectrum(self.hover_candidate[self._X_AXIS], self.hover_candidate[self._Y_AXIS])
+        now = time.time()
+        last_time = self.hover_candidate.get(self._TIMESTAMP, 0)
+        # Only update if at least _HOVER_DEBOUNCE_DELAY seconds have passed since last update
+        if now - last_time >= self._HOVER_DEBOUNCE_DELAY:
+            self.hover_candidate[self._X_AXIS] = coord_x
+            self.hover_candidate[self._Y_AXIS] = coord_y
+            self.hover_candidate[self._TIMESTAMP] = now
+            self._update_create_spectrum(coord_x, coord_y)
 
     def _inconsistent_overlay_opts(self, overlays, x, y):
         """
@@ -369,22 +402,14 @@ class SpectrumImageVisualizer(AbstractEELSVisualizer):
         """
         return overlays.opts(
             title=f"{self._LABEL_SPECTRUM} ({x}, {y}) - {self._LABEL_INCONSISTENT}",
-            height=self._SPECTRUM_HEIGHT,
             responsive=True,
             show_grid=True,
             legend_position=self._LEGEND_POSITION
         )
 
-    # --- Debounce Callback ---
-    # def _debounce_callback(self):
-    #     if self.hover_candidate[self._X_AXIS] is None:
-    #         return
-    #     if time.time() - self.hover_candidate[self._TIMESTAMP] > 0.001:
-    #         self._update_create_spectrum(self.hover_candidate[self._X_AXIS], self.hover_candidate[self._Y_AXIS])
-    #         self.hover_candidate[self._X_AXIS] = None
-
     # --- Range Slider Callback ---
     def _update_range(self, event=None):
         x = self.last_selected[self._X_AXIS]
         y = self.last_selected[self._Y_AXIS]
-        self.spectrum_pane.object = self._create_spectrum(x, y, self.range_slider.value)
+        # Update the DynamicMap stream with new range values
+        self.spectrum_stream.event(x=x, y=y, range_values=self.range_slider.value)
