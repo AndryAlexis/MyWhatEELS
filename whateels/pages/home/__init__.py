@@ -9,7 +9,7 @@ class Home(CustomPage):
 
     def __init__(self, title: str = None):
         self.model = Model()
-        self.view = View(self.model)  # No callbacks yet
+        self.view = View(self.model)
         self.controller = Controller(self.model, self.view)
         
         title = title or self.model.constants.TITLE

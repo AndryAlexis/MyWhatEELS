@@ -1,7 +1,14 @@
-from ..model import Model
-from ..view import View
+import traceback
+
 from .services import EELSFileProcessor, EELSDataProcessor
 from .handlers import InteractionHandler
+from ..view.eels_plot_factory import EELSPlotFactory
+import panel as pn
+
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from ..model import Model
+    from ..view import View
 
 class Controller:
     """
@@ -10,7 +17,7 @@ class Controller:
     It delegates specific operations to specialized services while maintaining
     the overall workflow coordination.
     """
-    def __init__(self, model: Model, view: View):
+    def __init__(self, model: "Model", view: "View"):
         self.model = model
         self.view = view
         
@@ -32,7 +39,7 @@ class Controller:
             file_content: Binary content of the uploaded file
         """
         # Show loading screen immediately
-        self.view.show_loading()
+        self.show_loading_placeholder_in_main_layout()
         
         # Delegate to file service
         dataset = self.file_service.process_upload(filename, file_content)
@@ -40,7 +47,7 @@ class Controller:
         if dataset is None:
             # Reset to placeholder on error
             self.interaction_handler.reset_click_state()
-            self.view.reset_main_layout()
+            self.reset_main_layout()
             print(f'Error loading file: {filename}')
             return 
 
@@ -51,29 +58,70 @@ class Controller:
         dataset_type = dataset.attrs.get('dataset_type', None)
         self.model.set_dataset(dataset, dataset_type)
         
-        # Create plots and dataset info based on dataset type
-        eels_plots, spectrum_dataset_info = self.view.create_eels_plot(self.model.dataset_type)
-        
-        # If dataset info creation failed, view already shows error so we're done
-        if spectrum_dataset_info is None:
-            print(f'Error visualizing file: {filename}')
-            return
-        # If plots creation failed, view already shows error so we're done
-        if eels_plots is None:
-            print(f'Error visualizing file: {filename}')
-            return
-            
-            
-        
+        # Create EELS plots based on dataset type
+        spectrum_plots_created, spectrum_dataset_info_created = self._create_eels_plot_and_dataset_info(dataset_type)
+
         # Setup interaction callbacks - use tap instead of hover
         if hasattr(self.view, 'tap_stream') and self.view.tap_stream:
             self.interaction_handler.setup_tap_callback(self.view.tap_stream)
         
         # Update the view with the new plot
-        self.view.update_main_layout(eels_plots)
-        self.view.add_component_to_sidebar_layout(spectrum_dataset_info)
+        self.update_main_layout(spectrum_plots_created)
+        self.add_component_to_sidebar_layout(spectrum_dataset_info_created)
 
         print(f'Successfully loaded and visualized: {filename}')
+        
+    def _create_eels_plot_and_dataset_info(self, dataset_type: str):
+        """
+        Create EELS plots based on dataset type.
+        
+        Args:
+            dataset_type: Type of dataset (SSp, SLi, or SIm)
+            
+        Returns:
+            Panel component with the appropriate plot visualization, or None
+            if an error occurred (in which case the view will already show an error)
+        """
+        self.eels_plot_factory = EELSPlotFactory(self.model, self)
+        chosed_spectrum = self.eels_plot_factory.choose_spectrum(dataset_type)
+        if chosed_spectrum is None:
+            traceback.print_exc()
+            self.show_error_placeholder_in_main_layout()
+            return
+        # Store the active plotter for interaction handling
+        self.view.active_plotter = chosed_spectrum
+        spectrum_plots_created = chosed_spectrum.create_plots()
+        spectrum_dataset_info_created = chosed_spectrum.create_dataset_info()
+
+        return spectrum_plots_created, spectrum_dataset_info_created
+
+    def show_loading_placeholder_in_main_layout(self):
+        self.view.main.clear()
+        self.view.main.append(self.view.loading_placeholder)
+        
+    def reset_main_layout(self):
+        self.view.main.clear()
+        self.view.main.append(self.view.no_file_placeholder)
+
+    def update_main_layout(self, plot_component):
+        self.view.main.clear()
+        self.view.main.append(plot_component)
+        
+    def show_error_placeholder_in_main_layout(self):
+        self.view.main.clear()
+        self.view.main.append(self.view.error_placeholder)
+        
+    def add_component_to_sidebar_layout(self, component: pn.viewable.Viewable):
+        self.view.sidebar.append(component)
+        self.view.last_dataset_info_component = component
+        
+    def remove_last_dataset_info_from_sidebar(self):
+        if self.view.last_dataset_info_component is None:
+            return
+        
+        if self.view.last_dataset_info_component in self.view.sidebar:
+            self.view.sidebar.remove(self.view.last_dataset_info_component)
+            self.view.last_dataset_info_component = None
 
     def handle_file_removed(self, filename: str):
         """
@@ -87,12 +135,7 @@ class Controller:
         # Reset interaction state
         self.interaction_handler.reset_click_state()
         
-        self.view.remove_last_dataset_info_from_sidebar()
+        self.remove_last_dataset_info_from_sidebar()
         
         # Reset plot display to placeholder when file is removed
-        self.view.reset_main_layout()
-        # Limpiar información de datos del sidebar cuando se elimina el archivo
-        try:
-            self.view._dataset_info_pane.clear()
-        except Exception:
-            pass
+        self.reset_main_layout()
