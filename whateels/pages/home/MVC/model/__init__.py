@@ -10,7 +10,6 @@ class Model:
     def __init__(self):
         # State attributes
         self._dataset: xr.Dataset | None = None  # Loaded EELS dataset
-        self._dataset_type = None                # Type of loaded dataset (e.g., 'dm3', 'dm4')
 
         # Shared configuration and constants
         self._constants = Constants()
@@ -21,15 +20,6 @@ class Model:
     @property
     def dataset(self) -> xr.Dataset | None:
         return self._dataset
-    
-    @property
-    def dataset_type(self) -> str | None:
-        return self._dataset_type
-
-    def set_dataset(self, dataset: xr.Dataset, dataset_type: str = None):
-        self._dataset = dataset
-        self._dataset_type = dataset_type
-
     @property
     def constants(self) -> Constants:
         return self._constants
@@ -42,4 +32,9 @@ class Model:
     @property
     def placeholders(self) -> Placeholders:
         return self._placeholders
+    
+    @dataset.setter
+    def dataset(self, dataset: xr.Dataset | None):
+        """Set the EELS dataset and update any dependent state."""
+        self._dataset = dataset
     

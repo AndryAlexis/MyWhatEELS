@@ -57,13 +57,12 @@ class Controller:
             self.reset_main_layout()
             print(f'Error loading file: {filename}')
             return 
-        
-        # Set dataset in model with type from dataset metadata
-        dataset_type = dataset.attrs.get('dataset_type', None)
-        self.model.set_dataset(dataset, dataset_type)
+
+        # Set dataset in model
+        self.model.dataset = dataset
         
         # Create EELS plots based on dataset type
-        spectrum_plots_created, spectrum_dataset_info_created = self._create_eels_plot_and_dataset_info(dataset_type)
+        spectrum_plots_created, spectrum_dataset_info_created = self._create_eels_plot_and_dataset_info(self.model.dataset.attrs.get('dataset_type', None))
 
         # (No tap callback setup needed; handled in visualizer if required)
         
@@ -121,7 +120,7 @@ class Controller:
         self.view.sidebar.append(component)
         self.view.last_dataset_info_component = component
         
-    def remove_last_dataset_info_from_sidebar(self):
+    def remove_dataset_info_from_sidebar(self):
         """Remove the last dataset info component from the sidebar, if present."""
         if self.view.last_dataset_info_component is None:
             return
@@ -141,6 +140,6 @@ class Controller:
         - Reset main layout to placeholder
         """
         print('File removed', filename)
-        self.remove_last_dataset_info_from_sidebar()
+        self.remove_dataset_info_from_sidebar()
         # Reset plot display to placeholder when file is removed
         self.reset_main_layout()
