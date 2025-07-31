@@ -11,26 +11,11 @@ from whateels.helpers import TempFile, DM_EELS_Reader
 from .eels_data_processor import EELSDataProcessor
 
 class EELSFileProcessor:
-    def dict_to_json(self, dictionary):
-        """
-        Convert a dictionary to a JSON string. Handles non-serializable values gracefully.
-        """
-        import json
-        def default_serializer(obj):
-            try:
-                return str(obj)
-            except Exception:
-                return '<unserializable>'
-        try:
-            return json.dumps(dictionary, default=default_serializer, indent=2)
-        except Exception as e:
-            print(f"Error serializing dictionary to JSON: {e}")
-            return '{}'
     def print_spectrum_image_attributes(self, spectrum_image):
         """
         Print all attributes of the spectrum_image object for debugging.
         """
-        print("--- spectrum_image attributes ---")
+        print("--- spectrum_image attributes ----------------------------------")
         dictionary = {}
         for attr in dir(spectrum_image):
             # Skip private/protected and methods
@@ -44,7 +29,7 @@ class EELSFileProcessor:
                 dictionary[attr] = value
             except Exception as e:
                 print(f"{attr}: <error reading attribute: {e}>")
-        print("--- end of spectrum_image attributes ---")
+        print("--- end of spectrum_image attributes -------------------------")
         return dictionary
     """
     Handles DM3/DM4 file I/O and orchestrates file-to-dataset processing.
@@ -94,6 +79,8 @@ class EELSFileProcessor:
             # Print all attributes for debugging
             attributes = self.print_spectrum_image_attributes(spectrum_image)
             print(attributes)
+            
+            
 
             # json_representation = self.dict_to_json(attributes)
             # print(f"JSON Representation: {json_representation}")

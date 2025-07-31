@@ -51,7 +51,19 @@ class DM_EELS_data(IDM_EELS_DataHandler):
             _logger.exception(message)
             raise DMEmptyInfoDictionary(message)
         try:
-            self.image_dict = infoDict["ImageList"]
+            # Only keep entries that have both 'ImageData' and 'ImageTags' keys, and pass all real-image filters
+            all_blocks = infoDict["ImageList"]
+            self.image_dict = {
+                k: v for k, v in all_blocks.items()
+                if (
+                    isinstance(v, dict)
+                    and 'ImageData' in v
+                    and 'ImageTags' in v
+                    and isinstance(v['ImageTags'], dict)
+                    and len(v['ImageTags']) > 0
+                    and not (len(v['ImageTags']) == 1 and 'GMS Version' in v['ImageTags'])
+                )
+            }
         except Exception:
             message = f"The dictionary provided after parsing the file does not contain spectral information.\n{infoDict.keys()}"
             _logger.exception(message)
