@@ -93,9 +93,10 @@ class EELSFileProcessor:
             spectrum_image = DM_EELS_Reader(filepath).read_data()
             # Print all attributes for debugging
             attributes = self.print_spectrum_image_attributes(spectrum_image)
+            print(attributes)
 
-            json_representation = self.dict_to_json(attributes)
-            print(f"JSON Representation: {json_representation}")
+            # json_representation = self.dict_to_json(attributes)
+            # print(f"JSON Representation: {json_representation}")
 
             # Get data and energy axis
             electron_count_data = spectrum_image.data

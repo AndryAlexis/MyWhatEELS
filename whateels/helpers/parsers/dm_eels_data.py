@@ -8,6 +8,19 @@ from ...errors import *
 _logger = Logger.get_logger("dm_eels_data.log", __name__)
 
 class DM_EELS_data(IDM_EELS_DataHandler):
+    def get_real_images(self):
+        """
+        Devuelve un diccionario solo con las imágenes reales, ignorando previews o metadatos.
+        Criterio: ignora imágenes cuya forma (shape) tenga alguna dimensión < 100.
+        """
+        real_images = {}
+        for k, v in self.image_dict.items():
+            dims = v.get('ImageData', {}).get('Dimensions', {})
+            shape = tuple(dims.values())
+            # Si alguna dimensión es menor que 100, probablemente no es una imagen real
+            if shape and all(dim >= 100 for dim in shape):
+                real_images[k] = v
+        return real_images
     """
     The idea of this class is to extract relevant EELS data from the
     parsed dictionary. It acts as a handler, as it can retrieve the
@@ -24,30 +37,34 @@ class DM_EELS_data(IDM_EELS_DataHandler):
         10: "uint16",
         11: "uint32",
         12: "float64",
+        23: "float32"
     }
 
     def get_file_data(self, file, infoDict=None):
-        """This method gets the opened file and the parsed info dict,
-        so we can actually extract the required information and use it
-        to our advantage
+        """
+        Store all image metadata from the parsed info dictionary.
+        Collects all images into self.image_dict for later access.
         """
         self.f = file  # An opened file, handled from the factory later on.
         if not infoDict:
-            message = f"Expected an informaction dictionary from parser.\
-                None provided : {infoDict =}"
+            message = f"Expected an informaction dictionary from parser. None provided : {infoDict =}"
             _logger.exception(message)
             raise DMEmptyInfoDictionary(message)
         try:
-            imageKeys = list(infoDict["ImageList"].keys())
-        except:
-            message = f"The dictionary provided after parsing the file does not\
-                contain spectral information.\n{infoDict.keys()}"
+            self.image_dict = infoDict["ImageList"]
+        except Exception:
+            message = f"The dictionary provided after parsing the file does not contain spectral information.\n{infoDict.keys()}"
             _logger.exception(message)
             raise DMNonEelsError(message)
+        # For backward compatibility, set the first image as spectralInfo
+        imageKeys = list(self.image_dict.keys())
+        self.spectralInfo = self.image_dict[imageKeys[0]] if imageKeys else None
 
-        # With this, we avoid the selection of the thumbnail info ...
-        imIDx = 1 if len(imageKeys) > 1 else 0  # Image index to be selected
-        self.spectralInfo = infoDict["ImageList"][imageKeys[imIDx]]
+    def get_all_images(self):
+        """
+        Returns a dict of all images parsed from the file, each with its metadata.
+        """
+        return self.image_dict
 
     def _recursively_add_key(self, infoD, keylist):
         """Method used to expand the dictionary recursevely, if a keyError is raised during
