@@ -11,26 +11,6 @@ from whateels.helpers import TempFile, DM_EELS_Reader
 from .eels_data_processor import EELSDataProcessor
 
 class EELSFileProcessor:
-    def print_spectrum_image_attributes(self, spectrum_image):
-        """
-        Print all attributes of the spectrum_image object for debugging.
-        """
-        print("--- spectrum_image attributes ----------------------------------")
-        dictionary = {}
-        for attr in dir(spectrum_image):
-            # Skip private/protected and methods
-            if attr.startswith("_"):
-                continue
-            try:
-                value = getattr(spectrum_image, attr)
-                # Skip methods
-                if callable(value):
-                    continue
-                dictionary[attr] = value
-            except Exception as e:
-                print(f"{attr}: <error reading attribute: {e}>")
-        print("--- end of spectrum_image attributes -------------------------")
-        return dictionary
     """
     Handles DM3/DM4 file I/O and orchestrates file-to-dataset processing.
     
@@ -66,7 +46,53 @@ class EELSFileProcessor:
                 print(f"Error during file upload processing: {e}")
                 traceback.print_exc()
                 return None
+            
+    def extract_all_spectrum_image_attributes(self, spectrum_image):
+        dictionary = {}
+        for attr in dir(spectrum_image):
+            # Skip private/protected and methods
+            if attr.startswith("_"):
+                continue
+            try:
+                value = getattr(spectrum_image, attr)
+                # Skip methods
+                if callable(value):
+                    continue
+                dictionary[attr] = value
+            except Exception as e:
+                print(f"{attr}: <error reading attribute: {e}>")
+        return dictionary
     
+    def _become_json_format(self, dictionary):
+        """Convert dictionary to JSON format, handling numpy arrays and non-serializable objects."""
+        import json
+        def convert(obj):
+            if isinstance(obj, np.ndarray):
+                return obj.tolist()
+            if isinstance(obj, (np.generic,)):
+                return obj.item()
+            if isinstance(obj, dict):
+                return {k: convert(v) for k, v in obj.items()}
+            if isinstance(obj, (list, tuple)):
+                return [convert(i) for i in obj]
+            # Handle non-serializable objects (e.g., file handles)
+            try:
+                json.dumps(obj)
+            except (TypeError, OverflowError):
+                return f"<{type(obj).__name__} object>"
+            return obj
+        return json.dumps(convert(dictionary), indent=4, sort_keys=True)
+    
+    def _generate_json_file(self, filename, json_representation):
+        """Generate a JSON file from the given JSON representation in the project root."""
+        json_filename = f"{Path(filename).stem}.json"
+        # Find the project root (assume it's two levels up from this file)
+        project_root = Path(__file__).resolve().parents[6]
+        json_filepath = project_root / json_filename
+
+        with open(json_filepath, 'w') as json_file:
+            json_file.write(json_representation)
+
     def load_dm_file(self, filepath):
         """Load DM3/DM4 file and convert to xarray dataset with metadata."""
         try:
@@ -77,13 +103,11 @@ class EELSFileProcessor:
             # Use the DM_EELS_Reader from the whatEELS library
             spectrum_image = DM_EELS_Reader(filepath).read_data()
             # Print all attributes for debugging
-            attributes = self.print_spectrum_image_attributes(spectrum_image)
-            print(attributes)
-            
-            
+            attributes = self.extract_all_spectrum_image_attributes(spectrum_image)
 
-            # json_representation = self.dict_to_json(attributes)
-            # print(f"JSON Representation: {json_representation}")
+            json_representation = self._become_json_format(attributes)
+
+            self._generate_json_file("data.json", json_representation)
 
             # Get data and energy axis
             electron_count_data = spectrum_image.data

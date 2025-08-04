@@ -8,19 +8,6 @@ from ...errors import *
 _logger = Logger.get_logger("dm_eels_data.log", __name__)
 
 class DM_EELS_data(IDM_EELS_DataHandler):
-    def get_real_images(self):
-        """
-        Devuelve un diccionario solo con las imágenes reales, ignorando previews o metadatos.
-        Criterio: ignora imágenes cuya forma (shape) tenga alguna dimensión < 100.
-        """
-        real_images = {}
-        for k, v in self.image_dict.items():
-            dims = v.get('ImageData', {}).get('Dimensions', {})
-            shape = tuple(dims.values())
-            # Si alguna dimensión es menor que 100, probablemente no es una imagen real
-            if shape and all(dim >= 100 for dim in shape):
-                real_images[k] = v
-        return real_images
     """
     The idea of this class is to extract relevant EELS data from the
     parsed dictionary. It acts as a handler, as it can retrieve the
@@ -52,8 +39,10 @@ class DM_EELS_data(IDM_EELS_DataHandler):
             raise DMEmptyInfoDictionary(message)
         try:
             # Only keep entries that have both 'ImageData' and 'ImageTags' keys, and pass all real-image filters
+            print(infoDict)
             all_blocks = infoDict["ImageList"]
-            self.image_dict = {
+            
+            self.spectrum_images = {
                 k: v for k, v in all_blocks.items()
                 if (
                     isinstance(v, dict)
@@ -69,14 +58,14 @@ class DM_EELS_data(IDM_EELS_DataHandler):
             _logger.exception(message)
             raise DMNonEelsError(message)
         # For backward compatibility, set the first image as spectralInfo
-        imageKeys = list(self.image_dict.keys())
-        self.spectralInfo = self.image_dict[imageKeys[0]] if imageKeys else None
+        imageKeys = list(self.spectrum_images.keys())
+        self.spectralInfo = self.spectrum_images[imageKeys[0]] if imageKeys else None
 
     def get_all_images(self):
         """
         Returns a dict of all images parsed from the file, each with its metadata.
         """
-        return self.image_dict
+        return self.spectrum_images
 
     def _recursively_add_key(self, infoD, keylist):
         """Method used to expand the dictionary recursevely, if a keyError is raised during
