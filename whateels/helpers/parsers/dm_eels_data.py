@@ -1,5 +1,6 @@
 
 import numpy as np
+import json
 from typing import List
 from ...helpers.dm_file_reader.abstract_classes import IDM_EELS_DataHandler
 from ..logging import Logger
@@ -38,8 +39,17 @@ class DM_EELS_data(IDM_EELS_DataHandler):
             _logger.exception(message)
             raise DMEmptyInfoDictionary(message)
         try:
+            # TODO DELETE COMMENTED CODE
             # Only keep entries that have both 'ImageData' and 'ImageTags' keys, and pass all real-image filters
-            print(infoDict)
+            """print(infoDict)"""
+            # Save infoDict to JSON file
+            """try:
+                with open('raw_data.json', 'w') as json_file:
+                    json.dump(infoDict, json_file, indent=4, default=str)
+                _logger.info("Successfully saved infoDict to data.json")
+            except Exception as e:
+                _logger.warning(f"Could not save infoDict to JSON: {e}") """
+            
             all_blocks = infoDict["ImageList"]
             
             self.spectrum_images = {
