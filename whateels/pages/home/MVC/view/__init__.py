@@ -38,6 +38,7 @@ class View:
         self._chosed_spectrum = None
         self._dataset_info = None
         self._file_dropper = None
+        self._float_panel = None
         
         self._init_visualization_components()
 
@@ -89,6 +90,11 @@ class View:
     def dataset_info(self) -> pn.viewable.Viewable:
         """Reference to the last dataset info component added to the sidebar."""
         return self._dataset_info
+    
+    @property
+    def float_panel(self) -> pn.layout.FloatPanel:
+        """FloatPanel for displaying additional information or controls."""
+        return self._float_panel
 
 
     @dataset_info.setter
@@ -133,6 +139,15 @@ class View:
         )
         self._sidebar_container_layout = self._sidebar_layout()
         self._main_container_layout = self._main_layout()
+        
+        self._float_panel = pn.layout.FloatPanel(
+            position='center',
+            width=300,
+            height=200,
+            name='Image info',
+            contained=False,
+            status='closed',
+        )
 
     def _sidebar_layout(self):
         file_dropper = FileDropper(

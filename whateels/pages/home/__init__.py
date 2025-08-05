@@ -16,6 +16,6 @@ class Home(CustomPage):
         
         super().__init__(
             title=title,
-            main=[self.view.main],
+            main=[self.view.main, self.view.float_panel],
             sidebar=[self.view.sidebar],
         )

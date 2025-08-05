@@ -89,7 +89,7 @@ class Controller:
             self.show_error_placeholder_in_main_layout()
             return
         # Store the active plotter for interaction handling
-        self.view.active_plotter = chosed_spectrum
+        self.view.chosed_spectrum = chosed_spectrum
         spectrum_plots_created = chosed_spectrum.create_plots()
         spectrum_dataset_info_created = chosed_spectrum.create_dataset_info()
 
@@ -127,6 +127,19 @@ class Controller:
         if self.view.last_dataset_info_component in self.view.sidebar:
             self.view.sidebar.remove(self.view.last_dataset_info_component)
             self.view.last_dataset_info_component = None
+            
+    def toggle_float_panel(self):
+        """
+        Toggle the visibility of the float panel.
+        If the panel is closed, open it with the current active plotter.
+        If the panel is open, close it.
+        """
+        if self.view._float_panel.status == 'closed':
+            if self.view.chosed_spectrum is not None:
+                self.view._float_panel.content = self.view.chosed_spectrum.float_panel_content
+            else:
+                self.view._float_panel.content = pn.pane.HTML("No active plotter available.")
+        self.view._float_panel.toggle()
 
     def handle_file_removed(self, filename: str):
         """
