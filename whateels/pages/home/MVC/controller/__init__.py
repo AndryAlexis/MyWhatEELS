@@ -1,6 +1,7 @@
 import traceback
 
 from .services import EELSFileProcessor, EELSDataProcessor
+from .managers import LayoutManager
 from .eels_plot_factory import EELSPlotFactory
 import panel as pn
 
@@ -27,9 +28,10 @@ class Controller:
         self.view.file_dropper.on_file_uploaded_callback = self.handle_file_uploaded
         self.view.file_dropper.on_file_removed_callback = self.handle_file_removed
         
-        # Initialize services
+        # Initialize services and managers
         self.file_service = EELSFileProcessor(model)
         self.data_service = EELSDataProcessor(self.model)
+        self.layout_manager = LayoutManager(view)
     
     def handle_file_uploaded(self, filename: str, file_content: bytes):
         """
@@ -47,14 +49,14 @@ class Controller:
         - Update main layout and sidebar
         """
         # Show loading screen immediately
-        self.show_loading_placeholder_in_main_layout()
+        self.layout_manager.show_loading_placeholder_in_main_layout()
         
         # Delegate to file service
         dataset = self.file_service.process_upload(filename, file_content)
         
         if dataset is None:
             # Reset to placeholder on error
-            self.reset_main_layout()
+            self.layout_manager.reset_main_layout()
             print(f'Error loading file: {filename}')
             return 
 
@@ -67,8 +69,8 @@ class Controller:
         # (No tap callback setup needed; handled in visualizer if required)
         
         # Update the view with the new plot
-        self.update_main_layout(spectrum_plots_created)
-        self.add_component_to_sidebar_layout(spectrum_dataset_info_created)
+        self.layout_manager.update_main_layout(spectrum_plots_created)
+        self.layout_manager.add_component_to_sidebar_layout(spectrum_dataset_info_created)
 
         print(f'Successfully loaded and visualized: {filename}')
         
@@ -86,7 +88,7 @@ class Controller:
         chosed_spectrum = self.eels_plot_factory.choose_spectrum(dataset_type)
         if chosed_spectrum is None:
             traceback.print_exc()
-            self.show_error_placeholder_in_main_layout()
+            self.layout_manager.show_error_placeholder_in_main_layout()
             return
         # Store the active plotter for interaction handling
         self.view.chosed_spectrum = chosed_spectrum
@@ -95,51 +97,12 @@ class Controller:
 
         return spectrum_plots_created, spectrum_dataset_info_created
 
-    def show_loading_placeholder_in_main_layout(self):
-        """Show the loading placeholder in the main layout."""
-        self.view.main.clear()
-        self.view.main.append(self.view.loading_placeholder)
-        
-    def reset_main_layout(self):
-        """Reset the main layout to the no-file placeholder."""
-        self.view.main.clear()
-        self.view.main.append(self.view.no_file_placeholder)
-
-    def update_main_layout(self, plot_component):
-        """Update the main layout with a new plot component."""
-        self.view.main.clear()
-        self.view.main.append(plot_component)
-        
-    def show_error_placeholder_in_main_layout(self):
-        """Show the error placeholder in the main layout."""
-        self.view.main.clear()
-        self.view.main.append(self.view.error_placeholder)
-        
-    def add_component_to_sidebar_layout(self, component: pn.viewable.Viewable):
-        """Add a component to the sidebar and track it as the last dataset info component."""
-        self.view.sidebar.append(component)
-        self.view.last_dataset_info_component = component
-        
-    def remove_dataset_info_from_sidebar(self):
-        """Remove the last dataset info component from the sidebar, if present."""
-        if self.view.last_dataset_info_component is None:
-            return
-        if self.view.last_dataset_info_component in self.view.sidebar:
-            self.view.sidebar.remove(self.view.last_dataset_info_component)
-            self.view.last_dataset_info_component = None
-            
     def toggle_float_panel(self):
         """
         Toggle the visibility of the float panel.
-        If the panel is closed, open it with the current active plotter.
-        If the panel is open, close it.
+        Delegates to the layout manager.
         """
-        if self.view._float_panel.status == 'closed':
-            if self.view.chosed_spectrum is not None:
-                self.view._float_panel.content = self.view.chosed_spectrum.float_panel_content
-            else:
-                self.view._float_panel.content = pn.pane.HTML("No active plotter available.")
-        self.view._float_panel.toggle()
+        self.layout_manager.toggle_float_panel()
 
     def handle_file_removed(self, filename: str):
         """
@@ -153,6 +116,6 @@ class Controller:
         - Reset main layout to placeholder
         """
         print('File removed', filename)
-        self.remove_dataset_info_from_sidebar()
+        self.layout_manager.remove_dataset_info_from_sidebar()
         # Reset plot display to placeholder when file is removed
-        self.reset_main_layout()
+        self.layout_manager.reset_main_layout()

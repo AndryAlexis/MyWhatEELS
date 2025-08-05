@@ -91,6 +91,7 @@ class View:
         """Reference to the last dataset info component added to the sidebar."""
         return self._dataset_info
     
+
     @property
     def float_panel(self) -> pn.layout.FloatPanel:
         """FloatPanel for displaying additional information or controls."""
