@@ -148,6 +148,13 @@ class View:
             name='Image info',
             contained=False,
             status='closed',
+            config={
+                'z-index': 9999,  # High z-index to appear over everything
+                'resizeit': {'handles': 'n, e, s, w, ne, se, sw, nw'},  # Resize handles
+                'dragit': {'containment': False},  # Allow dragging outside container
+                'maximizable': True,  # Add maximize button
+                'minimizable': True,  # Add minimize button
+            }
         )
 
     def _sidebar_layout(self):

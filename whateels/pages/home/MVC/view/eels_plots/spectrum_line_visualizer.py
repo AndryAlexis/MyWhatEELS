@@ -9,7 +9,11 @@ import xarray as xr
 
 from holoviews import streams
 from .abstract_eels_visualizer import AbstractEELSVisualizer
-from typing import override
+from typing import override, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from ...model import Model
+    from ...controller import Controller
 
 # Initialize HoloViews with Bokeh backend
 hv.extension("bokeh", logo=False)
@@ -36,9 +40,10 @@ class SpectrumLineVisualizer(AbstractEELSVisualizer):
     _SPECTRUM_WIDTH = 600
     _SPECTRUM_HEIGHT = 300
     
-    def __init__(self, model):
+    def __init__(self, model: "Model", controller: "Controller"):
         print("Initializing DM4Plots")
         self.model = model
+        self.controller = controller  # Optional for this visualizer
         self.tap_stream = None
         self.spectrum_pane = None
         # For tap/click throttling

@@ -14,6 +14,11 @@ from holoviews import streams
 from .abstract_eels_visualizer import AbstractEELSVisualizer
 from typing import override
 
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from ...model import Model
+    from ...controller import Controller
+
 # Initialize HoloViews with Bokeh backend
 hv.extension("bokeh", logo=False)
 
@@ -94,14 +99,15 @@ class SpectrumImageVisualizer(AbstractEELSVisualizer):
     _DATASET_DETAILS_HEADER = "### More Dataset Details"
     _DATASET_DETAILS_PLACEHOLDER = "(Add more details here as needed)"
 
-    def __init__(self, model):
-        self.model = model
-        self.image = None
-        self.clean_dataset = None
-        self.e_axis = self.model.dataset.coords[self.model.constants.ELOSS].values
-        self.last_selected = {self._X_AXIS: 0, self._Y_AXIS: 0}
-        self.hover_candidate = {self._X_AXIS: None, self._Y_AXIS: None, self._TIMESTAMP: 0}
-        self.current_ranges = {self._X_RANGE: None, self._Y_RANGE: None}
+    def __init__(self, model: "Model", controller: "Controller") -> None:
+        self._model = model
+        self._controller = controller
+        self._image = None
+        self._clean_dataset = None
+        self._e_axis = self._model.dataset.coords[self._model.constants.ELOSS].values
+        self._last_selected = {self._X_AXIS: 0, self._Y_AXIS: 0}
+        self._hover_candidate = {self._X_AXIS: None, self._Y_AXIS: None, self._TIMESTAMP: 0}
+        self._current_ranges = {self._X_RANGE: None, self._Y_RANGE: None}
 
         # Setup widgets, plots, and callbacks
         self._setup_widgets()
@@ -112,9 +118,9 @@ class SpectrumImageVisualizer(AbstractEELSVisualizer):
     def _setup_widgets(self):
         self.range_slider = pn.widgets.RangeSlider(
             name=self._WIDGET_RANGE,
-            start=float(self.e_axis[0]),
-            end=float(self.e_axis[-1]),
-            value=(float(self.e_axis[0]), float(self.e_axis[-1])),
+            start=float(self._e_axis[0]),
+            end=float(self._e_axis[-1]),
+            value=(float(self._e_axis[0]), float(self._e_axis[-1])),
             sizing_mode=self._STRETCH_WIDTH,
         )
         self.range_slider.param.watch(self._update_range, 'value')
@@ -134,24 +140,24 @@ class SpectrumImageVisualizer(AbstractEELSVisualizer):
 
     # --- Plot Setup ---
     def _setup_plots(self):
-        image_data = self.model.dataset.ElectronCount.sum(self.model.constants.ELOSS)
+        image_data = self._model.dataset.ElectronCount.sum(self._model.constants.ELOSS)
         image_data = image_data.fillna(0.0)
         image_data = image_data.where(np.isfinite(image_data), 0.0)
-        x_coords = self.model.dataset.coords[self.model.constants.AXIS_X]
-        y_coords = self.model.dataset.coords[self.model.constants.AXIS_Y]
+        x_coords = self._model.dataset.coords[self._model.constants.AXIS_X]
+        y_coords = self._model.dataset.coords[self._model.constants.AXIS_Y]
         x_coords = x_coords.where(np.isfinite(x_coords), 0.0)
         y_coords = y_coords.where(np.isfinite(y_coords), 0.0)
-        self.clean_dataset = image_data.assign_coords({
-            self.model.constants.AXIS_X: x_coords,
-            self.model.constants.AXIS_Y: y_coords
+        self._clean_dataset = image_data.assign_coords({
+            self._model.constants.AXIS_X: x_coords,
+            self._model.constants.AXIS_Y: y_coords
         })
-        self.image = self._create_image(self.clean_dataset)
+        self._image = self._create_image(self._clean_dataset)
         # Use DynamicMap for efficient spectrum updates
         self.spectrum_stream = streams.Stream.define(
             self._LABEL_SPECTRUM.replace(" ", ""),
             x=0,
             y=0,
-            range_values=(float(self.e_axis[0]), float(self.e_axis[-1]))
+            range_values=(float(self._e_axis[0]), float(self._e_axis[-1]))
         )()
         self.spectrum_dynamicmap = hv.DynamicMap(
             lambda x, y, range_values: self._create_spectrum(x, y, range_values),
@@ -161,7 +167,7 @@ class SpectrumImageVisualizer(AbstractEELSVisualizer):
 
     # --- Callback Setup ---
     def _setup_callbacks(self):
-        streams.PointerXY(source=self.image).add_subscriber(self._on_hover)
+        streams.PointerXY(source=self._image).add_subscriber(self._on_hover)
 
     # --- Math Utility ---
     @staticmethod
@@ -175,7 +181,7 @@ class SpectrumImageVisualizer(AbstractEELSVisualizer):
         return pn.Column(
             pn.Row(
                 pn.Column(
-                    self.image,
+                    self._image,
                     css_classes=self._GENERIC_CONTAINER_CLASS,
                     sizing_mode=self._STRETCH_HEIGHT,
                     margin=(0, 10, 0, 0)
@@ -200,15 +206,19 @@ class SpectrumImageVisualizer(AbstractEELSVisualizer):
     
     @override
     def create_dataset_info(self):
-        attrs = self.model.dataset.attrs if self.model.dataset is not None else {}
+        attrs = self._model.dataset.attrs if self._model.dataset is not None else {}
         shape = attrs.get('shape', 'N/A')
         beam_energy = attrs.get('beam_energy', 'N/A')
         convergence_angle = attrs.get('convergence_angle', 'N/A')
         collection_angle = attrs.get('collection_angle', 'N/A')
 
+        buttonIcon = pn.widgets.ButtonIcon(icon="plus", size="1.8rem", description="All file info",)
+        buttonIcon.on_click(lambda e: self._controller.layout.toggle_float_panel())
+
         # Main info panel
         header = pn.Row(
             pn.pane.HTML(self._DATASET_INFO_TITLE, sizing_mode=self._STRETCH_WIDTH),
+            buttonIcon,
             sizing_mode=self._STRETCH_WIDTH,
             css_classes=self._DATASET_INFO_HEADER_CLASS
         )
@@ -269,8 +279,8 @@ class SpectrumImageVisualizer(AbstractEELSVisualizer):
     # --- Reset Button Callback ---
     def _capture_reset_hook(self, plot, element):
         def on_reset(event):
-            self.current_ranges['x_range'] = None
-            self.current_ranges['y_range'] = None
+            self._current_ranges['x_range'] = None
+            self._current_ranges['y_range'] = None
             print("Reset pressed: restoring full range.")
         plot.state.on_event('reset', on_reset)
 
@@ -281,34 +291,34 @@ class SpectrumImageVisualizer(AbstractEELSVisualizer):
         Includes experimental data, range markers, and optional powerlaw fit/subtraction.
         """
         # Extract the spectrum at the selected pixel
-        selected_spectrum = self.model.dataset.ElectronCount[y, x, :].values
+        selected_spectrum = self._model.dataset.ElectronCount[y, x, :].values
 
         # Main experimental area plot
         area = hv.Area(
-            (self.e_axis, selected_spectrum),
+            (self._e_axis, selected_spectrum),
             self._XLABEL, self._YLABEL,
             label=self._LABEL_EXPERIMENTAL
         ).opts(
             fill_alpha=self._AREA_ALPHA,
-            fill_color=self.model.colors.ROYALBLUE,
-            line_color=self.model.colors.ROYALBLUE,
+            fill_color=self._model.colors.ROYALBLUE,
+            line_color=self._model.colors.ROYALBLUE,
             line_width=self._AREA_LINE_WIDTH,
             line_alpha=self._AREA_LINE_ALPHA,
             tools=[]
         )
 
         # Range markers
-        vline1 = hv.VLine(range_values[0]).opts(color=self.model.colors.CRIMSON, line_dash=self._VLINE_DASH)
-        vline2 = hv.VLine(range_values[1]).opts(color=self.model.colors.CRIMSON, line_dash=self._VLINE_DASH)
+        vline1 = hv.VLine(range_values[0]).opts(color=self._model.colors.CRIMSON, line_dash=self._VLINE_DASH)
+        vline2 = hv.VLine(range_values[1]).opts(color=self._model.colors.CRIMSON, line_dash=self._VLINE_DASH)
         overlays = area * vline1 * vline2
         
-        if len(self.e_axis) != len(selected_spectrum):
+        if len(self._e_axis) != len(selected_spectrum):
             return self._inconsistent_overlay_opts(overlays, x, y)
 
         # Powerlaw fit and subtraction (if possible)
         # Mask for selected range
-        mask = (self.e_axis >= range_values[0]) & (self.e_axis <= range_values[1])
-        x_fit = self.e_axis[mask]
+        mask = (self._e_axis >= range_values[0]) & (self._e_axis <= range_values[1])
+        x_fit = self._e_axis[mask]
         y_fit = selected_spectrum[mask]
 
         if len(x_fit) <= 0:
@@ -317,16 +327,16 @@ class SpectrumImageVisualizer(AbstractEELSVisualizer):
         try:
             # Fit powerlaw to selected range
             params, _ = curve_fit(self.powerlaw, x_fit, y_fit)
-            y_fit_curve = self.powerlaw(self.e_axis, *params)
+            y_fit_curve = self.powerlaw(self._e_axis, *params)
             y_subtracted = selected_spectrum - y_fit_curve
 
             # Powerlaw fit curve
             fit_curve = hv.Curve(
-                (self.e_axis, y_fit_curve),
+                (self._e_axis, y_fit_curve),
                 self._XLABEL, self._YLABEL,
                 label=self._LABEL_POWERLAW
             ).opts(
-                color=self.model.colors.CRIMSON,
+                color=self._model.colors.CRIMSON,
                 line_dash=self._POWERLAW_DASH,
                 line_width=self._POWERLAW_LINE_WIDTH,
                 alpha=self._POWERLAW_ALPHA
@@ -334,13 +344,13 @@ class SpectrumImageVisualizer(AbstractEELSVisualizer):
 
             # Background subtraction area
             subtraction_area = hv.Area(
-                (self.e_axis, y_subtracted),
+                (self._e_axis, y_subtracted),
                 self._XLABEL, self._YLABEL,
                 label=self._LABEL_SUBTRACTION
             ).opts(
                 fill_alpha=self._SUBTRACTION_ALPHA,
-                fill_color=self.model.colors.LIGHTSALMON,
-                line_color=self.model.colors.LIGHTSALMON,
+                fill_color=self._model.colors.LIGHTSALMON,
+                line_color=self._model.colors.LIGHTSALMON,
                 line_width=self._SUBTRACTION_LINE_WIDTH,
                 line_alpha=self._SUBTRACTION_LINE_ALPHA
             )
@@ -362,18 +372,18 @@ class SpectrumImageVisualizer(AbstractEELSVisualizer):
     # --- Interactive Spectrum Update ---
     def _update_create_spectrum(self, x, y):
         # Clamp and round coordinates to valid integer indices
-        max_x = self.clean_dataset.shape[1] - 1
-        max_y = self.clean_dataset.shape[0] - 1
+        max_x = self._clean_dataset.shape[1] - 1
+        max_y = self._clean_dataset.shape[0] - 1
         x_idx = int(np.clip(round(x), 0, max_x))
         y_idx = int(np.clip(round(y), 0, max_y))
 
         # Only update if the selection has changed
-        if (x_idx, y_idx) == (self.last_selected[self._X_AXIS], self.last_selected[self._Y_AXIS]):
+        if (x_idx, y_idx) == (self._last_selected[self._X_AXIS], self._last_selected[self._Y_AXIS]):
             return
 
         # Store last selected coordinates
-        self.last_selected[self._X_AXIS] = x_idx
-        self.last_selected[self._Y_AXIS] = y_idx
+        self._last_selected[self._X_AXIS] = x_idx
+        self._last_selected[self._Y_AXIS] = y_idx
 
         # Update the DynamicMap stream with new values
         self.spectrum_stream.event(x=x_idx, y=y_idx, range_values=self.range_slider.value)
@@ -391,9 +401,9 @@ class SpectrumImageVisualizer(AbstractEELSVisualizer):
         # last_time = self.hover_candidate.get(self._TIMESTAMP, 0)
         # Only update if at least _HOVER_DEBOUNCE_DELAY seconds have passed since last update
         # if now - last_time >= self._HOVER_DEBOUNCE_DELAY:
-        self.hover_candidate[self._X_AXIS] = coord_x
-        self.hover_candidate[self._Y_AXIS] = coord_y
-        self.hover_candidate[self._TIMESTAMP] = now
+        self._hover_candidate[self._X_AXIS] = coord_x
+        self._hover_candidate[self._Y_AXIS] = coord_y
+        self._hover_candidate[self._TIMESTAMP] = now
         self._update_create_spectrum(coord_x, coord_y)
 
     def _inconsistent_overlay_opts(self, overlays, x, y):
@@ -409,7 +419,7 @@ class SpectrumImageVisualizer(AbstractEELSVisualizer):
 
     # --- Range Slider Callback ---
     def _update_range(self, event=None):
-        x = self.last_selected[self._X_AXIS]
-        y = self.last_selected[self._Y_AXIS]
+        x = self._last_selected[self._X_AXIS]
+        y = self._last_selected[self._Y_AXIS]
         # Update the DynamicMap stream with new range values
         self.spectrum_stream.event(x=x, y=y, range_values=self.range_slider.value)

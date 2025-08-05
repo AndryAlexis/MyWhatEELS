@@ -13,7 +13,7 @@ from ..view.eels_plots import SpectrumLineVisualizer, SpectrumImageVisualizer
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from ..model import Model
-    from ..view import View
+    from ..controller import Controller
 
 import traceback
 
@@ -30,9 +30,12 @@ class EELSPlotFactory:
     _UNKNOWN_TYPE_ERROR = "[EELSPlotFactory] Unknown dataset type: '{}'. Supported types: {}"
     _EXCEPTION_ERROR = "[EELSPlotFactory] Exception while creating plot for dataset type '{}': {}"
     
-    def __init__(self, model: "Model", view: "View") -> None:
+    def __init__(self, model: "Model", controller: "Controller") -> None:
         self._model = model
-        self._view = view
+        self._controller = controller
+        
+        # Mapping of dataset types to visualizer classes
+        # This can be extended with more visualizers as needed
         self._all_spectrum_visualizer = {
             model.constants.SPECTRUM_LINE: SpectrumLineVisualizer,
             model.constants.SPECTRUM_IMAGE: SpectrumImageVisualizer,
@@ -56,7 +59,7 @@ class EELSPlotFactory:
         try:
             chosed_spectrum_visualizer = self._all_spectrum_visualizer.get(dataset_type)
             if chosed_spectrum_visualizer:
-                chosed_spectrum_visualizer = chosed_spectrum_visualizer(self._model)
+                chosed_spectrum_visualizer = chosed_spectrum_visualizer(self._model, self._controller)
                 return chosed_spectrum_visualizer
             else:
                 chosed_spectrum_visualizer = None

@@ -49,25 +49,27 @@ class LayoutManager:
     def add_component_to_sidebar_layout(self, component: pn.viewable.Viewable):
         """Add a component to the sidebar and track it as the last dataset info component."""
         self.view.sidebar.append(component)
-        self.view.last_dataset_info_component = component
+        self.view.dataset_info = component
         
     def remove_dataset_info_from_sidebar(self):
         """Remove the last dataset info component from the sidebar, if present."""
-        if self.view.last_dataset_info_component is None:
+        if self.view.dataset_info is None:
             return
-        if self.view.last_dataset_info_component in self.view.sidebar:
-            self.view.sidebar.remove(self.view.last_dataset_info_component)
-            self.view.last_dataset_info_component = None
+        if self.view.dataset_info in self.view.sidebar:
+            self.view.sidebar.remove(self.view.dataset_info)
+            self.view.dataset_info = None
             
     def toggle_float_panel(self):
         """
         Toggle the visibility of the float panel.
-        If the panel is closed, open it with the current active plotter.
+        If the panel is closed, open it to normalized state.
         If the panel is open, close it.
         """
-        if self.view._float_panel.status == 'closed':
-            if self.view.chosed_spectrum is not None:
-                self.view._float_panel.content = self.view.chosed_spectrum.float_panel_content
-            else:
-                self.view._float_panel.content = pn.pane.HTML("No active plotter available.")
-        self.view._float_panel.toggle()
+        CLOSED = 'closed'
+        OPEN = 'normalized'
+
+        if self.view.float_panel.status == CLOSED:
+            self.view.float_panel.status = OPEN
+        else:
+            # Close the panel regardless of its current state (maximized, minimized, etc.)
+            self.view.float_panel.status = CLOSED
