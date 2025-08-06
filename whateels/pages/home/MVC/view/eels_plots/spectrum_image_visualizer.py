@@ -212,13 +212,9 @@ class SpectrumImageVisualizer(AbstractEELSVisualizer):
         convergence_angle = attrs.get('convergence_angle', 'N/A')
         collection_angle = attrs.get('collection_angle', 'N/A')
 
-        buttonIcon = pn.widgets.ButtonIcon(icon="plus", size="1.8rem", description="All file info",)
-        buttonIcon.on_click(lambda e: self._controller.layout.toggle_float_panel())
-
         # Main info panel
         header = pn.Row(
             pn.pane.HTML(self._DATASET_INFO_TITLE, sizing_mode=self._STRETCH_WIDTH),
-            buttonIcon,
             sizing_mode=self._STRETCH_WIDTH,
             css_classes=self._DATASET_INFO_HEADER_CLASS
         )

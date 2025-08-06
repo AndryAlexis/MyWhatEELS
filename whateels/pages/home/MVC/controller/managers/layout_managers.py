@@ -58,18 +58,3 @@ class LayoutManager:
         if self.view.dataset_info in self.view.sidebar:
             self.view.sidebar.remove(self.view.dataset_info)
             self.view.dataset_info = None
-            
-    def toggle_float_panel(self):
-        """
-        Toggle the visibility of the float panel.
-        If the panel is closed, open it to normalized state.
-        If the panel is open, close it.
-        """
-        CLOSED = 'closed'
-        OPEN = 'normalized'
-
-        if self.view.float_panel.status == CLOSED:
-            self.view.float_panel.status = OPEN
-        else:
-            # Close the panel regardless of its current state (maximized, minimized, etc.)
-            self.view.float_panel.status = CLOSED
