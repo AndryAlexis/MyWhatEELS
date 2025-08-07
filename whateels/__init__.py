@@ -5,7 +5,7 @@ from pathlib import Path
 pn.extension('filedropper', 'floatpanel', theme='default')
 
 from whateels.helpers import LoadCSS
-from whateels.pages import Home, NLLS, Login, GOS
+from whateels.pages import Home, NLLS, Login, GOS, Metadata
 
 class App:
     """
@@ -32,6 +32,7 @@ class App:
         # Define the pages for the application
         pages = {
             "/": Home(),
+            "/metadata-details": Metadata(),
             "/gos": GOS(),
             "/nlls": NLLS(),
             "/login": Login(),

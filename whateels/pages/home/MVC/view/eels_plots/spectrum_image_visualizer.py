@@ -8,6 +8,8 @@ import holoviews as hv
 import numpy as np
 import time
 
+
+from pathlib import Path
 from numba import jit
 from scipy.optimize import curve_fit
 from holoviews import streams
@@ -212,36 +214,58 @@ class SpectrumImageVisualizer(AbstractEELSVisualizer):
         convergence_angle = attrs.get('convergence_angle', 'N/A')
         collection_angle = attrs.get('collection_angle', 'N/A')
 
+        # Load metadata button HTML
+        metadata_html_path = Path(__file__).parent.parent.parent.parent.parent.parent / "assets" / "html" / "metadata_info.html"
+        with open(metadata_html_path, 'r', encoding='utf-8') as f:
+            metadata_button_html = f.read()
+        
+        metadata_button = pn.pane.HTML(metadata_button_html, margin=0)
+
         # Main info panel
         header = pn.Row(
-            pn.pane.HTML(self._DATASET_INFO_TITLE, sizing_mode=self._STRETCH_WIDTH),
+            pn.pane.HTML(self._DATASET_INFO_TITLE, sizing_mode=self._STRETCH_WIDTH, margin=0),
+            metadata_button,
             sizing_mode=self._STRETCH_WIDTH,
-            css_classes=self._DATASET_INFO_HEADER_CLASS
+            css_classes=self._DATASET_INFO_HEADER_CLASS,
+            margin=0
         )
 
         dataset_info = pn.Column(
             header,
             pn.Spacer(height=5),
             pn.Row(
-                pn.pane.Str("Shape:"),
+                pn.Row(
+                    pn.pane.HTML("<strong>Shape:</strong>"),
+                    sizing_mode=self._STRETCH_WIDTH
+                ),
                 pn.pane.Str(shape),
                 sizing_mode=self._STRETCH_WIDTH
             ),
             pn.Row(
-                pn.pane.Str("Beam Energy:"),
+                pn.Row(
+                    pn.pane.HTML("<strong>Beam Energy:</strong>"),
+                    sizing_mode=self._STRETCH_WIDTH
+                ),
                 pn.pane.Str(f"{beam_energy} keV"),
                 sizing_mode=self._STRETCH_WIDTH
             ),
             pn.Row(
-                pn.pane.Str("Convergence Angle:"),
+                pn.Row(
+                    pn.pane.HTML("<strong>Convergence Angle:</strong>"),
+                    sizing_mode=self._STRETCH_WIDTH
+                ),
                 pn.pane.Str(f"{convergence_angle} mrad"),
                 sizing_mode=self._STRETCH_WIDTH
             ),
             pn.Row(
-                pn.pane.Str("Collection Angle:"),
+                pn.Row(
+                    pn.pane.HTML("<strong>Collection Angle:</strong>"),
+                    sizing_mode=self._STRETCH_WIDTH
+                ),
                 pn.pane.Str(f"{collection_angle} mrad"),
                 sizing_mode=self._STRETCH_WIDTH
             ),
+            pn.Spacer(height=10),
             sizing_mode=self._STRETCH_WIDTH,
             css_classes=self._DATASET_INFO_CLASS
         )

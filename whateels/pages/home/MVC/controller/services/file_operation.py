@@ -88,9 +88,7 @@ class FileOperation:
         Args:
             filename: Name of the removed file
         """
-        try:
-            print(f'File removed: {filename}')
-            
+        try:            
             # Clear the dataset from model
             self.model.dataset = None
             
