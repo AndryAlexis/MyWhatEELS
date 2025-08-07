@@ -1,7 +1,6 @@
 from .services import EELSFileProcessor, EELSDataProcessor, FileOperation
 from .managers import LayoutManager
-from .readers import DM_EELS_Reader
-from .parsers import DM_EELS_data, DM_InfoParser
+from .dm_file_processing import DM_EELS_Reader, DM_InfoParser, DM_EELS_data
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
