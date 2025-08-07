@@ -43,4 +43,3 @@ class IFileReader(ABC):
     @abstractmethod
     def read_data(self):
         pass
-

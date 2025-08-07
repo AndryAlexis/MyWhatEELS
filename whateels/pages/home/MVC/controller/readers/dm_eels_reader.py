@@ -17,7 +17,7 @@ import os
 
 from .abstract_classes import IDM_Parser, IDM_EELS_DataHandler, IFileReader
 from ..parsers import DM_InfoParser, DM_EELS_data
-from ..logging import Logger
+from whateels.helpers.logging import Logger
 
 _logger = Logger.get_logger("dm_file_reader.log", __name__)
 
@@ -37,8 +37,8 @@ class DM_EELS_Reader(IFileReader):
     def __init__(
         self,
         filename=None,
-        parser: IDM_Parser = DM_InfoParser(),
-        handler: IDM_EELS_DataHandler = DM_EELS_data(),
+        parser: IDM_Parser = None,
+        handler: IDM_EELS_DataHandler = None,
     ):
         """
         Initialize the DM EELS reader.
@@ -52,11 +52,11 @@ class DM_EELS_Reader(IFileReader):
             
         parser : IDM_Parser, optional
             DM file parser instance. Must implement IDM_Parser interface.
-            Default is DM_InfoParser().
+            Default creates DM_InfoParser().
             
         handler : IDM_EELS_DataHandler, optional  
             EELS data handler instance. Must implement IDM_EELS_DataHandler interface.
-            Default is DM_EELS_data().
+            Default creates DM_EELS_data().
             
         Raises
         ------
@@ -77,8 +77,8 @@ class DM_EELS_Reader(IFileReader):
 
         # Store validated components
         self.filename = filename
-        self.parser = parser
-        self.handler = handler
+        self.parser = parser or DM_InfoParser()
+        self.handler = handler or DM_EELS_data()
 
     def read_data(self):
         """

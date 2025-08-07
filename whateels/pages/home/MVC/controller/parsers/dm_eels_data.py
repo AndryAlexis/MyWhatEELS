@@ -2,9 +2,9 @@
 import numpy as np
 import json
 from typing import List
-from ...helpers.dm_file_reader.abstract_classes import IDM_EELS_DataHandler
-from ..logging import Logger
-from ...errors import *
+from ..readers.abstract_classes import IDM_EELS_DataHandler
+from whateels.helpers.logging import Logger
+from whateels.errors import *
 
 _logger = Logger.get_logger("dm_eels_data.log", __name__)
 

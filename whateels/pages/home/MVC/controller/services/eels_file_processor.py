@@ -7,7 +7,8 @@ Manages temporary files and delegates data processing to EELSDataProcessor.
 
 import os, numpy as np, xarray as xr, traceback
 from pathlib import Path
-from whateels.helpers import TempFile, DM_EELS_Reader
+from whateels.helpers import TempFile
+from ..readers import DM_EELS_Reader
 from .eels_data_processor import EELSDataProcessor
 
 class EELSFileProcessor:

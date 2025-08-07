@@ -1,9 +1,9 @@
 import re
-from ...errors import *
-from ...helpers.decoders import decoders as dec
-from ...helpers.dm_file_reader.abstract_classes import IDM_Parser
+from whateels.errors import *
+from whateels.helpers.decoders import decoders as dec
+from ..readers.abstract_classes import IDM_Parser
 from typing import List, Tuple
-from ..logging import Logger
+from whateels.helpers.logging import Logger
 
 _logger = Logger.get_logger("dm_infoparser.log", __name__)
 
