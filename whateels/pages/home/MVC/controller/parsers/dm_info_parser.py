@@ -1,6 +1,14 @@
 import re
 from whateels.errors import *
-from whateels.helpers.decoders import decoders as dec
+import sys
+
+from ..decoders import decoders as dec
+from whateels.errors.dm.parsing import (
+    DMVersionError, 
+    DMDelimiterCharacterError, 
+    DMStructDataTypeError, 
+    DMIdentifierError
+)
 from ..readers.abstract_classes import IDM_Parser
 from typing import List, Tuple
 from whateels.helpers.logging import Logger
