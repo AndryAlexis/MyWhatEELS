@@ -17,17 +17,10 @@ class View:
     def __init__(self, model: "Model") -> None:
         self._model = model
         self._main_container_layout = None
-        self._sidebar_container_layout = None
         
         self._init_components()
     
     # --- Properties ---
-    
-    @property
-    def sidebar(self) -> pn.viewable.Viewable:
-        """Sidebar layout containing metadata controls."""
-        return self._sidebar_container_layout
-
     @property
     def main(self) -> pn.Column:
         """Main content area layout for displaying metadata."""
@@ -37,17 +30,15 @@ class View:
     
     def _init_components(self):
         """Initialize main and sidebar layout containers."""
-        self._sidebar_container_layout = self._sidebar_layout()
         self._main_container_layout = self._main_layout()
 
     def _sidebar_layout(self):
         """Create and return the sidebar layout."""
-        self._sidebar_container_layout = pn.Column(
+        return pn.Column(
             pn.pane.HTML("<h3>Metadata Controls</h3>"),
             pn.Spacer(height=10),
             sizing_mode=self._STRETCH_WIDTH
         )
-        return self._sidebar_container_layout
 
     def _main_layout(self):
         """Create and return the main layout."""

@@ -24,7 +24,8 @@ class CustomPage(pn.template.FastListTemplate):
         main: Optional[Union[List, pn.viewable.Viewable]] = None, 
         sidebar: Optional[Union[List, pn.viewable.Viewable]] = None, 
         header: Optional[List[pn.viewable.Viewable]] = None, 
-        right_sidebar: Optional[Union[List, pn.viewable.Viewable]] = None, 
+        right_sidebar: Optional[Union[List, pn.viewable.Viewable]] = None,
+        header_background: str = "#4caf50",  # Default header background color
     ):
         """
         Initialize CustomPage with enhanced FastListTemplate.
@@ -33,11 +34,11 @@ class CustomPage(pn.template.FastListTemplate):
             title: Page title to display in the template
             main: Main content area components (list or single component)
             sidebar: Left sidebar components (optional)
-            header: Header navigation components (optional, defaults to standard nav)
+            header: Header navigation components (optional, defaults to standard nav, pass [] for no header)
             right_sidebar: Right sidebar components (optional)
             collapsed_sidebar: Whether the sidebar starts in collapsed state
         """
-        # Set default header if none provided
+        # Set default header if none provided (but not if empty list is explicitly passed)
         if header is None:
             header = self._create_navigation_header()
         
@@ -52,7 +53,7 @@ class CustomPage(pn.template.FastListTemplate):
             'header': header,
             'theme_toggle': False,  # Disable theme toggle for consistency
             'theme': 'default',  # Default theme
-            'header_background': '#4caf50',  # Example header background color
+            'header_background': header_background,
         }
         
         # Only add sidebar parameters if they have content

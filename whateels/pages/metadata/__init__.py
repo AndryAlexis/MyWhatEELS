@@ -17,5 +17,6 @@ class Metadata(CustomPage):
         super().__init__(
             title=title,
             main=[self.view.main],
-            sidebar=[self.view.sidebar],
+            header=[], # No header for metadata page, pass [] to avoid default header
+            header_background="#007bff"
         )
