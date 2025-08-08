@@ -13,4 +13,4 @@ class Model:
         return self.Constants()
 
     class Constants:
-        TITLE = "Metadata Details"
+        TITLE = "Eels Metadata Details"

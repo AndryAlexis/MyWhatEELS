@@ -104,6 +104,7 @@ class EELSFileProcessor:
             # Use the DM_EELS_Reader from the whatEELS library
             spectrum_image = DM_EELS_Reader(filepath).read_data()
             
+            
             # TODO DELETE COMMENTED CODE            
             #attributes = self.extract_all_spectrum_image_attributes(spectrum_image)
             #json_representation = self._become_json_format(attributes)
