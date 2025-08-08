@@ -57,7 +57,7 @@
 .dataset-info {
     padding: 0;
     list-style-type: none;
-    border: 2px solid #007bff;
+    border: 2px solid #0066cc;
     border-radius: 8px;
     background-color: #f8f9fa;
     margin: 0 10px;
@@ -88,7 +88,7 @@
 }
 
 .dataset-info-header {
-    background-color: #007bff;
+    background-color: #0066cc;
     color: white;
     margin: 0;
     padding: 12px 16px;
@@ -118,7 +118,7 @@
     justify-content: center;
     width: 25px;
     height: 25px;
-    background: #007bff;
+    background: #0066cc;
     color: white;
     border: none;
     border-radius: 8px;
