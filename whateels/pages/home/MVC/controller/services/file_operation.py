@@ -9,6 +9,7 @@ import traceback
 from .eels_file_processor import EELSFileProcessor
 from .eels_data_processor import EELSDataProcessor
 from ..eels_plot_factory import EELSPlotFactory
+from whateels.shared_state import AppState
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
@@ -95,6 +96,10 @@ class FileOperation:
             # Clear UI components
             self.controller.layout.remove_dataset_info_from_sidebar()
             self.controller.layout.reset_main_layout()
+            
+            # Reset AppState metadata
+            app_state = AppState()
+            app_state.metadata = None
             
             # Clear any active spectrum reference
             if hasattr(self.controller.view, 'chosed_spectrum'):
