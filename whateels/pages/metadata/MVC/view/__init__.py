@@ -19,14 +19,8 @@ class View:
     def __init__(self, model: "Model") -> None:
         self._model = model
         self._main_container_layout = None
-        self._controller = None  # Will be set by the main page
         
         self._init_components()
-    
-    def set_controller(self, controller):
-        """Set the controller reference for reactive display."""
-        self._controller = controller
-        self._update_layout()  # Update layout immediately when controller is set
     
     # --- UI Component Creation Methods ---
     
@@ -65,16 +59,13 @@ class View:
 
     def _main_layout(self):
         """Create and return the main layout."""
-        # Create a placeholder that will be updated when controller is set
+        # Create a placeholder that will be populated by the controller
         self._main_container_layout = pn.Column(
-            pn.pane.HTML("<p>Initializing...</p>"),
+            pn.pane.HTML("<p>Loading...</p>"),
             sizing_mode=self._STRETCH_BOTH
         )
         return self._main_container_layout
     
-    def _update_layout(self):
-        """Update the layout with the controller's display component."""
-        if self._controller and self._main_container_layout:
-            # Clear and update the layout with the reactive component
-            self._main_container_layout.clear()
-            self._main_container_layout.append(self._controller.get_display_component)
+    def get_main_container(self):
+        """Provide access to the main container for controller to populate."""
+        return self._main_container_layout

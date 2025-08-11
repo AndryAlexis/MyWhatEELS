@@ -9,11 +9,8 @@ class Metadata(CustomPage):
 
     def __init__(self, title: str = None):
         self.model = Model()
-        self.view = View(self.model)
-        self.controller = Controller(self.model, self.view)
-        
-        # Set controller reference in view for reactive display
-        self.view.set_controller(self.controller)
+        self.view = View(self.model)  # Create view first
+        self.controller = Controller(self.model, self.view)  # Pass view to controller
         
         title = title or self.model.constants.TITLE
                 
