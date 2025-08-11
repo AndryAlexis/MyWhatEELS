@@ -30,20 +30,22 @@ class View:
             data,
             depth=1,
             hover_preview=True,
-            sizing_mode='stretch_both'
+            sizing_mode=self._STRETCH_BOTH
         )
     
     def create_no_metadata_component(self):
         """Creates no metadata available component."""
-        with open(HTML_ROOT / "no_metadata_loaded.html", 'r', encoding='utf-8') as f:
+        NO_METADATA_PATH = HTML_ROOT / "no_metadata_loaded.html"
+        with open(NO_METADATA_PATH, 'r', encoding='utf-8') as f:
             no_metadata_template = f.read()
-        return pn.pane.HTML(no_metadata_template, sizing_mode='stretch_both')
-    
+        return pn.pane.HTML(no_metadata_template, sizing_mode=self._STRETCH_BOTH)
+
     def create_error_component(self):
         """Creates error display component."""
-        with open(HTML_ROOT / "json_error.html", 'r', encoding='utf-8') as f:
+        JSON_ERROR_PATH = HTML_ROOT / "json_error.html"
+        with open(JSON_ERROR_PATH, 'r', encoding='utf-8') as f:
             error_template = f.read()
-        return pn.pane.HTML(error_template, sizing_mode='stretch_both')
+        return pn.pane.HTML(error_template, sizing_mode=self._STRETCH_BOTH)
     
     # --- Properties ---
     @property

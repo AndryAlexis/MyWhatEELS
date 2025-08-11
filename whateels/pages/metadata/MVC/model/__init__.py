@@ -25,3 +25,4 @@ class Model:
 
     class Constants:
         TITLE = "Eels Metadata Details"
+        HEADER_BACKGROUND = "#0066cc"

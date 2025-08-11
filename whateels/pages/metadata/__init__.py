@@ -18,5 +18,5 @@ class Metadata(CustomPage):
             title=title,
             main=[self.view.main],
             header=[], # No header for metadata page, pass [] to avoid default header
-            header_background="#0066cc"
+            header_background=self.model.constants.HEADER_BACKGROUND
         )
