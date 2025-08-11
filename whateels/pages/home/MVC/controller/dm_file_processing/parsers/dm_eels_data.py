@@ -16,6 +16,13 @@ class DM_EELS_data(IDM_EELS_DataHandler):
     relevant information for its later usage
     """
 
+    def __init__(self):
+        """Initialize instance attributes."""
+        self.spectrum_images = {}
+        self.spectralInfo = None
+        self.f = None
+        self.data = None
+
     # Supported types to be read using numpy from file.
     _supported_dtypes = {
         1: "int16",
@@ -29,23 +36,63 @@ class DM_EELS_data(IDM_EELS_DataHandler):
         23: "float32"
     }
 
-    def get_file_data(self, file, infoDict=None):
+    def _store_metadata(self, file, infoDict=None):
         """
-        Store all image metadata from the parsed info dictionary.
-        Collects all images into self.image_dict for later access.
+        Store file handle and metadata from parsed info dictionary.
+        
+        Parameters
+        ----------
+        file : file object
+            Opened binary file handle
+        infoDict : dict
+            Parsed metadata dictionary from DM file
+            
+        Raises
+        ------
+        DMEmptyInfoDictionary
+            If infoDict is None or empty
+        DMNonEelsError
+            If dictionary doesn't contain expected structure
         """
-        self.f = file  # An opened file, handled from the factory later on.
+        self.f = file
         if not infoDict:
-            message = f"Expected an informaction dictionary from parser. None provided : {infoDict =}"
+            message = f"Expected an information dictionary from parser. None provided : {infoDict =}"
             _logger.exception(message)
             raise DMEmptyInfoDictionary(message)
+        
         try:
-            AppState().metadata = infoDict  # Store metadata in AppState
+            # Store metadata in AppState for application-wide access
+            AppState().metadata = infoDict
             _logger.info("Metadata stored in AppState")
+            return infoDict
+        except Exception:
+            message = f"Failed to store metadata in AppState.\n{infoDict.keys() if infoDict else 'None'}"
+            _logger.exception(message)
+            raise DMNonEelsError(message)
+
+    def _filter_spectrum_images(self, infoDict):
+        """
+        Filter and extract spectrum images from metadata dictionary.
+        
+        Parameters
+        ----------
+        infoDict : dict
+            Metadata dictionary containing ImageList
             
+        Returns
+        -------
+        dict
+            Filtered spectrum images with valid EELS data
+            
+        Raises
+        ------
+        DMNonEelsError
+            If no valid spectrum images found
+        """
+        try:
             all_blocks = infoDict["ImageList"]
             
-            self.spectrum_images = {
+            spectrum_images = {
                 k: v for k, v in all_blocks.items()
                 if (
                     isinstance(v, dict)
@@ -56,19 +103,30 @@ class DM_EELS_data(IDM_EELS_DataHandler):
                     and not (len(v['ImageTags']) == 1 and 'GMS Version' in v['ImageTags'])
                 )
             }
+            
+            if not spectrum_images:
+                raise ValueError("No valid spectrum images found")
+                
+            return spectrum_images
+            
         except Exception:
             message = f"The dictionary provided after parsing the file does not contain spectral information.\n{infoDict.keys()}"
             _logger.exception(message)
             raise DMNonEelsError(message)
+
+    def get_file_data(self, file, infoDict=None):
+        """
+        Store metadata and filter spectrum images from parsed info dictionary.
+        
+        This method combines metadata storage and spectrum filtering for backward compatibility.
+        For new code, consider using _store_metadata() and _filter_spectrum_images() separately.
+        """
+        stored_metadata = self._store_metadata(file, infoDict)
+        self.spectrum_images = self._filter_spectrum_images(stored_metadata)
+        
         # For backward compatibility, set the first image as spectralInfo
         imageKeys = list(self.spectrum_images.keys())
         self.spectralInfo = self.spectrum_images[imageKeys[0]] if imageKeys else None
-
-    def get_all_images(self):
-        """
-        Returns a dict of all images parsed from the file, each with its metadata.
-        """
-        return self.spectrum_images
 
     def _recursively_add_key(self, infoD, keylist):
         """Method used to expand the dictionary recursevely, if a keyError is raised during
@@ -104,13 +162,6 @@ class DM_EELS_data(IDM_EELS_DataHandler):
             _logger.info(f"Acceleration voltage V0 value updated to {E0*1000} V")
         return E0
 
-    def _set_beam_energy(self, value, kV=True):
-        """Method that changes the beam energy from a given value. The value is most ofen given in kV"""
-        if kV:
-            value *= 1000
-        self.spectralInfo["ImageTags"]["Microscope Info"]["Voltage"] = value
-        _logger.info(f"Acceleration Voltage V value updated to {value} V")
-
     @property
     def convergence_angle(self):
         """Convergence semi angle property, read from dictionary if available.
@@ -139,15 +190,6 @@ class DM_EELS_data(IDM_EELS_DataHandler):
             _logger.info(f"Convergence angle alpha value updated to {alpha} mrad")
         return alpha
 
-    def _set_convergence_angle(self, value, rad=False):
-        """Method that changes the conovergence semi angle from a given value. The value is most ofen given in mrad"""
-        if rad:
-            value *= 1000
-        self.spectralInfo["ImageTags"]["EELS"]["Experimental Conditions"][
-            "Convergence semi-angle (mrad)"
-        ] = value
-        _logger.info(f"Convergence angle alpha value updated to {value} mrad")
-
     @property
     def collection_angle(self):
         """Collection semi angle property, read from dictionary if available.
@@ -175,15 +217,6 @@ class DM_EELS_data(IDM_EELS_DataHandler):
             _logger.info(f"Collection angle beta value updated to {beta} mrad")
         return beta
 
-    def _set_collection_angle(self, value, rad=False):
-        """Method that changes the collection semi angle from a given value. The value is most ofen given in mrad"""
-        if rad:
-            value *= 1000
-        self.spectralInfo["ImageTags"]["EELS"]["Experimental Conditions"][
-            "Collection semi-angle (mrad)"
-        ] = value
-        _logger.info(f"Collection angle beta value updated to {value} mrad")
-
     def _set_energy_scale(self, scale_val):
         """Method that sets a new value for the energy scale
         Raises ValueError whenever we face an spectrum dataset with ill-defined units
@@ -201,23 +234,6 @@ class DM_EELS_data(IDM_EELS_DataHandler):
             "Scale"
         ] = scale_val
 
-    def _set_lateral_scale(self, scale_val):
-        """Method that sets a new scale for the lateral units, if they exists
-        It assumes that the lateral units are the same for spectrum images (square pixels)
-        """
-        scale_items = [
-            k
-            for k, el in self.spectralInfo["ImageData"]["Calibrations"][
-                "Dimension"
-            ].items()
-            if el["Units"] != "eV"
-        ]
-
-        for el in scale_items:
-            self.spectralInfo["ImageData"]["Calibrations"]["Dimension"][el][
-                "Scale"
-            ] = scale_val
-
     def _set_energy_origin(self, offset_val):
         """Method that changes the offset value of the energy axis"""
         scale_items = [
@@ -233,41 +249,6 @@ class DM_EELS_data(IDM_EELS_DataHandler):
             "Origin"
         ] = offset_val
 
-    # Now, a complex method that adjusts the energy origin automatically given the E-axis origin
-
-    def calibrate_single_channel(self, eValue: float, pixID: int = 0) -> None:
-        """Given a single energy loss channel and a value for the Energy Loss value
-        expected, modifies the origins property, so the channel lies in the actual expected
-        energy value.
-        If no index is given, it is assumed to be the origin of the energy axis ...
-        """
-        eAxis_offset = -(
-            eValue / self.scales[0] - pixID
-        )  # Expected offset value for the energy axis
-        self._set_energy_origin(eAxis_offset)
-
-    # Now, a complex method that adjusts the energy origin automatically given two positions (indices)
-    # in the E-axis and their expected values
-
-    def calibrate_dual_channels(
-        self, eValues: List[float], pixIDs: List[int] = [0, -1]
-    ) -> None:
-        """Given two indices in the energy axis and two expected energy loss values, the scale
-        is calibrated, as well as the origin position, so the provided indices for the new
-        energy loss axis correspond to the given energy loss values.
-        If no index are provided, they are assumed to be the origin and last index of the energy axis
-        """
-        # TODO program exceptions to enforce good energy values lists and pixel ids (i.e., avoid deltaE < 0)
-        deltaE = eValues[1] - eValues[0]
-        numChannels = pixIDs[1] - pixIDs[0]
-        new_scale = deltaE / numChannels
-        self._set_energy_scale(new_scale)
-        # And now, we calibrate the origin to have the correct possitions
-        eAxis_offset = -(
-            eValues[0] / self.scales[0] - pixIDs[0]
-        )  # Expected offset value for the energy axis
-        self._set_energy_origin(eAxis_offset)
-
     @property
     def shape(self):
         """Shape property for the EELS dataset read from the
@@ -281,8 +262,7 @@ class DM_EELS_data(IDM_EELS_DataHandler):
 
     # ['Origin']['Scale']['Dimension']
 
-    @property
-    def scales(self):
+    def _get_scales(self):
         """scale properties for all the dimensions involved"""
         # TODO safeguard for the cases where the dimensions cannot be read from file
         scale = [
@@ -293,8 +273,7 @@ class DM_EELS_data(IDM_EELS_DataHandler):
         ]
         return np.array(scale)[::-1]
 
-    @property
-    def origins(self):
+    def _get_origins(self):
         """origins for the dimensions involved"""
         # TODO safeguard for the cases where the dimensions cannot be read from file
         orig = [
@@ -305,13 +284,11 @@ class DM_EELS_data(IDM_EELS_DataHandler):
         ]
         return np.array(orig)[::-1]
 
-    @property
-    def unit_origins(self):
+    def _get_unit_origins(self):
         """Origins for the dimensions involved that include the scaling factors"""
-        return -1 * self.origins * self.scales
+        return -1 * self._get_origins() * self._get_scales()
 
-    @property
-    def units(self):
+    def _get_units(self):
         """Units for the scales involved, one per each dimension"""
         # TODO safeguard for the cases where the dimensions cannot be read from file
         units = []
@@ -330,11 +307,11 @@ class DM_EELS_data(IDM_EELS_DataHandler):
         This is one of the more confusing properties to extract
         from DM. By some unknown reason, it is stored"""
         if len(self.shape) == 3:
-            return np.arange(self.shape[0]) * self.scales[0] + self.unit_origins[0]
+            return np.arange(self.shape[0]) * self._get_scales()[0] + self._get_unit_origins()[0]
         # For Slines and single spectra, this works ...
-        return np.arange(self.shape[-1]) * self.scales[-1] + self.unit_origins[-1]
+        return np.arange(self.shape[-1]) * self._get_scales()[-1] + self._get_unit_origins()[-1]
 
-    def get_eels_data(self):
+    def _get_eels_data(self):
         """This method will attempt to extract the actual EELS data,
         to be handled to the factory later on.
         It does several things.
@@ -369,6 +346,6 @@ class DM_EELS_data(IDM_EELS_DataHandler):
         After that, it returns itself, the instance of this class created, so the properties
         of the object can be accessed from the exterior (energy_axis, shape, collection_angle, etc)
         """
-        self.data = self.get_eels_data()
+        self.data = self._get_eels_data()
         return self
 
