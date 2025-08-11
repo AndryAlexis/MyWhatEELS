@@ -1,81 +1,65 @@
 """
-File Reader Module for DM3/DM4 EELS Data
+DM3/DM4 EELS Data Reader
 
-This module provides functionality to read and process EELS (Electron Energy Loss Spectroscopy) 
-data from Gatan DigitalMicrograph files (DM3/DM4 format).
+Reads EELS data from Gatan DigitalMicrograph files using a two-stage process:
+1. Parse file structure and metadata
+2. Extract and process EELS spectroscopic data
 
-The main class DM_EELS_Reader follows a two-stage process:
-1. Parse file structure and metadata using a DM parser
-2. Extract and handle EELS data using a specialized data handler
+Supports dependency injection for custom parsers and handlers.
 
-Classes
+Example
 -------
-DM_EELS_Reader : Main reader class for DM3/DM4 files containing EELS data
+    reader = DM_EELS_Reader("spectrum.dm4")
+    eels_data = reader.read_data()
 """
 
 import os
 
-from .abstract_classes import IDM_Parser, IDM_EELS_DataHandler, IFileReader
+from typing import TYPE_CHECKING
+from .abstract_classes import IFileReader
 from ..parsers import DM_InfoParser, DM_EELS_data
 from whateels.helpers.logging import Logger
+
+if TYPE_CHECKING:
+    from .abstract_classes import IDM_Parser, IDM_EELS_DataHandler
 
 _logger = Logger.get_logger("dm_file_reader.log", __name__)
 
 class DM_EELS_Reader(IFileReader):
     """
-    Reader class for DM3/DM4 files containing EELS (Electron Energy Loss Spectroscopy) data.
+    Reader for DM3/DM4 files containing EELS data.
     
-    This class can be injected into whatEELS or used in a factory pattern scheme.
-    It uses a parser to extract file information and a handler to process the EELS data.
+    Uses dependency injection pattern with separate parser and handler components.
+    Processes data through a two-stage pipeline: file parsing then EELS data extraction.
     
-    Dependencies
-    ------------
-    - parser: Extracts structural information from DM files
-    - handler: Processes and converts EELS data to usable format
+    Parameters
+    ----------
+    filename : str
+        Path to DM3/DM4 file
+    parser : IDM_Parser, optional
+        File parser (defaults to DM_InfoParser)
+    handler : IDM_EELS_DataHandler, optional
+        Data handler (defaults to DM_EELS_data)
     """
 
     def __init__(
         self,
-        filename=None,
-        parser: IDM_Parser = None,
-        handler: IDM_EELS_DataHandler = None,
+        filename: str,
+        parser: "IDM_Parser" = None,
+        handler: "IDM_EELS_DataHandler" = None,
     ):
         """
-        Initialize the DM EELS reader.
+        Initialize reader with file validation and component injection.
 
         Parameters
         ----------
-        filename : str, optional
-            Path to the DM3/DM4 file to read. Must be a valid file path.
-            Raises NameError if not provided or if file doesn't exist.
-            Default is None.
-            
+        filename : str
+            Path to DM3/DM4 file to read
         parser : IDM_Parser, optional
-            DM file parser instance. Must implement IDM_Parser interface.
-            Default creates DM_InfoParser().
-            
+            Custom parser (default: DM_InfoParser)
         handler : IDM_EELS_DataHandler, optional  
-            EELS data handler instance. Must implement IDM_EELS_DataHandler interface.
-            Default creates DM_EELS_data().
-            
-        Raises
-        ------
-        NameError
-            If filename is not provided, file doesn't exist, or has wrong extension.
+            Custom handler (default: DM_EELS_data)
         """
-        # Validate that a filename was provided
-        if not filename:
-            error_message = "No file name provided."
-            _logger.error(error_message)
-            raise NameError(error_message)
-
-        # Validate that the file exists
-        if not os.path.isfile(filename):
-            error_message = f"The file-name given is not an actual file - {filename}."
-            _logger.error(error_message)
-            raise NameError(error_message)
-
-        # Store validated components
         self.filename = filename
         self.parser = parser or DM_InfoParser()
         self.handler = handler or DM_EELS_data()
@@ -84,18 +68,17 @@ class DM_EELS_Reader(IFileReader):
         """
         Read and process EELS data from the DM file.
         
-        This method performs a two-step process:
-        1. Parse the file structure to extract metadata and data organization
-        2. Handle the EELS data extraction and conversion
+        Performs two-stage processing: file parsing then EELS data extraction.
         
         Returns
         -------
         object
-            Processed EELS data object containing the spectroscopy data and metadata
+            Processed EELS data with spectroscopy information and metadata
             
         Raises
         ------
-        Various exceptions may be raised during file parsing or data handling
+        Exception
+            Various exceptions during file parsing or data handling
         """
         _logger.info(f"Opening file {self.filename}")
         
