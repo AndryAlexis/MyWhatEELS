@@ -9,16 +9,14 @@ from whateels.errors.dm.parsing import (
     DMStructDataTypeError, 
     DMIdentifierError
 )
-from typing import List, Tuple
+from typing import List, Tuple, TextIO, Callable, Optional, Dict, Any
 from whateels.helpers.logging import Logger
 
 _logger = Logger.get_logger("dm_infoparser.log", __name__)
 
 class DM_InfoParser:
     """
-    This class contains all the methods required to parse a dm3 or dm4 file.
-    After its usage, the user will find that the info acquired is stored in a dictionary,
-    which can later be used to read the actual data (e.g., spectrum images) from the file.
+    Parses DM3/DM4 files and extracts metadata into a dictionary structure.
     """
 
     ###
@@ -40,11 +38,6 @@ class DM_InfoParser:
     }
     # SizeId - Encryption | allowed pairs
     # The pairings are written literaly here ... for more clarity
-    """
-    _id_pairings = [
-        (1, i) for i in range(2, 13)
-    ]
-    """
     _id_pairings = [
         (1, 2),
         (1, 3),
@@ -60,116 +53,42 @@ class DM_InfoParser:
         (2, 18),
         (3, 20),
     ]
-    """
-    _id_pairings.append((2, 18))
-    _id_pairings.extend([(2, 18), (3, 20)])
+
     _id_pairings = tuple(_id_pairings)
-    """
-    _id_pairings = tuple(_id_pairings)
-    ###
     # Valid extensions for the file reading
     _valid_extensions = (".dm3$", ".dm4$")
-    ####
 
-    def __init__(self):
-        """
-        Instansciation of the DM_InfoParser class for a file f.
-        It calls automatically the file header reader -> so if
-        a wrong version of dm file is provided, the instantiation is
-        halted.
+    def __init__(self) -> None:
+        """Initialize parser with empty information dictionary and default values."""
+        self.information_dictionary: Dict[str, Any] = dict()
+        self.f: Optional[TextIO] = None  # File handle to be set via get_file()
+        self.version: Optional[int] = None  # DM file version (3 or 4)
+        self.parser: Optional[Callable] = None  # Parser function (read_long or read_long_long)
+        self.endianness: Optional[str] = None  # File endianness ('big' or 'little')
 
-        Parameters
-        --------------
-        file : cls:_io.BufferedReader = Opened file. This class is deviced to be
-                                        used within a context manager (with statement)
-                                        where an actual file f is opened.
+    # =============================================================================
+    # PUBLIC METHODS
+    # =============================================================================
 
-        Dependencies
-        ---------------
-        self.read_file_header() : method to read the file header and decide if it's a valid
-                                candidate.
-        """
-        self.information_dictionary = dict()
-
-    def get_file(self, file):
+    def get_file(self, file: TextIO) -> None:
+        """Set the file handle for parsing operations."""
         self.f = file
 
-    def check_extension_in_fname(self) -> None:
-        """Before even starting to parse the file, we check that the
-        provided file has a valid extension (dm3 or dm4). Otherwise, raises error.
-        This will be once again checked - upon parsing the header of the file -.
-        """
-        # First thing we do is to check is we have an actual valid file
-        fname = (
-            self.f.name
-        )  # It is an opened file, should have a name instance variable ...
-        if not any(
-            [
-                re.search(ext, fname, flags=re.IGNORECASE)
-                for ext in self._valid_extensions
-            ]
-        ):
-            msg = f"The file-name given does not have a valid extension - {fname}.\
-                The extension should be one of the following : {self._valid_extensions}."
-            _logger.error(msg)
-            raise DMVersionError(msg)
+    def parse_file(self) -> Dict[str, Any]:
+        """Parse the entire DM file and return the information dictionary."""
+        self._check_extension_in_fname()
+        self._process_file_header()
+        nnames = self._read_ParentBlockSize_info()
+        self.information_dictionary["root"] = dict()
+        self._parse_Blocks(nnames, self.information_dictionary, "root")
+        return self.information_dictionary
 
-    @property
-    def _callable_parsers_dictionary(self):
-        dictio = {
-            "simpleType": (
-                self.catch_simpleTypeData_format,
-                self.read_simpleTypeData,
-                self.skip_simpleTypeData,
-            ),
-            "structure": (
-                self.catch_structure_format,
-                self.read_structure,
-                self.skip_structure,
-            ),
-            "string": (self.catch_string_format, self.read_string, self.skip_string),
-            "array": (
-                self.catch_simpleTypesArray_format,
-                self.read_simpleTypesArray,
-                self.skip_simpleTypesArray,
-            ),
-            "complexArray": (
-                self.catch_complexTypesArray_format,
-                self.read_complexTypesArray,
-                self.skip_complexTypesArray,
-            ),
-        }
-        return dictio
+    # =============================================================================
+    # CORE PARSING METHODS
+    # =============================================================================
 
-    def get_callable_word(self, encryption_type):
-        """
-        This method is in charge getting the keyword for the type of callables to be read
-
-        Parameters
-        ------------
-        encryption_type : int = Type of encryption for the data to be read.
-        """
-        if 2 <= encryption_type <= 12:
-            return "simpleType"
-
-        dictionary_words = {18: "string", 15: "structure", 20: "array"}
-        return dictionary_words[encryption_type]
-
-    def process_file_header(self) -> None:
-        """
-        Method that reads the header of the file:
-        1-  Gets the dm version -> self.version
-        2-  The parser that it will be using in general to get the integer values
-            Format - long <4 bytes> or long_long <8 bytes>
-        3-  file_size
-        4-  Endianness of the info read by the parser -> self.endianness
-
-        Dependencies
-        ---------------
-        self._version_parsers : class variable. Dictionary of the possible
-                                general usage reader methods -> for long or long_long
-                                data, according to the file version (dm3 or dm4)
-        """
+    def _process_file_header(self) -> None:
+        """Read and validate DM file header (version, size, endianness)."""
         self.f.seek(0)  # Pointer to the 0 possition
         self.version = dec.read_long(self.f, "big")  # version : <4 bytes> big endian
         if self.version not in [3, 4]:
@@ -189,108 +108,129 @@ class DM_InfoParser:
         msg = f"DM version = {self.version} - File size (Bytes) = {file_size} - {self.endianness} endian"
         _logger.info(msg)
 
-    def read_ParentBlockSize_info(self, read_block_size: bool = False) -> int:
+    def _parse_Blocks(self, nnames, info_dictionary, parentBlock_name: str = "root"):
         """
-        This method gets the info for the current block of data to be read -
-
-        - Gets the number of named subblocks of info inside the current block
-        * As a side effect, if the file is dm4 and read_block_size is True, it
-        reads an extra byte-space located before the number of named subblocks
-        -> corresponding to the block size ? -> Not always though.
-                                Only uppon calling the method with read_block_size
-
-        Parameters
-        ----------------------------------------
-        read_block_size : bool = Whenever a version 4 (dm4) is given, an extra memory direction is included
-                            in front of the actual number of header names. This has to be read to advance
-                            the memory pointer to the place we are interested in. It is suposedly related
-                            to the size of the current infoGroup.
-
-        Returns
-        ----------------------------------------
-        number_of_names : int = Number of named tags in the file in the current block
-
-        Block info structure
-        ----------------------------------------
-        GATAN dm3
-        ordered : <1 byte> - opened <1 byte> - number_of_names <4 bytes>
-        ---------
-        GATAN dm4
-        ordered : <1 byte> - opened <1 byte> - ¿block_size <8 bytes>? - number_of_names <8 bytes>
+        Recursively parse all blocks in the file structure.
+        
+        Handles both data blocks (id=21) and parent blocks (id=20) that contain subblocks.
         """
-        # Deprecated #############################################
-        # These two lines read a single byte position for a boolean info on wheather or not the file :
-        # dec.read_byte(self.f,'big')        #is ordered
-        # dec.read_byte(self.f,'big')        #is opened
-        #########################################################
-        self.f.seek(2, 1)  # advances 2 bytes from the current possition
+        # Local indices for unnamed data/group Blocks
+        noNameData = 0
+        noNameBlock = 0
+
+        for _ in range(nnames):
+            # NameSpace - Header info
+            identifier, childrenBlock_name = self._read_ChildrenBlock_header()
+            # This is coupled with the dictionary of callers
+            callable_id = (
+                2
+                if (parentBlock_name == "ImageData" and childrenBlock_name == "Data")
+                else 1
+            )
+
+            if identifier == 21:
+                if not childrenBlock_name:
+                    childrenBlock_name = f"DataBlock{noNameData}"  # NoNameData
+                    noNameData += 1
+                self._read_delimiter()  # Checks the delimiter name - data
+                (
+                    sizeBlock_id,
+                    encryption_type,
+                ) = self._read_DataType_info()  # Type of data header
+                self._check_sizeID_encryption_pair(
+                    sizeBlock_id, encryption_type
+                )  # Checking types
+                # The type pairings are check, so we can use the size to get the correct callables
+                if sizeBlock_id > 3 and encryption_type == 20:  # Array of complex types
+                    keyword = "complexArray"
+                    pass  # Do something -> implement complex type caller
+                else:
+                    keyword = self._get_callable_word(encryption_type)
+
+                parsers_dict = self._get_callable_parsers_dictionary()
+                catcher = parsers_dict[keyword][0]
+                caller = parsers_dict[keyword][callable_id]
+                data = self._process_ChildrensDataBlock(catcher, caller)
+                # The endgame - creating a dictionary of things ...
+                info_dictionary[childrenBlock_name] = data
+
+            elif identifier == 20:  # ChildrenBlock becoming a ParentBlock -> Recursion
+                if not childrenBlock_name:
+                    childrenBlock_name = f"GroupBlock{noNameBlock}"  # NoNameBlock
+                    noNameBlock += 1
+                nnames = self._read_ParentBlockSize_info(
+                    read_block_size=True
+                )  # Number of names inside
+
+                info_dictionary[childrenBlock_name] = dict()
+                # Recursion !
+                self._parse_Blocks(
+                    nnames, info_dictionary[childrenBlock_name], childrenBlock_name
+                )
+
+            else:
+                raise DMIdentifierError(
+                    f"Identifier missread while parsing the file. {identifier =}"
+                )
+
+    def _process_ChildrensDataBlock(self, formatCallable, readerCallable):
+        """Process data block using format catcher and data reader."""
+        format_header = formatCallable()
+        data = readerCallable(**format_header)
+        return data
+
+    # =============================================================================
+    # BLOCK READING METHODS
+    # =============================================================================
+
+    def _read_ParentBlockSize_info(self, read_block_size: bool = False) -> int:
+        """
+        Read number of named subblocks in current block.
+        
+        For DM4 files, optionally reads block size if read_block_size=True.
+        """
+        # Skip deprecated boolean flags (ordered/opened)
+        self.f.seek(2, 1)
 
         if self.version == 4 and read_block_size:
-            # TODO Lacking the logging capability still
-            # Relies on the parser defined by the version
-            # (dm4 or dm3 - 8 or 4 byte chuncks of info)
+            # Read block size for DM4 format
             block_size = self.parser(self.f, "big")
 
         number_of_names = self.parser(self.f, "big")
         return number_of_names
 
-    def read_ChildrenBlock_header(self):
+    def _read_ChildrenBlock_header(self) -> Tuple[int, str]:
         """
-        Method to extract the header info for the current chuck of the parent block of info.
-        The files in dm3/4 are structured in blocks of info - Parent blocks containing children blocks.
-        A children block can then become a parent block of another set of children subblocks ... and so on.
-        These blocks are usually named, and also contain a numerical code that
-        specifies the type of data stored in that possition:
-        id == 20 -> This children block contains more subblocks -> Is the parent of a new set of children blocks.
-                    (Potentially containing several name spaces.)
-        id == 21 -> This children block contains data and info. So this data can later be read or skipped ...
-
+        Read header info for current child block.
+        
         Returns
-        -----------
-        (identifier, block_name) : tuple(int,str) =
-            identifier : int = id for the type of block -> Data block, or set of new children subblocks
-            block_name : str = string for the name of the current block (can be '' empty)
-
-        File structure here:
-        ---------------------
-        identifier <1 byte> - length <4 bytes> - block_name <'length' bytes>
+        -------
+        tuple[int, str]
+            (identifier, block_name) where identifier indicates block type:
+            - 20: Contains subblocks (parent)
+            - 21: Contains data
         """
         identifier = dec.read_byte(self.f, "big")  # a single byte integer used as index
         # Reading the name - a string
         length = dec.read_short(self.f, "big")  # a double byte integer
-        block_name = self.read_string(length)
+        block_name = self._read_string(length)
         return identifier, block_name
 
-    def read_DataType_info(self) -> Tuple:
+    def _read_DataType_info(self) -> Tuple[int, int]:
         """
-        This method will, in principle, read the size identifier for the current children data
-        block been studied, as well as the actual type of data.
-        If a value <1 is read, raises an error (as that identifier is not implemented in GATAN DM)
-
+        Read size and encryption type identifiers for data block.
+        
         Returns
-        ---------------
-        size_Data_id : int = The number identifier that will indicate the type of data read
-                            1  - simple type                         <4 or 8 bytes> most likely
-                            2  - string                              <length bytes>
-                            3  - Array of simple types               <size * element_type bytes>
-                            >3 - Structure or Array of complex types <?>
-                                The array of complex types can be array of strings,
-                                structs or an arrays(simple_types)
-
-        encryption_type : int = Whenever size_Data_id >= 1, this read number will denote the decryption
-                                method (reader) required to get the actual data from the current children block
-                                -> pointing in the _readers_dictionay to the actual reader method required.
-
-        Dependencies
-        ----------------
-        self.parser()
+        -------
+        tuple[int, int]
+            (size_data_id, encryption_type) where:
+            - size_data_id: 1=simple, 2=string, 3=array, >3=structure/complex
+            - encryption_type: Points to specific reader method
         """
         size_Data_id = self.parser(self.f, "big")
-        # Checking data size -> If not correct automatically raises and error.
+        # Check data size validity
         if size_Data_id < 1:
-            # Check this always ... to catch possible corrupted files
-            msg = f"Invalid {size_Data_id = } < -1. DM does not support this id\
-                (Error parsing the file?)"
+            msg = f"Invalid {size_Data_id = } < 1. DM does not support this id (parsing error?)"
             _logger.exception(msg)
             raise IOError(msg)
 
@@ -300,17 +240,75 @@ class DM_InfoParser:
 
         return size_Data_id, encryption_type
 
-    def check_sizeID_encryption_pair(
-        self, size_Data_id: int, encryption_type: int
-    ) -> None:
-        """Method in charge of checking size and encryptions read from file.
-        In case of containing a wrong pairing of size index and encryption type, raises
+    def _read_delimiter(self) -> None:
+        """Read and validate '%%%%' delimiter between block names and data."""
+        if self.version == 4:
+            # Skip 8 bytes for DM4 format
+            self.f.seek(8, 1)
+        delimiter = self._read_string(4)
+        if delimiter != "%%%%":
+            message = f"Error with the delimiter between blocks.\nExpected %%%%\nGot{delimiter}"
+            _logger.exception(message)
+            raise DMDelimiterCharacterError(message)
 
-        Parameters
-        ----------
-        size_Data_id    : int = Index indicating the size of the data to be read/skipped.
-        encryption_type : int = Index indicating the type of data to be read.
-        """
+    # =============================================================================
+    # UTILITY & HELPER METHODS
+    # =============================================================================
+
+    def _check_extension_in_fname(self) -> None:
+        """Validate file has dm3 or dm4 extension."""
+        # First thing we do is to check is we have an actual valid file
+        fname = (
+            self.f.name
+        )  # It is an opened file, should have a name instance variable ...
+        if not any(
+            [
+                re.search(ext, fname, flags=re.IGNORECASE)
+                for ext in self._valid_extensions
+            ]
+        ):
+            msg = f"The file-name given does not have a valid extension - {fname}.\
+                The extension should be one of the following : {self._valid_extensions}."
+            _logger.error(msg)
+            raise DMVersionError(msg)
+
+    def _get_callable_parsers_dictionary(self) -> Dict[str, Tuple[Callable, Callable, Callable]]:
+        """Dictionary mapping data type keywords to their respective parser methods."""
+        dictio = {
+            "simpleType": (
+                self._catch_simpleTypeData_format,
+                self._read_simpleTypeData,
+                self._skip_simpleTypeData,
+            ),
+            "structure": (
+                self._catch_structure_format,
+                self._read_structure,
+                self._skip_structure,
+            ),
+            "string": (self._catch_string_format, self._read_string, self._skip_string),
+            "array": (
+                self._catch_simpleTypesArray_format,
+                self._read_simpleTypesArray,
+                self._skip_simpleTypesArray,
+            ),
+            "complexArray": (
+                self._catch_complexTypesArray_format,
+                self._read_complexTypesArray,
+                self._skip_complexTypesArray,
+            ),
+        }
+        return dictio
+
+    def _get_callable_word(self, encryption_type: int) -> str:
+        """Get keyword for encryption type to select appropriate callable."""
+        if 2 <= encryption_type <= 12:
+            return "simpleType"
+
+        dictionary_words = {18: "string", 15: "structure", 20: "array"}
+        return dictionary_words[encryption_type]
+
+    def _check_sizeID_encryption_pair(self, size_Data_id: int, encryption_type: int) -> None:
+        """Validate that size/encryption pair is supported by DM format."""
         if size_Data_id > 3:
             if encryption_type not in [15, 20]:
                 m0 = f"Expected EncryptionTypes of 15 or 20 for the DataSize {size_Data_id}"
@@ -327,33 +325,16 @@ class DM_InfoParser:
                 _logger.exception(message)
                 raise IOError(message)
 
-    def read_delimiter(self) -> None:
-        """
-        Method that reads the delimiter between blocks names, and the actual data they refer to.
-        Raises an error when the delimiter is not what was expected from ta DM3 or DM4 files...
-        """
-        if self.version == 4:
-            # Notice it moves the pointer 8 bytes further down
-            # the file from the current position, if dm4.
-            self.f.seek(8, 1)
-        delimiter = self.read_string(4)
-        if delimiter != "%%%%":
-            message = f"Error with the delimiter between blocks.\nExpected %%%%\nGot{delimiter}"
-            _logger.exception(message)
-            raise DMDelimiterCharacterError(message)
+    def _check_multipleElementObjects_DataTypes(self, definition) -> None:
+        """Validate that all element types are simple data types (2-12 range)."""
+        if any([el not in self._simple_data_types for el in definition]):
+            m1 = "Expected id labels of simple data types."
+            m2 = f"Got {definition} instead >> numbers outside the [2,12] range"
+            message = "\n".join([m1, m2])
+            raise DMStructDataTypeError(message)
 
-    #############################################
-    ## Simple data type reading #################
-    def backtracking_position_in_file(self, nbytes=None) -> None:
-        """Helper method in  charge of backtracking a number of nbytes in the file reader
-        Parameters
-        ----------
-        nbytes : int =  number of bytes to be backtracked in the file (the memory pointer is moved
-                        back that number of bytes).
-                        If None, the nbytes is assigned a value 4 for dm3
-                        and 8 for dm4 format files in DM.
-                        Default = None
-        """
+    def _backtracking_position_in_file(self, nbytes=None) -> None:
+        """Move file pointer back by nbytes (4 for dm3, 8 for dm4 if None)."""
         if not nbytes:
             if self.version == 3:
                 nbytes = 4
@@ -368,33 +349,24 @@ class DM_InfoParser:
         current_position = self.f.tell()
         self.f.seek(current_position - nbytes, 0)
 
-    # This method does nothing in reality ... it exists to be injected
-    def catch_simpleTypeData_format(self):
-        """Method that gets the simple element type read from memory,
-        and returns a dictionary, to be fed to the reader
+    # =============================================================================
+    # SIMPLE DATA TYPE METHODS
+    # =============================================================================
 
-        Parameters
-        -----------
-        element_type : int = Type of element (simple) read from memory
-        """
+    def _catch_simpleTypeData_format(self) -> Dict[str, int]:
+        """Get simple element type from memory for reader configuration."""
 
-        self.backtracking_position_in_file()
+        self._backtracking_position_in_file()
         element_type = self.parser(self.f, "big")
         return {"element_type": element_type}
 
-    def skip_simpleTypeData(self, element_type: int):
-        """This method skips the reading of a simple data type.
-        In principle, should never be called ... it is included for the completitudeness
-        of the behaviour injection scheme used in this class
+    def _read_simpleTypeData(self, element_type: int) -> Any:
+        """Read simple data type using appropriate decoder."""
+        data = self._simple_parsers_dictionary[element_type][0](self.f, self.endianness)
+        return data
 
-        Parameters
-        ----------
-        element_type : int = Type of element (simple) read from memory
-
-        Returns
-        ---------
-        dictionary_simpleDType : dict = Information for the element type, size, size in bytes ... etc
-        """
+    def _skip_simpleTypeData(self, element_type: int) -> Dict[str, Any]:
+        """Skip simple data type and return position info."""
         sizeB = self._simple_parsers_dictionary[element_type][-1]
         offset = self.f.tell()
         dictionary_simpleDType = {
@@ -403,60 +375,20 @@ class DM_InfoParser:
             "offset": offset,
             "endian": self.endianness,
         }
-        self.f.seek(sizeB, 1)  # Advancing the pointer memory
-
+        self.f.seek(sizeB, 1)  # Skip data
         return dictionary_simpleDType
 
-    def read_simpleTypeData(self, element_type: int):
-        """Method that searches the adequate data reader from the dictionary, and
-        returns the data read
+    # =============================================================================
+    # STRING METHODS
+    # =============================================================================
 
-        Parameters
-        -----------
-        element_type : int = numerical identifier for the simpleType data reader
-
-        Returns
-        -----------
-        data = Data read. The type is dependent on the type of data stored, obviously.
-
-        """
-        data = self._simple_parsers_dictionary[element_type][0](self.f, self.endianness)
-        return data
-
-    #############################################
-    ## String related methods ###################
-
-    def catch_string_format(self):
-        """
-        Method that will recover the length of the string to be read,
-        using the appropriate byte-size depending on the dm version
-        dm3 <4 bytes> -- dm4 <8 bytes> -> But always big endian.
-
-        Return
-        --------------
-        length : int = Length of the chain of characters that will form the string
-        """
+    def _catch_string_format(self):
+        """Get string length from file header."""
         length = self.parser(self.f, "big")
         return {"length": length}
 
-    def read_string(self, length: int, methods: List | None = None) -> str:
-        """
-        This method will read a string from the encoded files
-        adressing every single character one by one, and returning
-        a fully formed string from the list of joined characters.
-        Then, the string is decoded (or at least decoding is tried)
-
-        Parameters
-        -------------
-        length : int = Determines the number of characters of the string
-        methods : list | None = list of methods that the decoder will try
-                                to get the string decoded from its byte format
-                                Default = None.
-
-        Returns
-        -------------
-        string : str = The actual string read from the list of characters.
-        """
+    def _read_string(self, length: int, methods: List | None = None) -> str:
+        """Read and decode string of specified length."""
         # Reading files
         list_characters = [
             dec.read_char(self.f, self.endianness) for _ in range(length)
@@ -475,35 +407,12 @@ class DM_InfoParser:
                 _logger.warning(msg)
             else:
                 break
-        """    
-        if not string:
-            
-            string = " - "
-        """
         return string
 
-    def skip_string(self, length: int, data=False):
-        """
-        This method will skip the reading of a string, by jumping forward in the file
-        a number of byte possitions equal to the string length given.
-
-        Parameters
-        -------------
-        length : int = Determines the number of characters of the string
-
-        Returns
-        -------------
-        string_info : dict = The dictionary of info to be able to locate and read the string.
-                            The usual suspects as keys
-                            - size (length of the string)
-                            - bytes_size (size in bytes) == size (1 character = 1 byte)
-                            - offset (pointer position in the file)
-                            - endian (endianness of the string bytes chain) == self.endianness
-        """
-        offset = self.f.tell()  # Get the current pointer position
-        self.f.seek(
-            length, 1
-        )  # advances the pointer a number of bytes equal to the length
+    def _skip_string(self, length: int, data=False):
+        """Skip string reading and return position info."""
+        offset = self.f.tell()
+        self.f.seek(length, 1)  # Skip string data
         string_info = {
             "size": length,
             "bytes_size": length,
@@ -512,120 +421,46 @@ class DM_InfoParser:
         }
         return string_info
 
-    #### Check element (structures or arrays) data types
+    # =============================================================================
+    # STRUCTURE METHODS
+    # =============================================================================
 
-    def check_multipleElementObjects_DataTypes(self, definition) -> None:
-        """Simple method to validate that the element data types given to
-        the structure and array readers are of simple type.
-
-        Parameters
-        --------------
-        definition : list | tuple = Iterable that defines the element data types
-                                    in an array (list) or structure (tuple).
-        """
-        if any([el not in self._simple_data_types for el in definition]):
-            m1 = "Expected id labels of simple data types."
-            m2 = f"Got {definition} instead >> numbers outside the [2,12] range"
-            message = "\n".join([m1, m2])
-            raise DMStructDataTypeError(message)
-
-    ###############################################
-    ## Structure related methods ##################
-
-    def catch_structure_format(self):
-        """
-        This method will, in principle, the structure or format of the
-        struct object stored in the Gatan DM file, returning in a tuple format
-        so later the data can be extracted from within the file.
-
-        Returns
-        ---------------
-        s_format : tuple = Tuple of the format descriptor of the struc object
-        """
-        self.parser(
-            self.f, "big"
-        )  # Reads the length of the struct ... not relevant, so not strored
+    def _catch_structure_format(self):
+        """Read structure format descriptor from file."""
+        self.parser(self.f, "big")  # Skip struct length (not needed)
         n_fields = self.parser(self.f, "big")
-        # Loop doing exactly the same, n_fields times
+        # Read field types
         s_format = []
         for _ in range(n_fields):
-            self.parser(
-                self.f, "big"
-            )  # Again - Reads the length of the struct.. not stored
+            self.parser(self.f, "big")  # Skip field length (not needed)
             s_format.append(self.parser(self.f, "big"))
         return {"struct_format": tuple(s_format)}
 
-    def read_structure(self, struct_format):
-        """
-        This method reads a struct without skipping the actual info reading
-        It relies in a variable dictionary that contains the type of readers
-        that it can access. Notice that the structs can only be filled with
-        simple_types - That is - integers (8,4 bytes - signed or unsigned),
-        floats, etc.
+    def _read_structure(self, struct_format):
+        """Read structure data according to format specification."""
+        # Validate format first
+        self._check_multipleElementObjects_DataTypes(struct_format)
 
-        It cannot be a struct of strings, arrays, etc -> Those would be complex_type arrays
-
-        Parameters
-        ----------------
-        struct_format : tuple = The format tuple that contains the descriptors
-                                of the types of data that the struct contains
-
-        Return
-        ----------------
-        data : tuple = The actual struct data read and decoded.
-
-        Dependencies
-        ----------------
-        _parsers_dictionary : dict = A dictionary that links the data types from
-                            the struct format, to the actual byte reader functions
-        """
-        # Firts, check that the definition is right -> Otherwise raise
-        self.check_multipleElementObjects_DataTypes(struct_format)
-
-        # Now the actual reading of the struct
+        # Read struct values
         values = []
         for num_type in struct_format:
-            # Getting and calling the reader
             data = self._simple_parsers_dictionary[num_type][0](self.f, self.endianness)
             values.append(data)
 
         return tuple(values)
 
-    def skip_structure(self, struct_format):
-        """
-        This method skips a struct and store its info -> meaning that it bassically returns
-        possitional info and size for the struct.
+    def _skip_structure(self, struct_format):
+        """Skip structure reading and return position info."""
+        # Validate format first
+        self._check_multipleElementObjects_DataTypes(struct_format)
 
-        Parameters
-        ----------------
-        struct_format : tuple = The format tuple that contains the descriptors
-                                of the types of data that the struct contains
-
-        Return
-        ----------------
-        data : dict = Now, we do not return a tuple for the struct
-                        We return a dictionary holding info about the struct
-                        possition in the file, size (len of the tuple), size
-                        in bytes and endianness ... in case of needing it later.
-
-        Dependencies
-        ----------------
-        readers_dict : dict = A dictionary that links the data types from
-                                the struct format, to the actual byte reader functions
-        simple_data_types : tuple = Tuple of integers, descriptor numbers for the simple data types
-        """
-        # Firts, check that the definition is right -> Otherwise raise
-        self.check_multipleElementObjects_DataTypes(struct_format)
-
-        # Now let's skip through the reading and advance the file pointer
-        offset = self.f.tell()  # Getting the current pointer position
-        struct_Bsize = 0  # Size in bytes
+        # Calculate size and skip
+        offset = self.f.tell()
+        struct_Bsize = 0
         for num_type in struct_format:
-            # Getting the size in bytes to skip
             struct_Bsize += self._simple_parsers_dictionary[num_type][-1]
 
-        # Now we advance the pointer position
-        self.f.seek(struct_Bsize, 1)
+        self.f.seek(struct_Bsize, 1)  # Skip struct data
 
         # Create the info dictionary
         dictionary_struct_info = {
@@ -637,89 +472,38 @@ class DM_InfoParser:
 
         return dictionary_struct_info
 
-    #############################################
-    ## Arrays of simple types ###################
+    # =============================================================================
+    # SIMPLE ARRAY METHODS
+    # =============================================================================
 
-    def catch_simpleTypesArray_format(self):
-        """
-        This method will, in principle, read the structure or format of the
-        array object stored in the Gatan DM file, returning the size (length)
-        of the array and the types of elements inside the array (all elements must share
-        the type, so is single valued and represented by a single type)
-
-        Returns
-        ---------------
-        element_encryption : int = Type of encryption for the elements in the array
-        size : int = Lentgh of the array to be read
-
-        Dependencies
-        ----------------
-        Currently, the parser function
-
-        Data structure
-        -----------------
-        The arrays will be structured as a header + data.
-        The header
-        """
-        # The reading order is relevant
+    def _catch_simpleTypesArray_format(self):
+        """Read array format (element type and length) from file header."""
+        # Read array header
         element_encryption = self.parser(self.f, "big")
         size = self.parser(self.f, "big")
         return {"element_encryption_type": element_encryption, "length": size}
 
-    def read_simpleTypesArray(self, element_encryption_type, length):
-        """
-        Method to read simple-type arrays - Where every single element of the array
-        belongs to the same type and, thus, addresses the same reader type
-
-        Parameters
-        -------------
-        element_encryption_type : int = The actual type of encryption, key in the dictionary of types
-        length : int = The size of the array, read from the file in the pre-processing step for arrays.
-
-        Return
-        -------------
-        data : list | str = Data read from file, corresponding to an array of data
-        """
-        # Checking that the data types given are correct -> We create the list on site ...
-        self.check_multipleElementObjects_DataTypes(
-            [
-                element_encryption_type,
-            ]
-        )
+    def _read_simpleTypesArray(self, element_encryption_type, length):
+        """Read array of simple types (or convert to string if appropriate)."""
+        # Validate element type
+        self._check_multipleElementObjects_DataTypes([element_encryption_type])
 
         reader = self._simple_parsers_dictionary[element_encryption_type][0]
         data = [reader(self.f, self.endianness) for _ in range(length)]
-        # There's the possibility, apparently, of a simple array to correspond to an actual string
-        # So, the list is joined to form the string
+        
+        # Convert to string if appropriate (type 4 = ushort, often used for strings)
         if element_encryption_type == 4 and data:
             try:
-                data = "".join(
-                    [chr(i) for i in data]
-                )  # Not encoded, as the rest of strings
+                data = "".join([chr(i) for i in data])
             except Exception as e:
-                _logger.warning(
-                    f"Skipped the reading of array-like string. Exception - {e}"
-                )
-                data = self.skip_string(length=length * 2)
+                _logger.warning(f"Skipped array-to-string conversion. Exception: {e}")
+                data = self._skip_string(length=length * 2)
         return data
 
-    def skip_simpleTypesArray(self, element_encryption_type, length):
-        """
-        Method to skip simple-type arrays - Where every single element of the array
-        belongs to the same type and, thus, addresses the same reader type -> But returns a dictionary
-        with the description of the actual array
-
-        Parameters
-        -------------
-        element_ecryption_type : int = The actual type of encryption, key in the dictionary of types
-        length : int = The size of the array, read from the file in the pre-processing step for arrays.
-
-        Return
-        --------------
-        data : dict = info for the data read from file, corresponding to an array of data
-        """
+    def _skip_simpleTypesArray(self, element_encryption_type, length):
+        """Skip simple array reading and return position info."""
         # The info about size per element is in the dictionary
-        self.check_multipleElementObjects_DataTypes(
+        self._check_multipleElementObjects_DataTypes(
             [
                 element_encryption_type,
             ]
@@ -737,30 +521,16 @@ class DM_InfoParser:
         self.f.seek(size_bytes, 1)  # Skipping data -> Not read
         return data
 
-    ###########################
-    # Complex arrays #######
+    # =============================================================================
+    # COMPLEX ARRAY METHODS
+    # =============================================================================
 
-    def catch_complexTypesArray_format(self):
-        """
-        This method will try to catch the format header for complex type arrays
-        (i.e., arrays with strings, structures or other arrays as their elements).
-
-        Returns
-        -------------
-        format_dict : dict() = Dictionary with the necessary keywords to excecute the
-                            complex array reader/skipper later on. So, it gets:
-                            keyword           : str  = identifier of the array
-                                                        element encryption type
-                            array_size        : int  = size of the complex array
-                                                        to be read/skipped
-                            format_definition : dict = format dictionary to be fed
-                                                        to the reader/skipper
-        """
+    def _catch_complexTypesArray_format(self):
+        """Read format header for complex arrays (strings, structures, arrays)."""
         element_encryption_type = self.parser(self.f, "big")
-        keyword = self.get_callable_word(element_encryption_type)
-        format_definition = self._callable_parsers_dictionary[keyword][
-            0
-        ]()  # Definition of the elements
+        keyword = self._get_callable_word(element_encryption_type)
+        parsers_dict = self._get_callable_parsers_dictionary()
+        format_definition = parsers_dict[keyword][0]()  # Definition of the elements
         array_size = self.parser(self.f, "big")
         return {
             "keyword": keyword,
@@ -768,29 +538,17 @@ class DM_InfoParser:
             "format_definition": format_definition,
         }
 
-    def read_complexTypesArray(self, keyword, array_size, format_definition):
-        """
-        Method to read complex-type arrays - Where every single element of the array
-        belongs to the same type and, thus, addresses the same reader type. Furthermore,
-        in these arrays that contain multiple-element elements, each one of them is always
-        of the same type, and, so, described by the same format_definition. Hence, the
-        definition is only read once ...
-
-        Parameters
-        -----------
-        """
+    def _read_complexTypesArray(self, keyword, array_size, format_definition):
+        """Read array of complex types using appropriate reader."""
         # Let us read the arrays of length == array_size
-        reader = self._callable_parsers_dictionary[keyword][1]
+        reader = self._get_callable_parsers_dictionary()[keyword][1]
         # And we read all the data inside, according to the type of reader we got ...
         data = [reader(**format_definition) for el in range(array_size)]
         return data
 
-    def skip_complexTypesArray(self, keyword, array_size, format_definition):
-        """
-        Method to skip the reading of complex-type arrays, returning the memory size and location
-        info as data
-        """
-        skipper = self._callable_parsers_dictionary[keyword][-1]
+    def _skip_complexTypesArray(self, keyword, array_size, format_definition):
+        """Skip complex array reading and return position info."""
+        skipper = self._get_callable_parsers_dictionary()[keyword][-1]
         # This will advance an element_size length the pointer position in memory,
         # appart from retrieving the offset, size, size in bytes and endiannes in a
         # data dictionary
@@ -803,113 +561,3 @@ class DM_InfoParser:
         # and the size in bytes by the actual size for the whole array
         element_data["bytes_size"] *= array_size
         return element_data
-
-    ######################
-    # General methods ####
-
-    def process_ChildrensDataBlock(self, formatCallable, readerCallable):
-        """
-        Method to process the block of data according to the size and encrytion
-        found in the header.
-
-        Parameters
-        --------------
-        formatCallable : Callable = Method injected according to the type of encryption
-                                    read on the general block header. It will be in charge of
-                                    reading the format (extra header info).
-
-        readerCallable : Callable = Method injected according to the type of encryption
-                                    read on the general block header. It will be in charge of
-                                    reading the actual data contained within the data block.
-                                    To function properly, these types of callables are instantiated
-                                    with a format_dictionary, provided by executing the formatCallable
-
-        Returns
-        ---------------
-        data : Unknown type = Data type read or skipped according to the callables provided.
-        """
-        format_header = formatCallable()
-        data = readerCallable(**format_header)
-        return data
-
-    def parse_Blocks(self, nnames, info_dictionary, parentBlock_name: str = "root"):
-        """
-        Method that parses all the information in the file, except the initial file headers.
-        Notice that this method will be called recursevely whenever a Children_block becomes a
-        Parent_block (i.e., when an specific block contains a series of Children blocks, instead of data)
-
-        Parameters
-        -----------
-        nnames : int = Number of name spaces inside the current block (with name == parentBlock_name)
-        info_dictionary : dict = Dictionary referred to the current parent namespace,
-                                where the new info is going to be stored.
-        partentBlock_name : str = Name of the current block being read. Its only function is to
-                                keep track of where we are currently reading info - to skip
-                                the reading if we are in the 'ImageData' parent namespace, and the
-                                children read from file is 'Data'. Default = 'root'
-        """
-        # Local indices for unnamed data/group Blocks
-        noNameData = 0
-        noNameBlock = 0
-
-        for _ in range(nnames):
-            # NameSpace - Header info
-            identifier, childrenBlock_name = self.read_ChildrenBlock_header()
-            # This is coupled with the dictionary of callers
-            callable_id = (
-                2
-                if (parentBlock_name == "ImageData" and childrenBlock_name == "Data")
-                else 1
-            )
-
-            if identifier == 21:
-                if not childrenBlock_name:
-                    childrenBlock_name = f"DataBlock{noNameData}"  # NoNameData
-                    noNameData += 1
-                self.read_delimiter()  # Checks the delimiter name - data
-                (
-                    sizeBlock_id,
-                    encryption_type,
-                ) = self.read_DataType_info()  # Type of data header
-                self.check_sizeID_encryption_pair(
-                    sizeBlock_id, encryption_type
-                )  # Checking types
-                # The type pairings are check, so we can use the size to get the correct callables
-                if sizeBlock_id > 3 and encryption_type == 20:  # Array of complex types
-                    keyword = "complexArray"
-                    pass  # Do something -> implement complex type caller
-                else:
-                    keyword = self.get_callable_word(encryption_type)
-
-                catcher = self._callable_parsers_dictionary[keyword][0]
-                caller = self._callable_parsers_dictionary[keyword][callable_id]
-                data = self.process_ChildrensDataBlock(catcher, caller)
-                # The endgame - creating a dictionary of things ...
-                info_dictionary[childrenBlock_name] = data
-
-            elif identifier == 20:  # ChildrenBlock becoming a ParentBlock -> Recursion
-                if not childrenBlock_name:
-                    childrenBlock_name = f"GroupBlock{noNameBlock}"  # NoNameBlock
-                    noNameBlock += 1
-                nnames = self.read_ParentBlockSize_info(
-                    read_block_size=True
-                )  # Number of names inside
-
-                info_dictionary[childrenBlock_name] = dict()
-                # Recursion !
-                self.parse_Blocks(
-                    nnames, info_dictionary[childrenBlock_name], childrenBlock_name
-                )
-
-            else:
-                raise DMIdentifierError(
-                    f"Identifier missread while parsing the file. {identifier =}"
-                )
-
-    def parse_file(self):
-        self.check_extension_in_fname()
-        self.process_file_header()
-        nnames = self.read_ParentBlockSize_info()
-        self.information_dictionary["root"] = dict()
-        self.parse_Blocks(nnames, self.information_dictionary, "root")
-        return self.information_dictionary
