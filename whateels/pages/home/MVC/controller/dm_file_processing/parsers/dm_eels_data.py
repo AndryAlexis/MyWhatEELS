@@ -2,26 +2,18 @@
 import numpy as np
 import json
 from typing import List
-from ..readers.abstract_classes import IDM_EELS_DataHandler
 from whateels.helpers.logging import Logger
 from whateels.errors import *
 from whateels.shared_state import AppState
 
 _logger = Logger.get_logger("dm_eels_data.log", __name__)
 
-class DM_EELS_data(IDM_EELS_DataHandler):
+class DM_EELS_data:
     """
     The idea of this class is to extract relevant EELS data from the
     parsed dictionary. It acts as a handler, as it can retrieve the
     relevant information for its later usage
     """
-
-    def __init__(self):
-        """Initialize instance attributes."""
-        self.spectrum_images = {}
-        self.spectralInfo = None
-        self.f = None
-        self.data = None
 
     # Supported types to be read using numpy from file.
     _supported_dtypes = {
@@ -36,84 +28,15 @@ class DM_EELS_data(IDM_EELS_DataHandler):
         23: "float32"
     }
 
-    def _store_metadata(self, file, infoDict=None):
-        """
-        Store file handle and metadata from parsed info dictionary.
-        
-        Parameters
-        ----------
-        file : file object
-            Opened binary file handle
-        infoDict : dict
-            Parsed metadata dictionary from DM file
-            
-        Raises
-        ------
-        DMEmptyInfoDictionary
-            If infoDict is None or empty
-        DMNonEelsError
-            If dictionary doesn't contain expected structure
-        """
-        self.f = file
-        if not infoDict:
-            message = f"Expected an information dictionary from parser. None provided : {infoDict =}"
-            _logger.exception(message)
-            raise DMEmptyInfoDictionary(message)
-        
-        try:
-            # Store metadata in AppState for application-wide access
-            AppState().metadata = infoDict
-            _logger.info("Metadata stored in AppState")
-            return infoDict
-        except Exception:
-            message = f"Failed to store metadata in AppState.\n{infoDict.keys() if infoDict else 'None'}"
-            _logger.exception(message)
-            raise DMNonEelsError(message)
+    def __init__(self):
+        """Initialize instance attributes."""
+        self.spectrum_images = {}
+        self.spectralInfo = None
+        self.f = None
+        self.data = None
 
-    def _filter_spectrum_images(self, infoDict):
-        """
-        Filter and extract spectrum images from metadata dictionary.
-        
-        Parameters
-        ----------
-        infoDict : dict
-            Metadata dictionary containing ImageList
-            
-        Returns
-        -------
-        dict
-            Filtered spectrum images with valid EELS data
-            
-        Raises
-        ------
-        DMNonEelsError
-            If no valid spectrum images found
-        """
-        try:
-            all_blocks = infoDict["ImageList"]
-            
-            spectrum_images = {
-                k: v for k, v in all_blocks.items()
-                if (
-                    isinstance(v, dict)
-                    and 'ImageData' in v
-                    and 'ImageTags' in v
-                    and isinstance(v['ImageTags'], dict)
-                    and len(v['ImageTags']) > 0
-                    and not (len(v['ImageTags']) == 1 and 'GMS Version' in v['ImageTags'])
-                )
-            }
-            
-            if not spectrum_images:
-                raise ValueError("No valid spectrum images found")
-                
-            return spectrum_images
-            
-        except Exception:
-            message = f"The dictionary provided after parsing the file does not contain spectral information.\n{infoDict.keys()}"
-            _logger.exception(message)
-            raise DMNonEelsError(message)
-
+    # ==================== PUBLIC INTERFACE ====================
+    
     def get_file_data(self, file, infoDict=None):
         """
         Store metadata and filter spectrum images from parsed info dictionary.
@@ -128,16 +51,16 @@ class DM_EELS_data(IDM_EELS_DataHandler):
         imageKeys = list(self.spectrum_images.keys())
         self.spectralInfo = self.spectrum_images[imageKeys[0]] if imageKeys else None
 
-    def _recursively_add_key(self, infoD, keylist):
-        """Method used to expand the dictionary recursevely, if a keyError is raised during
-        the info reading. This is useful to create the dictionary structure expected for the
-        E0, alpha and beta values later on. So, if a _setter function is called for these
-        parameters, the correct route is in place to modify them
+    def handle_EELS_data(self):
         """
-        for el in keylist:
-            if el not in infoD:
-                infoD[el] = dict()
-            infoD = infoD[el]
+        This method will basically read from file, using numpy, the EELS data.
+        After that, it returns itself, the instance of this class created, so the properties
+        of the object can be accessed from the exterior (energy_axis, shape, collection_angle, etc)
+        """
+        self.data = self._get_eels_data()
+        return self
+
+    # ==================== PUBLIC PROPERTIES ====================
 
     @property
     def beam_energy(self):
@@ -217,38 +140,6 @@ class DM_EELS_data(IDM_EELS_DataHandler):
             _logger.info(f"Collection angle beta value updated to {beta} mrad")
         return beta
 
-    def _set_energy_scale(self, scale_val):
-        """Method that sets a new value for the energy scale
-        Raises ValueError whenever we face an spectrum dataset with ill-defined units
-        """
-        scale_items = [
-            k
-            for k, el in self.spectralInfo["ImageData"]["Calibrations"][
-                "Dimension"
-            ].items()
-            if el["Units"] == "eV"
-        ]
-        if len(scale_items) != 1:
-            raise ValueError
-        self.spectralInfo["ImageData"]["Calibrations"]["Dimension"][scale_items[0]][
-            "Scale"
-        ] = scale_val
-
-    def _set_energy_origin(self, offset_val):
-        """Method that changes the offset value of the energy axis"""
-        scale_items = [
-            k
-            for k, el in self.spectralInfo["ImageData"]["Calibrations"][
-                "Dimension"
-            ].items()
-            if el["Units"] == "eV"
-        ]
-        if len(scale_items) != 1:
-            raise ValueError
-        self.spectralInfo["ImageData"]["Calibrations"]["Dimension"][scale_items[0]][
-            "Origin"
-        ] = offset_val
-
     @property
     def shape(self):
         """Shape property for the EELS dataset read from the
@@ -260,7 +151,135 @@ class DM_EELS_data(IDM_EELS_DataHandler):
         )
         return dims[::-1]
 
-    # ['Origin']['Scale']['Dimension']
+    @property
+    def energy_axis(self):
+        """Energy axis for the spectral dataset.
+        This is one of the more confusing properties to extract
+        from DM. By some unknown reason, it is stored"""
+        if len(self.shape) == 3:
+            return np.arange(self.shape[0]) * self._get_scales()[0] + self._get_unit_origins()[0]
+        # For Slines and single spectra, this works ...
+        return np.arange(self.shape[-1]) * self._get_scales()[-1] + self._get_unit_origins()[-1]
+
+    # ==================== PRIVATE METHODS ====================
+
+    def _store_metadata(self, file, infoDict=None):
+        """
+        Store file handle and metadata from parsed info dictionary.
+        
+        Parameters
+        ----------
+        file : file object
+            Opened binary file handle
+        infoDict : dict
+            Parsed metadata dictionary from DM file
+            
+        Raises
+        ------
+        DMEmptyInfoDictionary
+            If infoDict is None or empty
+        DMNonEelsError
+            If dictionary doesn't contain expected structure
+        """
+        self.f = file
+        if not infoDict:
+            message = f"Expected an information dictionary from parser. None provided : {infoDict =}"
+            _logger.exception(message)
+            raise DMEmptyInfoDictionary(message)
+        
+        try:
+            # Store metadata in AppState for application-wide access
+            AppState().metadata = infoDict
+            _logger.info("Metadata stored in AppState")
+            return infoDict
+        except Exception:
+            message = f"Failed to store metadata in AppState.\n{infoDict.keys() if infoDict else 'None'}"
+            _logger.exception(message)
+            raise DMNonEelsError(message)
+
+    def _filter_spectrum_images(self, infoDict):
+        """
+        Filter and extract spectrum images from metadata dictionary.
+        
+        Parameters
+        ----------
+        infoDict : dict
+            Metadata dictionary containing ImageList
+            
+        Returns
+        -------
+        dict
+            Filtered spectrum images with valid EELS data
+            
+        Raises
+        ------
+        DMNonEelsError
+            If no valid spectrum images found
+        """
+        try:
+            all_blocks = infoDict["ImageList"]
+            
+            spectrum_images = {
+                k: v for k, v in all_blocks.items()
+                if (
+                    isinstance(v, dict)
+                    and 'ImageData' in v
+                    and 'ImageTags' in v
+                    and isinstance(v['ImageTags'], dict)
+                    and len(v['ImageTags']) > 0
+                    and not (len(v['ImageTags']) == 1 and 'GMS Version' in v['ImageTags'])
+                )
+            }
+            
+            if not spectrum_images:
+                raise ValueError("No valid spectrum images found")
+                
+            return spectrum_images
+            
+        except Exception:
+            message = f"The dictionary provided after parsing the file does not contain spectral information.\n{infoDict.keys()}"
+            _logger.exception(message)
+            raise DMNonEelsError(message)
+
+    def _get_eels_data(self):
+        """This method will attempt to extract the actual EELS data,
+        to be handled to the factory later on.
+        It does several things.
+        """
+        idx = self.spectralInfo["ImageData"]["DataType"]
+        try:
+            dtype = self._supported_dtypes[idx]
+        except KeyError as e:
+            message = (
+                f"Data Type index ({idx}) read from file ({self.f.name}) not supported."
+            )
+            _logger.exception(message)
+            raise DMNonSupportedDataType(message)
+
+        bSize = self.spectralInfo["ImageData"]["Data"]["bytes_size"]
+        offset = self.spectralInfo["ImageData"]["Data"]["offset"]
+        nItems = self.spectralInfo["ImageData"]["Data"]["size"]
+        # Checking that the info is readable
+        if bSize / nItems != np.dtype(dtype).itemsize:
+            message = f"Size_in_bytes / Number_of_items = {bSize / nItems}\
+                != from NumPy expected size for {dtype} = {np.dtype(dtype).itemsize}"
+            _logger.error(message)
+            raise DMConflictingDataTypeRead(message)
+
+        self.f.seek(0)
+        data = np.fromfile(self.f, count=nItems, offset=offset, dtype=dtype)
+        return data.reshape(self.shape)
+
+    def _recursively_add_key(self, infoD, keylist):
+        """Method used to expand the dictionary recursevely, if a keyError is raised during
+        the info reading. This is useful to create the dictionary structure expected for the
+        E0, alpha and beta values later on. So, if a _setter function is called for these
+        parameters, the correct route is in place to modify them
+        """
+        for el in keylist:
+            if el not in infoD:
+                infoD[el] = dict()
+            infoD = infoD[el]
 
     def _get_scales(self):
         """scale properties for all the dimensions involved"""
@@ -301,51 +320,35 @@ class DM_EELS_data(IDM_EELS_DataHandler):
             units.append(el["Units"])
         return tuple(units[::-1])
 
-    @property
-    def energy_axis(self):
-        """Energy axis for the spectral dataset.
-        This is one of the more confusing properties to extract
-        from DM. By some unknown reason, it is stored"""
-        if len(self.shape) == 3:
-            return np.arange(self.shape[0]) * self._get_scales()[0] + self._get_unit_origins()[0]
-        # For Slines and single spectra, this works ...
-        return np.arange(self.shape[-1]) * self._get_scales()[-1] + self._get_unit_origins()[-1]
-
-    def _get_eels_data(self):
-        """This method will attempt to extract the actual EELS data,
-        to be handled to the factory later on.
-        It does several things.
+    def _set_energy_scale(self, scale_val):
+        """Method that sets a new value for the energy scale
+        Raises ValueError whenever we face an spectrum dataset with ill-defined units
         """
-        idx = self.spectralInfo["ImageData"]["DataType"]
-        try:
-            dtype = self._supported_dtypes[idx]
-        except KeyError as e:
-            message = (
-                f"Data Type index ({idx}) read from file ({self.f.name}) not supported."
-            )
-            _logger.exception(message)
-            raise DMNonSupportedDataType(message)
+        scale_items = [
+            k
+            for k, el in self.spectralInfo["ImageData"]["Calibrations"][
+                "Dimension"
+            ].items()
+            if el["Units"] == "eV"
+        ]
+        if len(scale_items) != 1:
+            raise ValueError
+        self.spectralInfo["ImageData"]["Calibrations"]["Dimension"][scale_items[0]][
+            "Scale"
+        ] = scale_val
 
-        bSize = self.spectralInfo["ImageData"]["Data"]["bytes_size"]
-        offset = self.spectralInfo["ImageData"]["Data"]["offset"]
-        nItems = self.spectralInfo["ImageData"]["Data"]["size"]
-        # Checking that the info is readable
-        if bSize / nItems != np.dtype(dtype).itemsize:
-            message = f"Size_in_bytes / Number_of_items = {bSize / nItems}\
-                != from NumPy expected size for {dtype} = {np.dtype(dtype).itemsize}"
-            _logger.error(message)
-            raise DMConflictingDataTypeRead(message)
-
-        self.f.seek(0)
-        data = np.fromfile(self.f, count=nItems, offset=offset, dtype=dtype)
-        return data.reshape(self.shape)
-
-    def handle_EELS_data(self):
-        """
-        This method will basically read from file, using numpy, the EELS data.
-        After that, it returns itself, the instance of this class created, so the properties
-        of the object can be accessed from the exterior (energy_axis, shape, collection_angle, etc)
-        """
-        self.data = self._get_eels_data()
-        return self
+    def _set_energy_origin(self, offset_val):
+        """Method that changes the offset value of the energy axis"""
+        scale_items = [
+            k
+            for k, el in self.spectralInfo["ImageData"]["Calibrations"][
+                "Dimension"
+            ].items()
+            if el["Units"] == "eV"
+        ]
+        if len(scale_items) != 1:
+            raise ValueError
+        self.spectralInfo["ImageData"]["Calibrations"]["Dimension"][scale_items[0]][
+            "Origin"
+        ] = offset_val
 

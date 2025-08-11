@@ -21,7 +21,7 @@ from ..parsers import DM_InfoParser, DM_EELS_data
 from whateels.helpers.logging import Logger
 
 if TYPE_CHECKING:
-    from .abstract_classes import IDM_Parser, IDM_EELS_DataHandler
+    from .abstract_classes import IDM_Parser
 
 _logger = Logger.get_logger("dm_file_reader.log", __name__)
 
@@ -38,7 +38,7 @@ class DM_EELS_Reader(IFileReader):
         Path to DM3/DM4 file
     parser : IDM_Parser, optional
         File parser (defaults to DM_InfoParser)
-    handler : IDM_EELS_DataHandler, optional
+    handler : DM_EELS_data, optional
         Data handler (defaults to DM_EELS_data)
     """
 
@@ -46,7 +46,7 @@ class DM_EELS_Reader(IFileReader):
         self,
         filename: str,
         parser: "IDM_Parser" = None,
-        handler: "IDM_EELS_DataHandler" = None,
+        handler: "DM_EELS_data" = None,
     ):
         """
         Initialize reader with file validation and component injection.
@@ -57,7 +57,7 @@ class DM_EELS_Reader(IFileReader):
             Path to DM3/DM4 file to read
         parser : IDM_Parser, optional
             Custom parser (default: DM_InfoParser)
-        handler : IDM_EELS_DataHandler, optional  
+        handler : DM_EELS_data, optional  
             Custom handler (default: DM_EELS_data)
         """
         self.filename = filename
