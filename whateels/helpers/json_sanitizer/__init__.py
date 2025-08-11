@@ -7,7 +7,7 @@ data types (like NumPy arrays, NaN values, custom objects) into JSON-safe format
 
 import json
 import numpy as np
-from typing import Any, Union, Dict, List
+from typing import Any
 
 
 def sanitize_for_json(obj: Any) -> Any:
@@ -88,21 +88,3 @@ def is_json_serializable(obj: Any) -> bool:
         return True
     except (TypeError, ValueError, OverflowError):
         return False
-
-
-def safe_json_dumps(obj: Any, **kwargs) -> str:
-    """
-    Safely serialize an object to JSON string, automatically sanitizing if needed.
-    
-    Args:
-        obj: Object to serialize
-        **kwargs: Additional arguments passed to json.dumps()
-        
-    Returns:
-        JSON string representation of the object
-    """
-    if is_json_serializable(obj):
-        return json.dumps(obj, **kwargs)
-    else:
-        sanitized = sanitize_for_json(obj)
-        return json.dumps(sanitized, **kwargs)
