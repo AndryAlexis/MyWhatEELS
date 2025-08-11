@@ -13,19 +13,12 @@ Example
     eels_data = reader.read_data()
 """
 
-import os
-
-from typing import TYPE_CHECKING
-from .abstract_classes import IFileReader
 from ..parsers import DM_InfoParser, DM_EELS_data
 from whateels.helpers.logging import Logger
 
-if TYPE_CHECKING:
-    from .abstract_classes import IDM_Parser
-
 _logger = Logger.get_logger("dm_file_reader.log", __name__)
 
-class DM_EELS_Reader(IFileReader):
+class DM_EELS_Reader:
     """
     Reader for DM3/DM4 files containing EELS data.
     
@@ -36,7 +29,7 @@ class DM_EELS_Reader(IFileReader):
     ----------
     filename : str
         Path to DM3/DM4 file
-    parser : IDM_Parser, optional
+    parser : DM_InfoParser, optional
         File parser (defaults to DM_InfoParser)
     handler : DM_EELS_data, optional
         Data handler (defaults to DM_EELS_data)
@@ -45,7 +38,7 @@ class DM_EELS_Reader(IFileReader):
     def __init__(
         self,
         filename: str,
-        parser: "IDM_Parser" = None,
+        parser: "DM_InfoParser" = None,
         handler: "DM_EELS_data" = None,
     ):
         """
@@ -55,7 +48,7 @@ class DM_EELS_Reader(IFileReader):
         ----------
         filename : str
             Path to DM3/DM4 file to read
-        parser : IDM_Parser, optional
+        parser : DM_InfoParser, optional
             Custom parser (default: DM_InfoParser)
         handler : DM_EELS_data, optional  
             Custom handler (default: DM_EELS_data)

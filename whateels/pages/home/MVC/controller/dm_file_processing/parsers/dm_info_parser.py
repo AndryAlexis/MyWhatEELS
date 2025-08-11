@@ -9,13 +9,12 @@ from whateels.errors.dm.parsing import (
     DMStructDataTypeError, 
     DMIdentifierError
 )
-from ..readers.abstract_classes import IDM_Parser
 from typing import List, Tuple
 from whateels.helpers.logging import Logger
 
 _logger = Logger.get_logger("dm_infoparser.log", __name__)
 
-class DM_InfoParser(IDM_Parser):
+class DM_InfoParser:
     """
     This class contains all the methods required to parse a dm3 or dm4 file.
     After its usage, the user will find that the info acquired is stored in a dictionary,
