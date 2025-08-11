@@ -12,11 +12,14 @@ class Metadata(CustomPage):
         self.view = View(self.model)
         self.controller = Controller(self.model, self.view)
         
+        # Set controller reference in view for reactive display
+        self.view.set_controller(self.controller)
+        
         title = title or self.model.constants.TITLE
                 
         super().__init__(
             title=title,
             main=[self.view.main],
             header=[], # No header for metadata page, pass [] to avoid default header
-            header_background="#0066cc"  # Less shiny but not too dark
+            header_background="#0066cc"
         )
