@@ -135,6 +135,7 @@ class FileOperation:
             spectrum_dataset_info = chosen_spectrum.create_dataset_info()
             
             # Update UI
+            self.controller.layout.remove_dataset_info_from_sidebar()
             self.controller.layout.update_main_layout(spectrum_plots)
             self.controller.layout.add_component_to_sidebar_layout(spectrum_dataset_info)
             

@@ -10,7 +10,7 @@ class Home(CustomPage):
     def __init__(self, title: str = None):
         model = Model()
         view = View(model)
-        controller = Controller(model, view)
+        Controller(model, view)
         
         title = title or model.constants.TITLE
         
