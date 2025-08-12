@@ -1,6 +1,5 @@
 import re
 from whateels.errors import *
-import sys
 
 from ..decoders import decoders as dec
 from whateels.errors.dm.parsing import (

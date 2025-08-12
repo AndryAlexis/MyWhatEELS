@@ -8,14 +8,14 @@ class Home(CustomPage):
     """
 
     def __init__(self, title: str = None):
-        self.model = Model()
-        self.view = View(self.model)
-        self.controller = Controller(self.model, self.view)
+        model = Model()
+        view = View(model)
+        controller = Controller(model, view)
         
-        title = title or self.model.constants.TITLE
+        title = title or model.constants.TITLE
         
         super().__init__(
             title=title,
-            main=[self.view.main],
-            sidebar=[self.view.sidebar],
+            main=[view.main],
+            sidebar=[view.sidebar],
         )

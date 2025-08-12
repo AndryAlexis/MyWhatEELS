@@ -1,7 +1,6 @@
 """
 Spectrum line visualization composer.
 """
-
 import panel as pn
 import holoviews as hv
 import numpy as np
@@ -10,6 +9,7 @@ import xarray as xr
 from holoviews import streams
 from .abstract_eels_visualizer import AbstractEELSVisualizer
 from typing import override, TYPE_CHECKING
+from whateels.helpers import HTML_ROOT
 
 if TYPE_CHECKING:
     from ...model import Model
@@ -29,6 +29,16 @@ class SpectrumLineVisualizer(AbstractEELSVisualizer):
     _SPECTRUM_Y_LABEL = 'Electron Count'
     _SPECTRUM_TITLE = 'Selected Spectrum'
     _ERR_EMPTY_ELOSS = 'Energy loss coordinates are empty'
+    _DATASET_INFO_TITLE = "<h5 class=\"dataset-info-title\">Dataset Information</h5>"
+    _DATASET_INFO_HEADER_CLASS = ["dataset-info-header"]
+    _DATASET_INFO_CLASS = ["dataset-info", "animated"]
+    _DATASET_INFO_TITLE = "<h5 class=\"dataset-info-title\">Dataset Information</h5>"
+    _DATASET_DETAILS_NAME = "Dataset Details"
+    _DATASET_DETAILS_WIDTH = 350
+    _DATASET_DETAILS_HEIGHT = 250
+    _DATASET_DETAILS_POSITION = "center"
+    _DATASET_DETAILS_HEADER = "### More Dataset Details"
+    _DATASET_DETAILS_PLACEHOLDER = "(Add more details here as needed)"
 
     # Constants for sizing modes and plot configuration
     _STRETCH_BOTH = 'stretch_both'
@@ -42,7 +52,7 @@ class SpectrumLineVisualizer(AbstractEELSVisualizer):
     
     def __init__(self, model: "Model", controller: "Controller"):
         print("Initializing DM4Plots")
-        self.model = model
+        self._model = model
         self.controller = controller  # Optional for this visualizer
         self.tap_stream = None
         self.spectrum_pane = None
@@ -54,16 +64,16 @@ class SpectrumLineVisualizer(AbstractEELSVisualizer):
     def create_plots(self):
         """Create layout for spectrum line visualization with tap/click interaction."""
         # Sum over y dimension to create image
-        image_data = self.model.dataset.ElectronCount.squeeze()
+        image_data = self._model.dataset.ElectronCount.squeeze()
         image_data = image_data.fillna(0.0)
         image_data = image_data.where(np.isfinite(image_data), 0.0)
-        x_coords = self.model.dataset.coords[self.model.constants.AXIS_X]
-        eloss_coords = self.model.dataset.coords[self.model.constants.ELOSS]
+        x_coords = self._model.dataset.coords[self._model.constants.AXIS_X]
+        eloss_coords = self._model.dataset.coords[self._model.constants.ELOSS]
         x_coords = x_coords.where(np.isfinite(x_coords), 0.0)
         eloss_coords = eloss_coords.where(np.isfinite(eloss_coords), 0.0)
         clean_image_data = image_data.assign_coords({
-            self.model.constants.AXIS_X: x_coords,
-            self.model.constants.ELOSS: eloss_coords
+            self._model.constants.AXIS_X: x_coords,
+            self._model.constants.ELOSS: eloss_coords
         })
         image = self._create_image(clean_image_data, x_coords, eloss_coords)
         empty_spectrum = self._create_empty_spectrum(eloss_coords)
@@ -93,7 +103,7 @@ class SpectrumLineVisualizer(AbstractEELSVisualizer):
         """Update the spectrum pane with the spectrum at the tapped x position."""
         # Get spectrum at tapped x position
         try:
-            spectrum = self.model.dataset.ElectronCount.sel(
+            spectrum = self._model.dataset.ElectronCount.sel(
                 x=x, method='nearest'
             )
             # Ensure the spectrum is 1D by reducing over 'y' if present
@@ -101,15 +111,15 @@ class SpectrumLineVisualizer(AbstractEELSVisualizer):
                 spectrum = spectrum.mean(dim='y')
         except Exception:
             return
-        eloss_coords = self.model.dataset.coords[self.model.constants.ELOSS]
+        eloss_coords = self._model.dataset.coords[self._model.constants.ELOSS]
         spectrum_curve = hv.Curve(
             (eloss_coords, spectrum),
-            kdims=[self.model.constants.ELOSS],
-            vdims=[self.model.constants.ELECTRON_COUNT]
+            kdims=[self._model.constants.ELOSS],
+            vdims=[self._model.constants.ELECTRON_COUNT]
         ).opts(
             width=self._SPECTRUM_WIDTH,
             height=self._SPECTRUM_HEIGHT,
-            color=self.model.colors.RED,
+            color=self._model.colors.RED,
             line_width=2,
             xlabel=self._SPECTRUM_X_LABEL,
             ylabel=self._SPECTRUM_Y_LABEL,
@@ -120,22 +130,69 @@ class SpectrumLineVisualizer(AbstractEELSVisualizer):
     
     @override
     def create_dataset_info(self):
-        attrs = self.model.dataset.attrs if self.model.dataset is not None else {}
+        attrs = self._model.dataset.attrs if self._model.dataset is not None else {}
         shape = attrs.get('shape', 'N/A')
         beam_energy = attrs.get('beam_energy', 'N/A')
         convergence_angle = attrs.get('convergence_angle', 'N/A')
         collection_angle = attrs.get('collection_angle', 'N/A')
 
+        # Load metadata button HTML
+        metadata_html_path = HTML_ROOT / "metadata_info.html"
+        with open(metadata_html_path, 'r', encoding='utf-8') as f:
+            metadata_button_html = f.read()
+        
+        metadata_button = pn.pane.HTML(metadata_button_html, margin=0)
+
+        # Main info panel
+        header = pn.Row(
+            pn.pane.HTML(self._DATASET_INFO_TITLE, sizing_mode=self._STRETCH_WIDTH, margin=0),
+            metadata_button,
+            sizing_mode=self._STRETCH_WIDTH,
+            css_classes=self._DATASET_INFO_HEADER_CLASS,
+            margin=0
+        )
+
         dataset_info = pn.Column(
-            pn.pane.HTML("<h5 class='fdw-box-title'>Dataset Information</h5>", sizing_mode=self._STRETCH_WIDTH),
-            pn.pane.Markdown(f"**Shape:** {shape}"),
-            pn.pane.Markdown(f"**Beam Energy:** {beam_energy} keV"),
-            pn.pane.Markdown(f"**Convergence Angle:** {convergence_angle} mrad"),
-            pn.pane.Markdown(f"**Collection Angle:** {collection_angle} mrad"),
-            sizing_mode=self._STRETCH_WIDTH
+            header,
+            pn.Spacer(height=5),
+            pn.Row(
+                pn.Row(
+                    pn.pane.HTML("<strong>Shape:</strong>"),
+                    sizing_mode=self._STRETCH_WIDTH
+                ),
+                pn.pane.Str(shape),
+                sizing_mode=self._STRETCH_WIDTH
+            ),
+            pn.Row(
+                pn.Row(
+                    pn.pane.HTML("<strong>Beam Energy:</strong>"),
+                    sizing_mode=self._STRETCH_WIDTH
+                ),
+                pn.pane.Str(f"{beam_energy} keV"),
+                sizing_mode=self._STRETCH_WIDTH
+            ),
+            pn.Row(
+                pn.Row(
+                    pn.pane.HTML("<strong>Convergence Angle:</strong>"),
+                    sizing_mode=self._STRETCH_WIDTH
+                ),
+                pn.pane.Str(f"{convergence_angle} mrad"),
+                sizing_mode=self._STRETCH_WIDTH
+            ),
+            pn.Row(
+                pn.Row(
+                    pn.pane.HTML("<strong>Collection Angle:</strong>"),
+                    sizing_mode=self._STRETCH_WIDTH
+                ),
+                pn.pane.Str(f"{collection_angle} mrad"),
+                sizing_mode=self._STRETCH_WIDTH
+            ),
+            pn.Spacer(height=10),
+            sizing_mode=self._STRETCH_WIDTH,
+            css_classes=self._DATASET_INFO_CLASS
         )
         return dataset_info
-    
+
     def _create_image(self, clean_image_data, x_coords, eloss_coords):
         """Create the spectrum line image"""
         # Calculate dimensions
@@ -154,12 +211,12 @@ class SpectrumLineVisualizer(AbstractEELSVisualizer):
 
         return hv.Image(
             clean_image_data,
-            kdims=[self.model.constants.AXIS_X, self.model.constants.ELOSS]
+            kdims=[self._model.constants.AXIS_X, self._model.constants.ELOSS]
         ).opts(
             width=plot_width,
             height=plot_height,
             ylim=focused_ylim,
-            cmap=self.model.colors.GREYS_R,
+            cmap=self._model.colors.GREYS_R,
             xlabel=self._IMAGE_X_LABEL,
             ylabel=self._IMAGE_Y_LABEL,
             title=self._IMAGE_TITLE,
@@ -178,12 +235,12 @@ class SpectrumLineVisualizer(AbstractEELSVisualizer):
         
         return hv.Curve(
             (eloss_coords, empty_data),
-            kdims=[self.model.constants.ELOSS],
-            vdims=[self.model.constants.ELECTRON_COUNT]
+            kdims=[self._model.constants.ELOSS],
+            vdims=[self._model.constants.ELECTRON_COUNT]
         ).opts(
             width=self._SPECTRUM_WIDTH,
             height=self._SPECTRUM_HEIGHT,
-            color=self.model.colors.BLACK,
+            color=self._model.colors.BLACK,
             line_width=2,
             xlabel=self._SPECTRUM_X_LABEL,
             ylabel=self._SPECTRUM_Y_LABEL,

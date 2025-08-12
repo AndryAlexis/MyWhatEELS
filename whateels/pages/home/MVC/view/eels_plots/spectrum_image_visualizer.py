@@ -3,18 +3,17 @@ Spectrum image (datacube) visualization composer.
 """
 
 import panel as pn
-import param
 import holoviews as hv
 import numpy as np
 import time
 
 
-from pathlib import Path
 from numba import jit
 from scipy.optimize import curve_fit
 from holoviews import streams
 from .abstract_eels_visualizer import AbstractEELSVisualizer
 from typing import override
+from whateels.helpers import HTML_ROOT
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
@@ -215,7 +214,7 @@ class SpectrumImageVisualizer(AbstractEELSVisualizer):
         collection_angle = attrs.get('collection_angle', 'N/A')
 
         # Load metadata button HTML
-        metadata_html_path = Path(__file__).parent.parent.parent.parent.parent.parent / "assets" / "html" / "metadata_info.html"
+        metadata_html_path = HTML_ROOT / "metadata_info.html"
         with open(metadata_html_path, 'r', encoding='utf-8') as f:
             metadata_button_html = f.read()
         
