@@ -62,11 +62,11 @@ class CustomPage(pn.template.FastListTemplate):
         # Set default main content if none provided
         if main is None:
             main = [pn.pane.Markdown("# Welcome to WhatEELS")]
-            
-        # Add LoadPageTrigger to main
-        main = list(main)
-        main.append(LoadPageTrigger(on_load_page=on_load_page))
-        
+
+        load_page_trigger = LoadPageTrigger(on_load_page),
+
+        main.append(load_page_trigger)
+
         # Build initialization parameters dynamically
         init_params = {
             'title': title,

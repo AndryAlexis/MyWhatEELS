@@ -1,3 +1,7 @@
 #header-items {
     justify-content: end; /* Align items to the right */
 }
+
+#main .card-margin.None {
+    display: none; /* Hide the card margin */
+}
