@@ -18,4 +18,8 @@ class Home(CustomPage):
             title=title,
             main=[view.main],
             sidebar=[view.sidebar],
+            on_load_page=self._testing_load_page
         )
+
+    def _testing_load_page(self):
+        print("Home page loaded successfully!")

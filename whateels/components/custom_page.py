@@ -7,6 +7,21 @@ and CSS styling for the WhatEELS scientific web application.
 
 import panel as pn
 from typing import Optional, List, Union
+from panel.reactive import ReactiveHTML
+
+
+class LoadPageTrigger(ReactiveHTML):
+    _template = """
+        <img style="display: none;" id="testing" src="https://upload.wikimedia.org/wikipedia/commons/c/ca/1x1.png" onload="${_handle_reload}" />
+    """
+
+    def __init__(self, on_load_page=None, **kwargs):
+        super().__init__(**kwargs)
+        self._on_load_page = on_load_page
+
+    def _handle_reload(self, event):
+        if self._on_load_page:
+            self._on_load_page()
 
 class CustomPage(pn.template.FastListTemplate):
     """
@@ -17,7 +32,8 @@ class CustomPage(pn.template.FastListTemplate):
     """
     
     _DEFAULT_TITLE = "Custom Page"
-    
+    _DEFAULT_HEADER_BACKGROUND = "#4caf50"
+
     def __init__(
         self, 
         title: str = _DEFAULT_TITLE, 
@@ -25,7 +41,8 @@ class CustomPage(pn.template.FastListTemplate):
         sidebar: Optional[Union[List, pn.viewable.Viewable]] = None, 
         header: Optional[List[pn.viewable.Viewable]] = None, 
         right_sidebar: Optional[Union[List, pn.viewable.Viewable]] = None,
-        header_background: str = "#4caf50",  # Default header background color
+        header_background: str = _DEFAULT_HEADER_BACKGROUND,
+        on_load_page: Optional[callable] = None
     ):
         """
         Initialize CustomPage with enhanced FastListTemplate.
@@ -45,6 +62,10 @@ class CustomPage(pn.template.FastListTemplate):
         # Set default main content if none provided
         if main is None:
             main = [pn.pane.Markdown("# Welcome to WhatEELS")]
+            
+        # Add LoadPageTrigger to main
+        main = list(main)
+        main.append(LoadPageTrigger(on_load_page=on_load_page))
         
         # Build initialization parameters dynamically
         init_params = {
