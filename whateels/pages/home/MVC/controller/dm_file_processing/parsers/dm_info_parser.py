@@ -60,7 +60,7 @@ class DM_InfoParser:
     def __init__(self) -> None:
         """Initialize parser with empty information dictionary and default values."""
         self.information_dictionary: Dict[str, Any] = dict()
-        self.f: Optional[TextIO] = None  # File handle to be set via get_file()
+        self._file: Optional[TextIO] = None  # File handle to be set via get_file()
         self.version: Optional[int] = None  # DM file version (3 or 4)
         self.parser: Optional[Callable] = None  # Parser function (read_long or read_long_long)
         self.endianness: Optional[str] = None  # File endianness ('big' or 'little')
@@ -69,9 +69,15 @@ class DM_InfoParser:
     # PUBLIC METHODS
     # =============================================================================
 
-    def get_file(self, file: TextIO) -> None:
+    @property
+    def file(self) -> Optional[TextIO]:
+        """Get the file handle for parsing operations."""
+        return self._file
+
+    @file.setter
+    def file(self, file: TextIO) -> None:
         """Set the file handle for parsing operations."""
-        self.f = file
+        self._file = file
 
     def parse_file(self) -> Dict[str, Any]:
         """Parse the entire DM file and return the information dictionary."""
@@ -88,19 +94,19 @@ class DM_InfoParser:
 
     def _process_file_header(self) -> None:
         """Read and validate DM file header (version, size, endianness)."""
-        self.f.seek(0)  # Pointer to the 0 possition
-        self.version = dec.read_long(self.f, "big")  # version : <4 bytes> big endian
+        self._file.seek(0)  # Pointer to the 0 possition
+        self.version = dec.read_long(self._file, "big")  # version : <4 bytes> big endian
         if self.version not in [3, 4]:
             # If version != 3 or 4 -> Raises an error -> Unsuported file for DM
             message = f"Expected versions 3 or 4 (.dm3/.dm4). Got {self.version} instead\
-            -> from the header of {self.f.name}"
+            -> from the header of {self._file.name}"
             raise DMVersionError(message)
 
         # The general parser/reader - reads in chuncks of 4 or 8 bytes returning integer values
         self.parser = dec.read_long if self.version == 3 else dec.read_long_long
-        file_size = self.parser(self.f, "big")  # Full size of file <4 or 8 bytes>
+        file_size = self.parser(self._file, "big")  # Full size of file <4 or 8 bytes>
         self.endianness = (
-            "little" if dec.read_long(self.f, "big") else "big"
+            "little" if dec.read_long(self._file, "big") else "big"
         )  # True - little / #False - big
 
         # logging header read - info level
@@ -189,13 +195,13 @@ class DM_InfoParser:
         For DM4 files, optionally reads block size if read_block_size=True.
         """
         # Skip deprecated boolean flags (ordered/opened)
-        self.f.seek(2, 1)
+        self._file.seek(2, 1)
 
         if self.version == 4 and read_block_size:
             # Read block size for DM4 format
-            block_size = self.parser(self.f, "big")
+            block_size = self.parser(self._file, "big")
 
-        number_of_names = self.parser(self.f, "big")
+        number_of_names = self.parser(self._file, "big")
         return number_of_names
 
     def _read_ChildrenBlock_header(self) -> Tuple[int, str]:
@@ -209,9 +215,9 @@ class DM_InfoParser:
             - 20: Contains subblocks (parent)
             - 21: Contains data
         """
-        identifier = dec.read_byte(self.f, "big")  # a single byte integer used as index
+        identifier = dec.read_byte(self._file, "big")  # a single byte integer used as index
         # Reading the name - a string
-        length = dec.read_short(self.f, "big")  # a double byte integer
+        length = dec.read_short(self._file, "big")  # a double byte integer
         block_name = self._read_string(length)
         return identifier, block_name
 
@@ -226,14 +232,14 @@ class DM_InfoParser:
             - size_data_id: 1=simple, 2=string, 3=array, >3=structure/complex
             - encryption_type: Points to specific reader method
         """
-        size_Data_id = self.parser(self.f, "big")
+        size_Data_id = self.parser(self._file, "big")
         # Check data size validity
         if size_Data_id < 1:
             msg = f"Invalid {size_Data_id = } < 1. DM does not support this id (parsing error?)"
             _logger.exception(msg)
             raise IOError(msg)
 
-        encryption_type = self.parser(self.f, "big")
+        encryption_type = self.parser(self._file, "big")
 
         # Before returning anything, it also checks if the pairings are correct
 
@@ -243,7 +249,7 @@ class DM_InfoParser:
         """Read and validate '%%%%' delimiter between block names and data."""
         if self.version == 4:
             # Skip 8 bytes for DM4 format
-            self.f.seek(8, 1)
+            self._file.seek(8, 1)
         delimiter = self._read_string(4)
         if delimiter != "%%%%":
             message = f"Error with the delimiter between blocks.\nExpected %%%%\nGot{delimiter}"
@@ -258,7 +264,7 @@ class DM_InfoParser:
         """Validate file has dm3 or dm4 extension."""
         # First thing we do is to check is we have an actual valid file
         fname = (
-            self.f.name
+            self._file.name
         )  # It is an opened file, should have a name instance variable ...
         if not any(
             [
@@ -345,8 +351,8 @@ class DM_InfoParser:
                 )
                 _logger.exception(message)
                 raise DMVersionError(message)
-        current_position = self.f.tell()
-        self.f.seek(current_position - nbytes, 0)
+        current_position = self._file.tell()
+        self._file.seek(current_position - nbytes, 0)
 
     # =============================================================================
     # SIMPLE DATA TYPE METHODS
@@ -356,25 +362,25 @@ class DM_InfoParser:
         """Get simple element type from memory for reader configuration."""
 
         self._backtracking_position_in_file()
-        element_type = self.parser(self.f, "big")
+        element_type = self.parser(self._file, "big")
         return {"element_type": element_type}
 
     def _read_simpleTypeData(self, element_type: int) -> Any:
         """Read simple data type using appropriate decoder."""
-        data = self._simple_parsers_dictionary[element_type][0](self.f, self.endianness)
+        data = self._simple_parsers_dictionary[element_type][0](self._file, self.endianness)
         return data
 
     def _skip_simpleTypeData(self, element_type: int) -> Dict[str, Any]:
         """Skip simple data type and return position info."""
         sizeB = self._simple_parsers_dictionary[element_type][-1]
-        offset = self.f.tell()
+        offset = self._file.tell()
         dictionary_simpleDType = {
             "size": 1,
             "bytes_size": sizeB,
             "offset": offset,
             "endian": self.endianness,
         }
-        self.f.seek(sizeB, 1)  # Skip data
+        self._file.seek(sizeB, 1)  # Skip data
         return dictionary_simpleDType
 
     # =============================================================================
@@ -383,14 +389,14 @@ class DM_InfoParser:
 
     def _catch_string_format(self):
         """Get string length from file header."""
-        length = self.parser(self.f, "big")
+        length = self.parser(self._file, "big")
         return {"length": length}
 
     def _read_string(self, length: int, methods: List | None = None) -> str:
         """Read and decode string of specified length."""
         # Reading files
         list_characters = [
-            dec.read_char(self.f, self.endianness) for _ in range(length)
+            dec.read_char(self._file, self.endianness) for _ in range(length)
         ]
         string_byte_characters = b"".join(list_characters)
         string = " - "
@@ -410,8 +416,8 @@ class DM_InfoParser:
 
     def _skip_string(self, length: int, data=False):
         """Skip string reading and return position info."""
-        offset = self.f.tell()
-        self.f.seek(length, 1)  # Skip string data
+        offset = self._file.tell()
+        self._file.seek(length, 1)  # Skip string data
         string_info = {
             "size": length,
             "bytes_size": length,
@@ -426,13 +432,13 @@ class DM_InfoParser:
 
     def _catch_structure_format(self):
         """Read structure format descriptor from file."""
-        self.parser(self.f, "big")  # Skip struct length (not needed)
-        n_fields = self.parser(self.f, "big")
+        self.parser(self._file, "big")  # Skip struct length (not needed)
+        n_fields = self.parser(self._file, "big")
         # Read field types
         s_format = []
         for _ in range(n_fields):
-            self.parser(self.f, "big")  # Skip field length (not needed)
-            s_format.append(self.parser(self.f, "big"))
+            self.parser(self._file, "big")  # Skip field length (not needed)
+            s_format.append(self.parser(self._file, "big"))
         return {"struct_format": tuple(s_format)}
 
     def _read_structure(self, struct_format):
@@ -443,7 +449,7 @@ class DM_InfoParser:
         # Read struct values
         values = []
         for num_type in struct_format:
-            data = self._simple_parsers_dictionary[num_type][0](self.f, self.endianness)
+            data = self._simple_parsers_dictionary[num_type][0](self._file, self.endianness)
             values.append(data)
 
         return tuple(values)
@@ -454,12 +460,12 @@ class DM_InfoParser:
         self._check_multipleElementObjects_DataTypes(struct_format)
 
         # Calculate size and skip
-        offset = self.f.tell()
+        offset = self._file.tell()
         struct_Bsize = 0
         for num_type in struct_format:
             struct_Bsize += self._simple_parsers_dictionary[num_type][-1]
 
-        self.f.seek(struct_Bsize, 1)  # Skip struct data
+        self._file.seek(struct_Bsize, 1)  # Skip struct data
 
         # Create the info dictionary
         dictionary_struct_info = {
@@ -478,8 +484,8 @@ class DM_InfoParser:
     def _catch_simpleTypesArray_format(self):
         """Read array format (element type and length) from file header."""
         # Read array header
-        element_encryption = self.parser(self.f, "big")
-        size = self.parser(self.f, "big")
+        element_encryption = self.parser(self._file, "big")
+        size = self.parser(self._file, "big")
         return {"element_encryption_type": element_encryption, "length": size}
 
     def _read_simpleTypesArray(self, element_encryption_type, length):
@@ -488,7 +494,7 @@ class DM_InfoParser:
         self._check_multipleElementObjects_DataTypes([element_encryption_type])
 
         reader = self._simple_parsers_dictionary[element_encryption_type][0]
-        data = [reader(self.f, self.endianness) for _ in range(length)]
+        data = [reader(self._file, self.endianness) for _ in range(length)]
         
         # Convert to string if appropriate (type 4 = ushort, often used for strings)
         if element_encryption_type == 4 and data:
@@ -515,9 +521,9 @@ class DM_InfoParser:
             "size": length,  # Size of the array (number of elements)
             "endian": self.endianness,  # endianess of the elements
             "bytes_size": size_bytes,  # Size of the array in bytes
-            "offset": self.f.tell(),
+            "offset": self._file.tell(),
         }  # offset position of the array in the memory
-        self.f.seek(size_bytes, 1)  # Skipping data -> Not read
+        self._file.seek(size_bytes, 1)  # Skipping data -> Not read
         return data
 
     # =============================================================================
@@ -526,11 +532,11 @@ class DM_InfoParser:
 
     def _catch_complexTypesArray_format(self):
         """Read format header for complex arrays (strings, structures, arrays)."""
-        element_encryption_type = self.parser(self.f, "big")
+        element_encryption_type = self.parser(self._file, "big")
         keyword = self._get_callable_word(element_encryption_type)
         parsers_dict = self._get_callable_parsers_dictionary()
         format_definition = parsers_dict[keyword][0]()  # Definition of the elements
-        array_size = self.parser(self.f, "big")
+        array_size = self.parser(self._file, "big")
         return {
             "keyword": keyword,
             "array_size": array_size,
@@ -554,7 +560,7 @@ class DM_InfoParser:
         element_data = skipper(**format_definition)
         # We advance the pointer the (array_size -1)*element_bytesSize positions
         # still to be moved
-        self.f.seek(element_data["bytes_size"] * (array_size - 1), 1)
+        self._file.seek(element_data["bytes_size"] * (array_size - 1), 1)
         # We substitute the size by the actual array size read from header
         element_data["size"] = array_size
         # and the size in bytes by the actual size for the whole array

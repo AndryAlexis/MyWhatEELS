@@ -13,6 +13,8 @@ Example
     eels_data = reader.read_data()
 """
 
+from whateels.errors.dm.data import DMEmptyInfoDictionary, DMNonEelsError
+from whateels.shared_state import AppState
 from ..parsers import DM_InfoParser, DM_EELS_data
 from whateels.helpers.logging import Logger
 
@@ -38,8 +40,6 @@ class DM_EELS_Reader:
     def __init__(
         self,
         filename: str,
-        parser: "DM_InfoParser" = None,
-        handler: "DM_EELS_data" = None,
     ):
         """
         Initialize reader with file validation and component injection.
@@ -53,46 +53,55 @@ class DM_EELS_Reader:
         handler : DM_EELS_data, optional  
             Custom handler (default: DM_EELS_data)
         """
-        self.filename = filename
-        self.parser = parser or DM_InfoParser()
-        self.handler = handler or DM_EELS_data()
 
-    def read_data(self):
+        self._file_metadata = None
+        self._processed_eels_spectrum = None
+
+        self._read_data(filename)
+
+    # -- Public Methods --
+    def _read_data(self, filename: str) -> None:
         """
         Read and process EELS data from the DM file.
-        
-        Performs two-stage processing: file parsing then EELS data extraction.
-        
-        Returns
-        -------
-        object
-            Processed EELS data with spectroscopy information and metadata
-            
-        Raises
-        ------
-        Exception
-            Various exceptions during file parsing or data handling
         """
-        _logger.info(f"Opening file {self.filename}")
+
+        parser = DM_InfoParser()
+        handler = DM_EELS_data()
+
+        file_metadata_dictionary = None
+        processed_eels_spectrum = None
+
+        _logger.info(f"Opening file {filename}")
         
-        with open(self.filename, "rb") as binary_file_stream:
+        with open(filename, "rb") as binary_file_stream:
             # Step 1: Parse file structure and extract metadata
-            _logger.info(f"Starting file parsing for {self.filename}")
-            _logger.info(f"Using parser: {self.parser.__module__}")
-            
-            self.parser.get_file(binary_file_stream)
-            file_metadata_dictionary = self.parser.parse_file()
-            
+            _logger.info(f"Starting file parsing for {filename}")
+            _logger.info(f"Using parser: {parser.__module__}")
+
+            parser.file = binary_file_stream
+            file_metadata_dictionary = parser.parse_file()
+
             _logger.info("File parsing completed successfully")
             _logger.info("##############")
             
             # Step 2: Extract and process EELS data
-            _logger.info(f"Starting EELS data extraction using: {self.handler.__module__}")
-            
-            self.handler.get_file_data(binary_file_stream, file_metadata_dictionary)
-            processed_eels_spectrum = self.handler.handle_EELS_data()
-            
+            _logger.info(f"Starting EELS data extraction using: {handler.__module__}")
+
+            handler.get_file_data(binary_file_stream, file_metadata_dictionary)
+            processed_eels_spectrum = handler.handle_EELS_data()
+
             _logger.info("EELS data extraction completed successfully")
             _logger.info("##############")
-            
-        return processed_eels_spectrum
+
+        self._file_metadata = file_metadata_dictionary
+        self._processed_eels_spectrum = processed_eels_spectrum
+
+    @property
+    def file_metadata(self):
+        """Return the file metadata dictionary."""
+        return self._file_metadata
+
+    @property
+    def processed_eels_spectrum(self):
+        """Return the processed EELS spectrum."""
+        return self._processed_eels_spectrum

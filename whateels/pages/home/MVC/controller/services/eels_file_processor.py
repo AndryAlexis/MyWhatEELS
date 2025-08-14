@@ -7,7 +7,9 @@ Manages temporary files and delegates data processing to EELSDataProcessor.
 
 import os, numpy as np, xarray as xr, traceback
 from pathlib import Path
+from whateels.errors.dm.data import DMEmptyInfoDictionary, DMNonEelsError
 from whateels.helpers import TempFile
+from whateels.shared_state import AppState
 from ..dm_file_processing import DM_EELS_Reader
 from .eels_data_processor import EELSDataProcessor
 
@@ -21,7 +23,9 @@ class EELSFileProcessor:
     
     def __init__(self, model):
         self.model = model
-    
+
+    # -- Public Methods --
+
     def process_upload(self, filename: str, file_content: bytes) -> xr.Dataset:
         """Process uploaded file bytes into EELS dataset."""
         # Get the correct file extension from the uploaded filename
@@ -47,53 +51,7 @@ class EELSFileProcessor:
                 print(f"Error during file upload processing: {e}")
                 traceback.print_exc()
                 return None
-            
-    def extract_all_spectrum_image_attributes(self, spectrum_image):
-        dictionary = {}
-        for attr in dir(spectrum_image):
-            # Skip private/protected and methods
-            if attr.startswith("_"):
-                continue
-            try:
-                value = getattr(spectrum_image, attr)
-                # Skip methods
-                if callable(value):
-                    continue
-                dictionary[attr] = value
-            except Exception as e:
-                print(f"{attr}: <error reading attribute: {e}>")
-        return dictionary
     
-    def _become_json_format(self, dictionary):
-        """Convert dictionary to JSON format, handling numpy arrays and non-serializable objects."""
-        import json
-        def convert(obj):
-            if isinstance(obj, np.ndarray):
-                return obj.tolist()
-            if isinstance(obj, (np.generic,)):
-                return obj.item()
-            if isinstance(obj, dict):
-                return {k: convert(v) for k, v in obj.items()}
-            if isinstance(obj, (list, tuple)):
-                return [convert(i) for i in obj]
-            # Handle non-serializable objects (e.g., file handles)
-            try:
-                json.dumps(obj)
-            except (TypeError, OverflowError):
-                return f"<{type(obj).__name__} object>"
-            return obj
-        return json.dumps(convert(dictionary), indent=4, sort_keys=True)
-    
-    def _generate_json_file(self, filename, json_representation):
-        """Generate a JSON file from the given JSON representation in the project root."""
-        json_filename = f"{Path(filename).stem}.json"
-        # Find the project root (assume it's two levels up from this file)
-        project_root = Path(__file__).resolve().parents[6]
-        json_filepath = project_root / json_filename
-
-        with open(json_filepath, 'w') as json_file:
-            json_file.write(json_representation)
-
     def load_dm_file(self, filepath):
         """Load DM3/DM4 file and convert to xarray dataset with metadata."""
         try:
@@ -101,8 +59,15 @@ class EELSFileProcessor:
             if not self._validate_file_size(filepath):
                 return None
 
-            # Use the DM_EELS_Reader from the whatEELS library
-            spectrum_image = DM_EELS_Reader(filepath).read_data()
+            # Read the file
+            dm_eels_reader = DM_EELS_Reader(filepath)
+
+            # Get file metadata
+            file_metadata_dictionary = dm_eels_reader.file_metadata
+            spectrum_image = dm_eels_reader.processed_eels_spectrum
+
+            # Store metadata
+            self._store_metadata(file_metadata_dictionary)
 
             # Get data and energy axis
             electron_count_data = spectrum_image.data
@@ -123,7 +88,23 @@ class EELSFileProcessor:
 
         except Exception as exception:
             return self._handle_file_error(exception)
-    
+
+    # -- Private Methods --
+
+    def _store_metadata(self, infoDict=None):
+        """
+        Store file handle and metadata from parsed info dictionary.
+        """
+        if not infoDict:
+            message = f"Expected an information dictionary from parser. None provided : {infoDict =}"
+            raise DMEmptyInfoDictionary(message)
+        try:
+            # Store metadata in AppState for application-wide access
+            AppState().metadata = infoDict
+        except Exception:
+            message = f"Failed to store metadata in AppState.\n{infoDict.keys() if infoDict else 'None'}"
+            raise DMNonEelsError(message)
+
     def _validate_file_size(self, filepath):
         """Validate file size for DM files"""
         file_size = os.path.getsize(filepath)

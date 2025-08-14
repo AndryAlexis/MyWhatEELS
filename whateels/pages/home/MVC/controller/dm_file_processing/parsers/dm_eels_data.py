@@ -42,11 +42,18 @@ class DM_EELS_data:
         Store metadata and filter spectrum images from parsed info dictionary.
         
         This method combines metadata storage and spectrum filtering for backward compatibility.
-        For new code, consider using _store_metadata() and _filter_spectrum_images() separately.
         """
-        stored_metadata = self._store_metadata(file, infoDict)
-        self.spectrum_images = self._filter_spectrum_images(stored_metadata)
+
+        self.f = file
         
+        if not infoDict:
+            message = f"Expected an information dictionary from parser. None provided : {infoDict =}"
+            _logger.exception(message)
+            raise DMEmptyInfoDictionary(message)
+
+        # stored_metadata = self._store_metadata(file, infoDict)
+        self.spectrum_images = self._filter_spectrum_images(infoDict)
+
         # For backward compatibility, set the first image as spectralInfo
         imageKeys = list(self.spectrum_images.keys())
         self.spectralInfo = self.spectrum_images[imageKeys[0]] if imageKeys else None
@@ -163,39 +170,25 @@ class DM_EELS_data:
 
     # ==================== PRIVATE METHODS ====================
 
-    def _store_metadata(self, file, infoDict=None):
-        """
-        Store file handle and metadata from parsed info dictionary.
+    # def _store_metadata(self, file, infoDict=None):
+    #     """
+    #     Store file handle and metadata from parsed info dictionary.
+    #     """
+    #     self.f = file
+    #     if not infoDict:
+    #         message = f"Expected an information dictionary from parser. None provided : {infoDict =}"
+    #         _logger.exception(message)
+    #         raise DMEmptyInfoDictionary(message)
         
-        Parameters
-        ----------
-        file : file object
-            Opened binary file handle
-        infoDict : dict
-            Parsed metadata dictionary from DM file
-            
-        Raises
-        ------
-        DMEmptyInfoDictionary
-            If infoDict is None or empty
-        DMNonEelsError
-            If dictionary doesn't contain expected structure
-        """
-        self.f = file
-        if not infoDict:
-            message = f"Expected an information dictionary from parser. None provided : {infoDict =}"
-            _logger.exception(message)
-            raise DMEmptyInfoDictionary(message)
-        
-        try:
-            # Store metadata in AppState for application-wide access
-            AppState().metadata = infoDict
-            _logger.info("Metadata stored in AppState")
-            return infoDict
-        except Exception:
-            message = f"Failed to store metadata in AppState.\n{infoDict.keys() if infoDict else 'None'}"
-            _logger.exception(message)
-            raise DMNonEelsError(message)
+    #     try:
+    #         # Store metadata in AppState for application-wide access
+    #         AppState().metadata = infoDict
+    #         _logger.info("Metadata stored in AppState")
+    #         return infoDict
+    #     except Exception:
+    #         message = f"Failed to store metadata in AppState.\n{infoDict.keys() if infoDict else 'None'}"
+    #         _logger.exception(message)
+    #         raise DMNonEelsError(message)
 
     def _filter_spectrum_images(self, infoDict):
         """

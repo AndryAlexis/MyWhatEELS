@@ -148,5 +148,4 @@ class FileOperation:
     
     def _handle_file_upload_error(self, filename: str) -> None:
         """Handle file upload error by resetting UI state."""
-        print(f'Error loading file: {filename}')
         self.controller.layout.show_error_placeholder_in_main_layout()

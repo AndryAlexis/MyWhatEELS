@@ -37,10 +37,61 @@ class EELSDataProcessor:
     # Constants for dataset types
     _AXIS_X = 'x'
     _AXIS_Y = 'y'
+    _ELOSS = 'Eloss'
     
     def __init__(self, model):
         """Initialize the processor with a Model instance for constants/config."""
         self.model = model
+
+    # --- Public Methods ---
+
+    def clean_dataset(self, dataset):
+        """Replace NaN/inf values with zeros in data and coordinates."""
+        try:
+            # Clean the main electron count data array
+            electron_count = dataset.ElectronCount.values
+            electron_count = np.nan_to_num(electron_count, nan=0.0, posinf=0.0, neginf=0.0)
+            
+            # Clean all coordinate arrays to prevent axis issues
+            x_coords = dataset.coords[self._AXIS_X].values
+            y_coords = dataset.coords[self._AXIS_Y].values
+            eloss_coords = dataset.coords[self._ELOSS].values
+
+            # Sanitize coordinate arrays
+            x_coords = np.nan_to_num(x_coords, nan=0.0, posinf=0.0, neginf=0.0)
+            y_coords = np.nan_to_num(y_coords, nan=0.0, posinf=0.0, neginf=0.0)
+            eloss_coords = np.nan_to_num(eloss_coords, nan=0.0, posinf=0.0, neginf=0.0)
+            
+            # Reconstruct dataset with cleaned data and coordinates
+            cleaned_dataset = xr.Dataset(
+                {
+                    'ElectronCount': (dataset.ElectronCount.dims, electron_count)
+                },
+                coords={
+                    self._AXIS_X: x_coords, 
+                    self._AXIS_Y: y_coords, 
+                    self._ELOSS: eloss_coords
+                }
+            )
+            
+            # Preserve original metadata attributes
+            cleaned_dataset.attrs = dataset.attrs.copy()
+            
+            return cleaned_dataset
+        except Exception as e:
+            print(f"Warning: Could not clean dataset: {e}")
+            return dataset
+
+    def determine_dataset_type(self, dataset: xr.Dataset) -> str:
+        """Classify dataset as Single Spectrum, Spectrum Line, or Spectrum Image based on spatial dimensions."""
+        x_size = len(dataset.coords[self._AXIS_X])
+        y_size = len(dataset.coords[self._AXIS_Y])
+        if x_size == 1 and y_size == 1:
+            return self.model.constants.SINGLE_SPECTRUM
+        elif y_size == 1:
+            return self.model.constants.SPECTRUM_LINE
+        else:
+            return self.model.constants.SPECTRUM_IMAGE
 
     def process_data_for_xarray(self, electron_count_data, energy_axis):
         """Process raw EELS data into xarray format (y, x, energy)."""
@@ -54,18 +105,22 @@ class EELSDataProcessor:
         else:
             print(f"ERROR: Unsupported data dimensionality: {electron_count_data.shape}")
             return None
-    
-    def _process_3d_data(self, electron_count_data):
-        """Process 3D spectrum image: transpose (energy, y, x) → (y, x, energy)."""
-        # Transpose from (energy, y, x) to (y, x, energy) for xarray compatibility
-        electron_count_data = electron_count_data.transpose((1, 2, 0))
+
+    # --- Private Methods ---
+
+    def _process_1d_data(self, electron_count_data):
+        """Process 1D single spectrum: add spatial dims to create (y=1, x=1, energy)."""
+        # Create artificial spatial coordinates (single point at origin)
+        x_coordinates = np.array([0], dtype=np.int32)  # Single point in x
+        y_coordinates = np.array([0], dtype=np.int32)  # Single point in y
         
-        # Generate spatial coordinates for the spectrum image
-        y_coordinates = np.arange(0, electron_count_data.shape[0], dtype=np.int32)  # Pixel rows
-        x_coordinates = np.arange(0, electron_count_data.shape[1], dtype=np.int32)  # Pixel columns
+        # Reshape from (energy,) to (y=1, x=1, energy) format
+        shape_dimensions = [1, 1]
+        shape_dimensions.extend(list(electron_count_data.shape))
+        electron_count_data = electron_count_data.reshape(shape_dimensions)
         
         return electron_count_data, x_coordinates, y_coordinates
-    
+
     def _process_2d_data(self, electron_count_data, energy_axis):
         """Process 2D spectrum line: detect orientation and reshape to (y=1, x, energy)."""
         # Determine data orientation by comparing dimensions with energy axis
@@ -82,58 +137,14 @@ class EELSDataProcessor:
         electron_count_data = electron_count_data.reshape(shape_dimensions)
         
         return electron_count_data, x_coordinates, y_coordinates
-    
-    def _process_1d_data(self, electron_count_data):
-        """Process 1D single spectrum: add spatial dims to create (y=1, x=1, energy)."""
-        # Create artificial spatial coordinates (single point at origin)
-        x_coordinates = np.array([0], dtype=np.int32)  # Single point in x
-        y_coordinates = np.array([0], dtype=np.int32)  # Single point in y
+
+    def _process_3d_data(self, electron_count_data):
+        """Process 3D spectrum image: transpose (energy, y, x) → (y, x, energy)."""
+        # Transpose from (energy, y, x) to (y, x, energy) for xarray compatibility
+        electron_count_data = electron_count_data.transpose((1, 2, 0))
         
-        # Reshape from (energy,) to (y=1, x=1, energy) format
-        shape_dimensions = [1, 1]
-        shape_dimensions.extend(list(electron_count_data.shape))
-        electron_count_data = electron_count_data.reshape(shape_dimensions)
+        # Generate spatial coordinates for the spectrum image
+        y_coordinates = np.arange(0, electron_count_data.shape[0], dtype=np.int32)  # Pixel rows
+        x_coordinates = np.arange(0, electron_count_data.shape[1], dtype=np.int32)  # Pixel columns
         
         return electron_count_data, x_coordinates, y_coordinates
-    
-    def clean_dataset(self, dataset):
-        """Replace NaN/inf values with zeros in data and coordinates."""
-        try:
-            # Clean the main electron count data array
-            electron_count = dataset.ElectronCount.values
-            electron_count = np.nan_to_num(electron_count, nan=0.0, posinf=0.0, neginf=0.0)
-            
-            # Clean all coordinate arrays to prevent axis issues
-            x_coords = dataset.coords['x'].values
-            y_coords = dataset.coords['y'].values
-            eloss_coords = dataset.coords['Eloss'].values
-            
-            # Sanitize coordinate arrays
-            x_coords = np.nan_to_num(x_coords, nan=0.0, posinf=0.0, neginf=0.0)
-            y_coords = np.nan_to_num(y_coords, nan=0.0, posinf=0.0, neginf=0.0)
-            eloss_coords = np.nan_to_num(eloss_coords, nan=0.0, posinf=0.0, neginf=0.0)
-            
-            # Reconstruct dataset with cleaned data and coordinates
-            cleaned_dataset = xr.Dataset(
-                {'ElectronCount': (dataset.ElectronCount.dims, electron_count)},
-                coords={'x': x_coords, 'y': y_coords, 'Eloss': eloss_coords}
-            )
-            
-            # Preserve original metadata attributes
-            cleaned_dataset.attrs = dataset.attrs.copy()
-            
-            return cleaned_dataset
-        except Exception as e:
-            print(f"Warning: Could not clean dataset: {e}")
-            return dataset
-    
-    def determine_dataset_type(self, dataset: xr.Dataset) -> str:
-        """Classify dataset as Single Spectrum, Spectrum Line, or Spectrum Image based on spatial dimensions."""
-        x_size = len(dataset.coords[self._AXIS_X])
-        y_size = len(dataset.coords[self._AXIS_Y])
-        if x_size == 1 and y_size == 1:
-            return self.model.constants.SINGLE_SPECTRUM
-        elif y_size == 1:
-            return self.model.constants.SPECTRUM_LINE
-        else:
-            return self.model.constants.SPECTRUM_IMAGE

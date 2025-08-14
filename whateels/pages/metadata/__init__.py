@@ -7,16 +7,14 @@ class Metadata(CustomPage):
     This class extends CustomPage to create a specific home page layout.
     """
 
-    def __init__(self, title: str = None):
-        self.model = Model()
-        self.view = View(self.model)  # Create view first
-        self.controller = Controller(self.model, self.view)  # Pass view to controller
-        
-        title = title or self.model.constants.TITLE
-                
+    def __init__(self):
+        model = Model()
+        view = View(model)
+        Controller(model, view)
+
         super().__init__(
-            title=title,
-            main=[self.view.main],
+            title=model.constants.TITLE,
+            main=[view.main],
             header=[], # No header for metadata page, pass [] to avoid default header
-            header_background=self.model.constants.HEADER_BACKGROUND
+            header_background=model.constants.HEADER_BACKGROUND
         )
