@@ -88,7 +88,7 @@ class DM_EELS_Reader:
             _logger.info(f"Starting EELS data extraction using: {handler.__module__}")
 
             handler.get_file_data(binary_file_stream, file_metadata_dictionary)
-            processed_eels_spectrum = handler.handle_EELS_data()
+            processed_eels_spectrum: DM_EELS_data = handler.handle_EELS_data()
 
             _logger.info("EELS data extraction completed successfully")
             _logger.info("##############")
