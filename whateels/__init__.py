@@ -1,8 +1,7 @@
 import panel as pn
-from pathlib import Path
 
 # Configure Panel with theme support (only called once here)
-pn.extension('filedropper', 'floatpanel', theme='default')
+pn.extension('filedropper', 'floatpanel', 'plotly', theme='default')
 
 from whateels.helpers import LoadCSS, CSS_ROOT
 from whateels.pages import Home, NLLS, Login, GOS, Metadata
