@@ -35,7 +35,7 @@ class View:
         self._loading_placeholder = None
         self._no_file_placeholder = None
         self._error_placeholder = None
-        self._chosed_spectrum = None
+        self._chosen_spectrum = None
         self._file_dropper = None
         
         self._init_visualization_components()
@@ -79,9 +79,9 @@ class View:
     
 
     @property
-    def chosed_spectrum(self):
+    def chosen_spectrum(self):
         """The currently active plotter/visualizer instance (set after file upload)."""
-        return self._chosed_spectrum
+        return self._chosen_spectrum
 
 
     @property
@@ -98,10 +98,10 @@ class View:
         self._dataset_info_layout = component
         
 
-    @chosed_spectrum.setter
-    def chosed_spectrum(self, plotter):
+    @chosen_spectrum.setter
+    def chosen_spectrum(self, plotter):
         """Set the active plotter/visualizer instance."""
-        self._chosed_spectrum = plotter
+        self._chosen_spectrum = plotter
 
     # --- Private/Internal Setup Methods ---
 

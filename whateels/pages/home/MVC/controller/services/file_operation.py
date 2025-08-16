@@ -103,7 +103,7 @@ class FileOperation:
             
             # Clear any active spectrum reference
             if hasattr(self.controller.view, 'chosed_spectrum'):
-                self.controller.view.chosed_spectrum = None
+                self.controller.view.chosen_spectrum = None
                 
         except Exception as e:
             print(f"Error during file removal: {e}")
@@ -130,7 +130,7 @@ class FileOperation:
                 return False
             
             # Store reference and create components
-            self.controller.view.chosed_spectrum = chosen_spectrum
+            self.controller.view.chosen_spectrum = chosen_spectrum
             spectrum_plots = chosen_spectrum.create_plots()
             spectrum_dataset_info = chosen_spectrum.create_dataset_info()
             
