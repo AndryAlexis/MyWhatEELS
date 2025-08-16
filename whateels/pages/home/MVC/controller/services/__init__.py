@@ -5,11 +5,11 @@ This module contains service classes that handle specific business logic
 operations, keeping the main controller focused on orchestration.
 """
 
-from .eels_file_processor import EELSFileProcessor
-from .eels_data_processor import EELSDataProcessor
-from .file_operation import FileOperation
+from .eels_file_processor_service import EELSFileProcessorService
+from .eels_data_processor_service import EELSDataProcessorService
+from .file_operation_service import FileOperationService
 from .region_extraction_service import RegionExtractionService
 from .spectrum_extraction_service import SpectrumExtractionService
 from .spectrum_fitting_service import SpectrumFittingService
 
-__all__ = ['EELSFileProcessor', 'EELSDataProcessor', 'FileOperation', 'RegionExtractionService', 'SpectrumExtractionService', 'SpectrumFittingService']
+__all__ = ['EELSFileProcessorService', 'EELSDataProcessorService', 'FileOperationService', 'RegionExtractionService', 'SpectrumExtractionService', 'SpectrumFittingService']

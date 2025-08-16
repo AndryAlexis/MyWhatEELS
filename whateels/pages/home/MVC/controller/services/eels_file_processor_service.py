@@ -11,9 +11,9 @@ from whateels.errors.dm.data import DMEmptyInfoDictionary, DMNonEelsError
 from whateels.helpers import TempFile
 from whateels.shared_state import AppState
 from ..dm_file_processing import DM_EELS_Reader
-from .eels_data_processor import EELSDataProcessor
+from .eels_data_processor_service import EELSDataProcessorService
 
-class EELSFileProcessor:
+class EELSFileProcessorService:
     """
     Handles DM3/DM4 file I/O and orchestrates file-to-dataset processing.
     
@@ -129,7 +129,7 @@ class EELSFileProcessor:
     
     def _create_dataset_from_data(self, electron_count_data, energy_axis, spectrum_image, filepath):
         """Create xarray dataset from processed data"""
-        eels_data_processor = EELSDataProcessor(self.model)
+        eels_data_processor = EELSDataProcessorService(self.model)
         
         # Process the data using DataService
         processed_data = eels_data_processor.process_data_for_xarray(electron_count_data, energy_axis)

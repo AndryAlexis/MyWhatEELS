@@ -26,7 +26,7 @@ Data cleaning → xarray Dataset → Type classification
 import numpy as np
 import xarray as xr
 
-class EELSDataProcessor:
+class EELSDataProcessorService:
     """
     Processes EELS data arrays into standardized xarray datasets.
     

@@ -6,17 +6,17 @@ Coordinates between file processing and UI updates.
 """
 
 import traceback
-from .eels_file_processor import EELSFileProcessor
-from .eels_data_processor import EELSDataProcessor
+from .eels_file_processor_service import EELSFileProcessorService
+from .eels_data_processor_service import EELSDataProcessorService
 from ..eels_plot_factory import EELSPlotFactory
 from whateels.shared_state import AppState
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from ...model import Model
-    from ...controller import Controller
+    from .. import Controller
 
-class FileOperation:
+class FileOperationService:
     """
     Service responsible for coordinating all file operations.
     
@@ -39,8 +39,8 @@ class FileOperation:
         self.controller = controller
         
         # Initialize file processing services
-        self.file_processor = EELSFileProcessor(model)
-        self.data_processor = EELSDataProcessor(model)
+        self.file_processor = EELSFileProcessorService(model)
+        self.data_processor = EELSDataProcessorService(model)
     
     def handle_file_upload(self, filename: str, file_content: bytes) -> bool:
         """
