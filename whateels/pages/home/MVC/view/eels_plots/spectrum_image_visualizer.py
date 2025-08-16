@@ -42,11 +42,8 @@ class SpectrumImageVisualizer(AbstractEELSVisualizer):
         
         # Energy axis (eje de energía)
         self._e_axis = self._model.dataset.coords[self._model.constants.ELOSS].values
-        
-        self._spectrum_service = self._controller.set_spectrum_service(
-            data_array=self._model.dataset.ElectronCount,
-            energy_axis=np.asarray(self._e_axis)
-        )
+
+        self._spectrum_service = self._controller.spectrum_service
 
         # Last selected pixel (x,y)
         self._last_selected = {"x": 0, "y": 0}

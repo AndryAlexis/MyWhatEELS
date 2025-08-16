@@ -20,16 +20,12 @@ class Controller:
     def __init__(self, model: "Model", view: "View"):
         self.model = model
         self.view = view
-        
         # Initialize services
         self._file_service = EELSFileProcessor(model)
         self._data_service = EELSDataProcessor(self.model)
-        
         self._file_operation_service = FileOperation(model, self)
-        
         # Initialize manager
         self._layout_manager = LayoutManager(view)
-        
         # Set up callbacks for file dropper events
         self.view.file_dropper.on_file_uploaded_callback = self._file_operation_service.handle_file_upload
         self.view.file_dropper.on_file_removed_callback = self._file_operation_service.handle_file_removal
@@ -43,12 +39,20 @@ class Controller:
     def region_service(self) -> RegionExtractionService:
         """Expose the region extraction service for external use."""
         return RegionExtractionService
-    
-    def set_spectrum_service(self, data_array: np.ndarray, energy_axis: np.ndarray) -> SpectrumExtractionService:
-        """Expose the spectrum extraction service for external use."""
-        return SpectrumExtractionService(data_array, energy_axis)
 
     @property
     def fitting_service(self) -> SpectrumFittingService:
         """Expose the fitting service for external use."""
-        return SpectrumFittingService()
+        return SpectrumFittingService
+    
+    @property
+    def spectrum_service(self) -> SpectrumExtractionService:
+        """
+        Returns a SpectrumExtractionService for the current dataset.
+        """
+        try:
+            data_array = self.model.dataset.ElectronCount
+            energy_axis = self.model.dataset.coords[self.model.constants.ELOSS].values
+        except Exception as e:
+            raise ValueError(f"Could not retrieve data_array or energy_axis from model: {e}")
+        return SpectrumExtractionService(data_array, energy_axis)
