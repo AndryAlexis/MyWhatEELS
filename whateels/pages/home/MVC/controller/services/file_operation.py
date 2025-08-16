@@ -102,7 +102,7 @@ class FileOperation:
             app_state.metadata = None
             
             # Clear any active spectrum reference
-            if hasattr(self.controller.view, 'chosed_spectrum'):
+            if hasattr(self.controller.view, 'chosen_spectrum'):
                 self.controller.view.chosen_spectrum = None
                 
         except Exception as e:
