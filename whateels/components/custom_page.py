@@ -7,21 +7,6 @@ and CSS styling for the WhatEELS scientific web application.
 
 import panel as pn
 from typing import Optional, List, Union
-from panel.reactive import ReactiveHTML
-
-
-class LoadPageTrigger(ReactiveHTML):
-    _template = """
-        <img style="display: none;" id="testing" src="https://upload.wikimedia.org/wikipedia/commons/c/ca/1x1.png" onload="${_handle_reload}" />
-    """
-
-    def __init__(self, on_load_page=None, **kwargs):
-        super().__init__(**kwargs)
-        self._on_load_page = on_load_page
-
-    def _handle_reload(self, event):
-        if self._on_load_page:
-            self._on_load_page()
 
 class CustomPage(pn.template.FastListTemplate):
     """
@@ -62,10 +47,6 @@ class CustomPage(pn.template.FastListTemplate):
         # Set default main content if none provided
         if main is None:
             main = [pn.pane.Markdown("# Welcome to WhatEELS")]
-
-        load_page_trigger = LoadPageTrigger(on_load_page),
-
-        main.append(load_page_trigger)
 
         # Build initialization parameters dynamically
         init_params = {

@@ -36,8 +36,3 @@ class Controller:
     def layout(self) -> LayoutManager:
         """Expose the layout manager for external use."""
         return self._layout_manager
-
-    # TODO this is just a test so if this function is only printing it should be removed
-    def handle_load_page(self):
-        """Handle the load page event."""
-        print("Home page loaded successfully!")

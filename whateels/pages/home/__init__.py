@@ -16,5 +16,4 @@ class Home(CustomPage):
             title=model.constants.TITLE,
             main=[view.main],
             sidebar=[view.sidebar],
-            on_load_page=controller.handle_load_page
         )
