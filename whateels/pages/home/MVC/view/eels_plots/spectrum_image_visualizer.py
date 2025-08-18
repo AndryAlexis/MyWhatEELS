@@ -45,6 +45,9 @@ class SpectrumImageVisualizer(AbstractEELSVisualizer):
         # Energy axis (eje de energía)
         self._e_axis = self._model.dataset.coords[self._model.constants.ELOSS].values
 
+        # ElectronCount data cube
+        self._electron_count_data = self._model.dataset.ElectronCount
+
         # Last selected pixel (x,y)
         self._last_selected = {"x": 0, "y": 0}
 
@@ -95,9 +98,8 @@ class SpectrumImageVisualizer(AbstractEELSVisualizer):
     def _setup_plots(self):
         # Build image (m_image) from data cube in the canonical way used in this class
         # ElectronCount dims assumed (y, x, E)
-        da = self._model.dataset.ElectronCount
-        # create clean 2D integrated image
-        m_image_da = da.sum(self._model.constants.ELOSS)
+        # Use self._electron_count_data from constructor
+        m_image_da = self._electron_count_data.sum(self._model.constants.ELOSS)
         m_image = np.asarray(m_image_da.fillna(0.0).where(np.isfinite(m_image_da), 0.0))
         if m_image.ndim != 2:
             raise ValueError(f"Se esperaba imagen 2D integrada, recibido shape={m_image.shape}")
@@ -106,10 +108,10 @@ class SpectrumImageVisualizer(AbstractEELSVisualizer):
         # energy axis
         try:
             energy = np.asarray(self._e_axis)
-            if energy.shape[0] != da.shape[-1]:
-                energy = np.arange(da.shape[-1])
+            if energy.shape[0] != self._electron_count_data.shape[-1]:
+                energy = np.arange(self._electron_count_data.shape[-1])
         except Exception:
-            energy = np.arange(da.shape[-1])
+            energy = np.arange(self._electron_count_data.shape[-1])
         self._energy = energy
 
         # Build Plotly heatmap (figA) and selectors scatter for box/lasso selections
@@ -150,9 +152,6 @@ class SpectrumImageVisualizer(AbstractEELSVisualizer):
         # Pane B initial message (apply stored ranges if any)
         self.paneB = pn.pane.Plotly(self._set_ranges_and_convert(self._figB_message("figura_B", "mueve el ratón o selecciona")),
                                     height=420, sizing_mode="fixed")
-
-        # Keep references to dataset for spectra lookup
-        self._da = da  # xarray DataArray
 
     # --- Callbacks setup (connect pane watchers & periodic callback) ---
     def _setup_callbacks(self):
@@ -266,12 +265,12 @@ class SpectrumImageVisualizer(AbstractEELSVisualizer):
     # --- Data extraction helpers (keep using model.dataset) ---
     def _spectrum_from_pixel(self, i, j):
         try:
-            spec = self._da.values[int(i), int(j), :].astype(float)
+            spec = self._electron_count_data.values[int(i), int(j), :].astype(float)
             return spec
         except Exception:
             # Try alternative indexing order (x,y,E) if needed
             try:
-                spec = self._da.values[int(j), int(i), :].astype(float)
+                spec = self._electron_count_data.values[int(j), int(i), :].astype(float)
                 return spec
             except Exception:
                 return np.zeros(self._energy.shape)
@@ -282,13 +281,13 @@ class SpectrumImageVisualizer(AbstractEELSVisualizer):
             return None
         try:
             ii, jj = zip(*pairs)
-            block = self._da.values[np.asarray(ii), np.asarray(jj), :]  # (N, nE)
+            block = self._electron_count_data.values[np.asarray(ii), np.asarray(jj), :]  # (N, nE)
             return block.sum(axis=0), len(pairs)
         except Exception:
             # attempt swap if indexing order different
             try:
                 ii, jj = zip(*pairs)
-                block = self._da.values[np.asarray(jj), np.asarray(ii), :]
+                block = self._electron_count_data.values[np.asarray(jj), np.asarray(ii), :]
                 return block.sum(axis=0), len(pairs)
             except Exception:
                 return None
