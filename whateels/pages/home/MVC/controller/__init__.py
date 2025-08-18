@@ -1,6 +1,6 @@
 from .services import *
 from .managers import LayoutManager
-import numpy as np
+
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
@@ -35,24 +35,3 @@ class Controller:
         """Expose the layout manager for external use."""
         return self._layout_manager
 
-    @property
-    def region_service(self) -> RegionExtractionService:
-        """Expose the region extraction service for external use."""
-        return RegionExtractionService
-
-    @property
-    def fitting_service(self) -> SpectrumFittingService:
-        """Expose the fitting service for external use."""
-        return SpectrumFittingService
-    
-    @property
-    def spectrum_service(self) -> SpectrumExtractionService:
-        """
-        Returns a SpectrumExtractionService for the current dataset.
-        """
-        try:
-            data_array = self.model.dataset.ElectronCount
-            energy_axis = self.model.dataset.coords[self.model.constants.ELOSS].values
-        except Exception as e:
-            raise ValueError(f"Could not retrieve data_array or energy_axis from model: {e}")
-        return SpectrumExtractionService(data_array, energy_axis)
