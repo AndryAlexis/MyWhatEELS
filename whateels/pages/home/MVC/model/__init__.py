@@ -1,4 +1,6 @@
-import xarray as xr
+from typing import TYPE_CHECKING, Optional
+if TYPE_CHECKING:
+    from xarray import Dataset
 
 from .constants import Constants, Colors, FileDropper, Placeholders
 
@@ -9,7 +11,7 @@ class Model:
     """
     def __init__(self):
         # State attributes
-        self._dataset: xr.Dataset | None = None  # Loaded EELS dataset
+        self._dataset: "Dataset" | None = None  # Loaded EELS dataset
 
         # Shared configuration and constants
         self._constants = Constants()
@@ -18,7 +20,7 @@ class Model:
         self._placeholders = Placeholders()
     
     @property
-    def dataset(self) -> xr.Dataset | None:
+    def dataset(self) -> Optional["Dataset"]:
         return self._dataset
     @property
     def constants(self) -> Constants:
@@ -34,7 +36,7 @@ class Model:
         return self._placeholders
     
     @dataset.setter
-    def dataset(self, dataset: xr.Dataset | None):
+    def dataset(self, dataset: Optional["Dataset"]):
         """Set the EELS dataset and update any dependent state."""
         self._dataset = dataset
     

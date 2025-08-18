@@ -12,11 +12,13 @@ import plotly.graph_objs as go
 from scipy.optimize import curve_fit
 from .abstract_eels_visualizer import AbstractEELSVisualizer
 from typing import override, TYPE_CHECKING
-from whateels.helpers import HTML_ROOT
+from whateels.helpers import HTML_ROOT, SpectrumExtractor
 
 if TYPE_CHECKING:
     from ...model import Model
     from ...controller import Controller
+    from xarray import Dataset
+    from param.parameterized import Event
 
 class SpectrumImageVisualizer(AbstractEELSVisualizer):
     """
@@ -46,7 +48,7 @@ class SpectrumImageVisualizer(AbstractEELSVisualizer):
         self._e_axis = self._model.dataset.coords[self._model.constants.ELOSS].values
 
         # ElectronCount data cube
-        self._electron_count_data = self._model.dataset.ElectronCount
+        self._electron_count_data: "Dataset" = self._model.dataset.ElectronCount
 
         # Last selected pixel (x,y)
         self._last_selected = {"x": 0, "y": 0}
@@ -200,7 +202,7 @@ class SpectrumImageVisualizer(AbstractEELSVisualizer):
         if not point:
             return self._figB_message("figura_B_hover", "hover sobre un píxel…")
         i, j = int(point["y"]), int(point["x"])
-        spec = self._spectrum_from_pixel(i, j)
+        spec = SpectrumExtractor.get_spectrum_from_pixel(self._electron_count_data, i, j)
         fig = go.Figure()
         fig.add_trace(go.Scatter(x=self._energy, y=spec, mode="lines", name=f"(i={i}, j={j})"))
         fig.update_layout(title="figura_B_hover", height=420, margin=dict(l=16, r=16, t=48, b=16),
@@ -208,7 +210,7 @@ class SpectrumImageVisualizer(AbstractEELSVisualizer):
         return fig
 
     def _figB_region(self, pairs):
-        res = self._spectrum_from_indices(pairs)
+        res = SpectrumExtractor.get_spectrum_from_indices(self._electron_count_data, pairs)
         if res is None:
             return self._figB_message("figura_B_region", "selecciona con lasso/box…")
         spec, N = res
@@ -262,47 +264,6 @@ class SpectrumImageVisualizer(AbstractEELSVisualizer):
         except Exception:
             return fig
 
-    # --- Data extraction helpers (keep using model.dataset) ---
-    def _spectrum_from_pixel(self, i, j):
-        try:
-            spec = self._electron_count_data.values[int(i), int(j), :].astype(float)
-            return spec
-        except Exception:
-            # Try alternative indexing order (x,y,E) if needed
-            try:
-                spec = self._electron_count_data.values[int(j), int(i), :].astype(float)
-                return spec
-            except Exception:
-                return np.zeros(self._energy.shape)
-
-    def _spectrum_from_indices(self, pairs):
-        """pairs: lista de (i,j)"""
-        if not pairs:
-            return None
-        try:
-            ii, jj = zip(*pairs)
-            block = self._electron_count_data.values[np.asarray(ii), np.asarray(jj), :]  # (N, nE)
-            return block.sum(axis=0), len(pairs)
-        except Exception:
-            # attempt swap if indexing order different
-            try:
-                ii, jj = zip(*pairs)
-                block = self._electron_count_data.values[np.asarray(jj), np.asarray(ii), :]
-                return block.sum(axis=0), len(pairs)
-            except Exception:
-                return None
-
-    # --- Extract helpers for Plotly event payloads ---
-    def _extract_point(self, data):
-        """Extrae (x,y) de hover_data/click_data estilo Plotly (heatmap o scatter)."""
-        try:
-            if not data or "points" not in data or not data["points"]:
-                return None
-            p = data["points"][0]
-            return {"x": p.get("x"), "y": p.get("y"), "curve": p.get("curveNumber", None)}
-        except Exception:
-            return None
-
     def _extract_region(self, data):
         """De selected_data → lista de (i,j). Acepta selección de cualquier traza (tomamos x,y)."""
         try:
@@ -338,7 +299,7 @@ class SpectrumImageVisualizer(AbstractEELSVisualizer):
                 self._pc.stop()
             fig = self._figB_region(self._region_pairs)
             if self._fitting_active:
-                res = self._spectrum_from_indices(self._region_pairs)
+                res = SpectrumExtractor.get_spectrum_from_indices(self._electron_count_data, self._region_pairs)
                 if res is not None:
                     spec, _N = res
                     fig = self.add_fit_traces(fig, self._energy, spec, range_values=self.range_slider.value)
@@ -348,7 +309,7 @@ class SpectrumImageVisualizer(AbstractEELSVisualizer):
         if self._now_ms() - int(self._last_hover_ts) >= self._INACTIVITY_MS:
             fig = self._figB_region(self._region_pairs)
             if self._fitting_active:
-                res = self._spectrum_from_indices(self._region_pairs)
+                res = SpectrumExtractor.get_spectrum_from_indices(self._electron_count_data, self._region_pairs)
                 if res is not None:
                     spec, _N = res
                     fig = self.add_fit_traces(fig, self._energy, spec, range_values=self.range_slider.value)
@@ -357,8 +318,8 @@ class SpectrumImageVisualizer(AbstractEELSVisualizer):
                 self._pc.stop()
 
     # --- Pane A event handlers (hover / click / selected) ---
-    def _on_paneA_hover(self, event):
-        point = self._extract_point(event.new)
+    def _on_paneA_hover(self, event: "Event"):
+        point = SpectrumExtractor.extract_point(event)
         if point is None:
             return
         self._last_hover_point = point
@@ -367,7 +328,7 @@ class SpectrumImageVisualizer(AbstractEELSVisualizer):
             fig = self._figB_hover(self._last_hover_point)
             if self._fitting_active:
                 i, j = int(point["y"]), int(point["x"])
-                spec = self._spectrum_from_pixel(i, j)
+                spec = SpectrumExtractor.get_spectrum_from_pixel(self._electron_count_data, i, j)
                 if spec is not None:
                     fig = self.add_fit_traces(fig, self._energy, spec, range_values=self.range_slider.value)
             self.paneB.object = self._set_ranges_and_convert(fig)
@@ -379,7 +340,7 @@ class SpectrumImageVisualizer(AbstractEELSVisualizer):
             fig = self._figB_hover(self._last_hover_point)
             if self._fitting_active:
                 i, j = int(point["y"]), int(point["x"])
-                spec = self._spectrum_from_pixel(i, j)
+                spec = SpectrumExtractor.get_spectrum_from_pixel(self._electron_count_data, i, j)
                 if spec is not None:
                     fig = self.add_fit_traces(fig, self._energy, spec, range_values=self.range_slider.value)
             self.paneB.object = self._set_ranges_and_convert(fig)
@@ -388,14 +349,14 @@ class SpectrumImageVisualizer(AbstractEELSVisualizer):
             self._last_hover_ts = None
 
     def _on_paneA_click(self, event):
-        point = self._extract_point(event.new)
+        point = SpectrumExtractor.extract_point(event)
         if point is None:
             return
         self._last_hover_point = point
         fig = self._figB_hover(self._last_hover_point)
         if self._fitting_active:
             i, j = int(point["y"]), int(point["x"])
-            spec = self._spectrum_from_pixel(i, j)
+            spec = SpectrumExtractor.get_spectrum_from_pixel(self._electron_count_data, i, j)
             if spec is not None:
                 fig = self.add_fit_traces(fig, self._energy, spec, range_values=self.range_slider.value)
         self.paneB.object = self._set_ranges_and_convert(fig)
@@ -419,7 +380,7 @@ class SpectrumImageVisualizer(AbstractEELSVisualizer):
                 fig = self._figB_hover(self._last_hover_point)
                 if self._fitting_active:
                     i, j = int(self._last_hover_point["y"]), int(self._last_hover_point["x"])
-                    spec = self._spectrum_from_pixel(i, j)
+                    spec = SpectrumExtractor.get_spectrum_from_pixel(self._electron_count_data, i, j)
                     if spec is not None:
                         fig = self.add_fit_traces(fig, self._energy, spec, range_values=self.range_slider.value)
                 self.paneB.object = self._set_ranges_and_convert(fig)
@@ -429,7 +390,7 @@ class SpectrumImageVisualizer(AbstractEELSVisualizer):
 
         fig = self._figB_region(self._region_pairs)
         if self._fitting_active:
-            res = self._spectrum_from_indices(self._region_pairs)
+            res = SpectrumExtractor.get_spectrum_from_indices(self._electron_count_data, self._region_pairs)
             if res is not None:
                 spec, N = res
                 fig = self.add_fit_traces(fig, self._energy, spec, range_values=self.range_slider.value)
@@ -517,7 +478,7 @@ class SpectrumImageVisualizer(AbstractEELSVisualizer):
         if self._region_pairs:
             fig = self._figB_region(self._region_pairs)
             if self._fitting_active:
-                res = self._spectrum_from_indices(self._region_pairs)
+                res = SpectrumExtractor.get_spectrum_from_indices(self._electron_count_data, self._region_pairs)
                 if res is not None:
                     spec, _ = res
                     fig = self.add_fit_traces(fig, self._energy, spec, range_values=self.range_slider.value)
@@ -528,7 +489,7 @@ class SpectrumImageVisualizer(AbstractEELSVisualizer):
             fig = self._figB_hover(self._last_hover_point)
             if self._fitting_active:
                 i, j = int(self._last_hover_point["y"]), int(self._last_hover_point["x"])
-                spec = self._spectrum_from_pixel(i, j)
+                spec = SpectrumExtractor.get_spectrum_from_pixel(self._electron_count_data, i, j)
                 if spec is not None:
                     fig = self.add_fit_traces(fig, self._energy, spec, range_values=self.range_slider.value)
             self.paneB.object = self._set_ranges_and_convert(fig)
@@ -542,7 +503,7 @@ class SpectrumImageVisualizer(AbstractEELSVisualizer):
             return
         if self._region_pairs:
             fig = self._figB_region(self._region_pairs)
-            res = self._spectrum_from_indices(self._region_pairs)
+            res = SpectrumExtractor.get_spectrum_from_indices(self._electron_count_data, self._region_pairs)
             if res is not None:
                 spec, _ = res
                 fig = self.add_fit_traces(fig, self._energy, spec, range_values=self.range_slider.value)
@@ -551,7 +512,7 @@ class SpectrumImageVisualizer(AbstractEELSVisualizer):
         if self._last_hover_point is not None:
             fig = self._figB_hover(self._last_hover_point)
             i, j = int(self._last_hover_point["y"]), int(self._last_hover_point["x"])
-            spec = self._spectrum_from_pixel(i, j)
+            spec = SpectrumExtractor.get_spectrum_from_pixel(self._electron_count_data, i, j)
             if spec is not None:
                 fig = self.add_fit_traces(fig, self._energy, spec, range_values=self.range_slider.value)
             self.paneB.object = self._set_ranges_and_convert(fig)

@@ -7,7 +7,6 @@ across different pages and components of the WhatEELS application.
 The AppState uses param for reactive updates across the application.
 """
 
-from typing import Optional, Dict, Any
 import param
 from .helpers.logging import Logger
 
