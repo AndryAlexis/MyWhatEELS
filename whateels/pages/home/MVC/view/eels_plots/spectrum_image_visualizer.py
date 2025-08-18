@@ -9,10 +9,9 @@ import numpy as np
 import time
 import plotly.graph_objs as go
 
-from scipy.optimize import curve_fit
 from .abstract_eels_visualizer import AbstractEELSVisualizer
 from typing import override, TYPE_CHECKING
-from whateels.helpers import HTML_ROOT, SpectrumExtractor
+from whateels.helpers import HTML_ROOT, SpectrumExtractor, SpectrumFitting
 
 if TYPE_CHECKING:
     from ...model import Model
@@ -220,50 +219,6 @@ class SpectrumImageVisualizer(AbstractEELSVisualizer):
                           margin=dict(l=16, r=16, t=48, b=16), xaxis_title="Energía", yaxis_title="Intensidad")
         return fig
 
-    @staticmethod
-    def powerlaw(x, A, k):
-        with np.errstate(divide='ignore', invalid='ignore'):
-            return A * np.power(x, k)
-
-    def add_fit_traces(self, fig, x, y, range_values=None):
-        """Add powerlaw fit and subtraction traces to fig (non-destructive)."""
-        try:
-            mask = np.isfinite(x) & np.isfinite(y) & (y > 0) & (x > 0)
-            if range_values is not None:
-                mask &= (x >= range_values[0]) & (x <= range_values[1])
-            x_f = x[mask]
-            y_f = y[mask]
-            if x_f.size < 3:
-                return fig
-            params, _ = curve_fit(self.powerlaw, x_f, y_f, maxfev=10000)
-            y_fit = self.powerlaw(x, *params)
-            newfig = go.Figure(fig)
-            newfig.add_trace(go.Scatter(x=x, y=y_fit, line=dict(color='crimson'), name='PowerLaw Fit'))
-            newfig.add_trace(
-                go.Scatter(
-                    x=x,
-                    y=(y - y_fit),
-                    fill='tozeroy',
-                    line=dict(color='rgba(255,160,122,0.2)'),
-                    fillcolor='rgba(255,160,122,0.6)',
-                    name='Background Subtraction',
-                )
-            )
-            newfig.update_layout(
-                legend=dict(
-                    x=0.98,
-                    y=0.98,
-                    xanchor='right',
-                    yanchor='top',
-                    bgcolor='rgba(255,255,255,0.6)',
-                    bordercolor='rgba(0,0,0,0.1)',
-                    borderwidth=1,
-                )
-            )
-            return newfig
-        except Exception:
-            return fig
-
     # --- Inactivity logic (restaurar selección tras inactivity) ---
     def _now_ms(self):
         return int(time.time() * 1000)
@@ -284,7 +239,8 @@ class SpectrumImageVisualizer(AbstractEELSVisualizer):
                 res = SpectrumExtractor.get_spectrum_from_indices(self._electron_count_data, self._region_pairs)
                 if res is not None:
                     spec, _N = res
-                    fig = self.add_fit_traces(fig, self._energy, spec, range_values=self.range_slider.value)
+                y_fit = SpectrumFitting.fit_powerlaw_curve(self._energy, spec, range_values=self.range_slider.value)
+                fig = self._plot_fit_traces(fig, self._energy, spec, y_fit)
             self.paneB.object = self._set_ranges_and_convert(fig)
             return
 
@@ -294,10 +250,69 @@ class SpectrumImageVisualizer(AbstractEELSVisualizer):
                 res = SpectrumExtractor.get_spectrum_from_indices(self._electron_count_data, self._region_pairs)
                 if res is not None:
                     spec, _N = res
-                    fig = self.add_fit_traces(fig, self._energy, spec, range_values=self.range_slider.value)
+                y_fit = SpectrumFitting.fit_powerlaw_curve(self._energy, spec, range_values=self.range_slider.value)
+                fig = self._plot_fit_traces(fig, self._energy, spec, y_fit)
             self.paneB.object = self._set_ranges_and_convert(fig)
             if self._pc.running:
                 self._pc.stop()
+                
+    def _plot_fit_traces(self, fig, x, y, y_fit):
+        """
+        Add fit and background subtraction traces to a Plotly figure.
+
+        Parameters:
+            fig (plotly.graph_objs.Figure): The Plotly figure to add traces to.
+            x (array-like): Independent variable data.
+            y (array-like): Dependent variable data.
+            y_fit (array-like): Fitted curve values for all x.
+
+        Returns:
+            plotly.graph_objs.Figure: The figure with added fit and subtraction traces.
+        """
+        # Local constants for Plotly and fitting
+        POWERLAW_FIT_NAME = 'PowerLaw Fit'
+        BG_SUBTRACTION_NAME = 'Background Subtraction'
+        CRIMSON = 'crimson'
+        BG_LINE_COLOR = 'rgba(255,160,122,0.2)'
+        BG_FILL_COLOR = 'rgba(255,160,122,0.6)'
+        LEGEND_X = 0.98
+        LEGEND_Y = 0.98
+        LEGEND_XANCHOR = 'right'
+        LEGEND_YANCHOR = 'top'
+        LEGEND_BGCOLOR = 'rgba(255,255,255,0.6)'
+        LEGEND_BORDER_COLOR = 'rgba(0,0,0,0.1)'
+        LEGEND_BORDER_WIDTH = 1
+        FILL_TO_ZEROY = 'tozeroy'
+
+        if y_fit is None:
+            return fig
+        newfig = go.Figure(fig)
+        newfig.add_trace(go.Scatter(
+            x=x,
+            y=y_fit,
+            line=dict(color=CRIMSON),
+            name=POWERLAW_FIT_NAME
+        ))
+        newfig.add_trace(go.Scatter(
+            x=x,
+            y=(y - y_fit),
+            fill=FILL_TO_ZEROY,
+            line=dict(color=BG_LINE_COLOR),
+            fillcolor=BG_FILL_COLOR,
+            name=BG_SUBTRACTION_NAME
+        ))
+        newfig.update_layout(
+            legend=dict(
+                x=LEGEND_X,
+                y=LEGEND_Y,
+                xanchor=LEGEND_XANCHOR,
+                yanchor=LEGEND_YANCHOR,
+                bgcolor=LEGEND_BGCOLOR,
+                bordercolor=LEGEND_BORDER_COLOR,
+                borderwidth=LEGEND_BORDER_WIDTH,
+            )
+        )
+        return newfig
 
     # --- Pane A event handlers (hover / click / selected) ---
     def _on_paneA_hover(self, event: "Event"):
@@ -312,7 +327,8 @@ class SpectrumImageVisualizer(AbstractEELSVisualizer):
                 i, j = int(point["y"]), int(point["x"])
                 spec = SpectrumExtractor.get_spectrum_from_pixel(self._electron_count_data, i, j)
                 if spec is not None:
-                    fig = self.add_fit_traces(fig, self._energy, spec, range_values=self.range_slider.value)
+                    y_fit = SpectrumFitting.fit_powerlaw_curve(self._energy, spec, range_values=self.range_slider.value)
+                    fig = self._plot_fit_traces(fig, self._energy, spec, y_fit)  
             self.paneB.object = self._set_ranges_and_convert(fig)
             self._last_hover_ts = self._now_ms()
             if not self._pc.running:
@@ -324,7 +340,8 @@ class SpectrumImageVisualizer(AbstractEELSVisualizer):
                 i, j = int(point["y"]), int(point["x"])
                 spec = SpectrumExtractor.get_spectrum_from_pixel(self._electron_count_data, i, j)
                 if spec is not None:
-                    fig = self.add_fit_traces(fig, self._energy, spec, range_values=self.range_slider.value)
+                    y_fit = SpectrumFitting.fit_powerlaw_curve(self._energy, spec, range_values=self.range_slider.value)
+                    fig = self._plot_fit_traces(fig, self._energy, spec, y_fit)
             self.paneB.object = self._set_ranges_and_convert(fig)
             if self._pc.running:
                 self._pc.stop()
@@ -340,8 +357,9 @@ class SpectrumImageVisualizer(AbstractEELSVisualizer):
             i, j = int(point["y"]), int(point["x"])
             spec = SpectrumExtractor.get_spectrum_from_pixel(self._electron_count_data, i, j)
             if spec is not None:
-                fig = self.add_fit_traces(fig, self._energy, spec, range_values=self.range_slider.value)
-        self.paneB.object = self._set_ranges_and_convert(fig)
+                y_fit = SpectrumFitting.fit_powerlaw_curve(self._energy, spec, range_values=self.range_slider.value)
+                fig = self._plot_fit_traces(fig, self._energy, spec, y_fit)
+            self.paneB.object = self._set_ranges_and_convert(fig)
         if self._region_pairs:
             self._last_hover_ts = self._now_ms()
             if not self._pc.running:
@@ -364,8 +382,9 @@ class SpectrumImageVisualizer(AbstractEELSVisualizer):
                     y, x = int(self._last_hover_point["y"]), int(self._last_hover_point["x"])
                     spec = SpectrumExtractor.get_spectrum_from_pixel(self._electron_count_data, y, x)
                     if spec is not None:
-                        fig = self.add_fit_traces(fig, self._energy, spec, range_values=self.range_slider.value)
-                self.paneB.object = self._set_ranges_and_convert(fig)
+                        y_fit = SpectrumFitting.fit_powerlaw_curve(self._energy, spec, range_values=self.range_slider.value)
+                        fig = self._plot_fit_traces(fig, self._energy, spec, y_fit)
+                    self.paneB.object = self._set_ranges_and_convert(fig)
             else:
                 self.paneB.object = self._set_ranges_and_convert(self._figB_message("figura_B", "mueve el ratón o selecciona"))
             return
@@ -375,7 +394,8 @@ class SpectrumImageVisualizer(AbstractEELSVisualizer):
             res = SpectrumExtractor.get_spectrum_from_indices(self._electron_count_data, self._region_pairs)
             if res is not None:
                 spec, N = res
-                fig = self.add_fit_traces(fig, self._energy, spec, range_values=self.range_slider.value)
+                y_fit = SpectrumFitting.fit_powerlaw_curve(self._energy, spec, range_values=self.range_slider.value)
+                fig = self._plot_fit_traces(fig, self._energy, spec, y_fit)
         self.paneB.object = self._set_ranges_and_convert(fig)
 
         # prepare inactivity behaviour: stop periodic callback until next hover
@@ -463,7 +483,8 @@ class SpectrumImageVisualizer(AbstractEELSVisualizer):
                 res = SpectrumExtractor.get_spectrum_from_indices(self._electron_count_data, self._region_pairs)
                 if res is not None:
                     spec, _ = res
-                    fig = self.add_fit_traces(fig, self._energy, spec, range_values=self.range_slider.value)
+                y_fit = SpectrumFitting.fit_powerlaw_curve(self._energy, spec, range_values=self.range_slider.value)
+                fig = self._plot_fit_traces(fig, self._energy, spec, y_fit)
             self.paneB.object = self._set_ranges_and_convert(fig)
             return
 
@@ -473,7 +494,8 @@ class SpectrumImageVisualizer(AbstractEELSVisualizer):
                 i, j = int(self._last_hover_point["y"]), int(self._last_hover_point["x"])
                 spec = SpectrumExtractor.get_spectrum_from_pixel(self._electron_count_data, i, j)
                 if spec is not None:
-                    fig = self.add_fit_traces(fig, self._energy, spec, range_values=self.range_slider.value)
+                    y_fit = SpectrumFitting.fit_powerlaw_curve(self._energy, spec, range_values=self.range_slider.value)
+                    fig = self._plot_fit_traces(fig, self._energy, spec, y_fit)
             self.paneB.object = self._set_ranges_and_convert(fig)
             return
 
@@ -488,7 +510,8 @@ class SpectrumImageVisualizer(AbstractEELSVisualizer):
             res = SpectrumExtractor.get_spectrum_from_indices(self._electron_count_data, self._region_pairs)
             if res is not None:
                 spec, _ = res
-                fig = self.add_fit_traces(fig, self._energy, spec, range_values=self.range_slider.value)
+                y_fit = SpectrumFitting.fit_powerlaw_curve(self._energy, spec, range_values=self.range_slider.value)
+                fig = self._plot_fit_traces(fig, self._energy, spec, y_fit)
             self.paneB.object = self._set_ranges_and_convert(fig)
             return
         if self._last_hover_point is not None:
@@ -496,7 +519,8 @@ class SpectrumImageVisualizer(AbstractEELSVisualizer):
             i, j = int(self._last_hover_point["y"]), int(self._last_hover_point["x"])
             spec = SpectrumExtractor.get_spectrum_from_pixel(self._electron_count_data, i, j)
             if spec is not None:
-                fig = self.add_fit_traces(fig, self._energy, spec, range_values=self.range_slider.value)
+                y_fit = SpectrumFitting.fit_powerlaw_curve(self._energy, spec, range_values=self.range_slider.value)
+                fig = self._plot_fit_traces(fig, self._energy, spec, y_fit)
             self.paneB.object = self._set_ranges_and_convert(fig)
 
     # --- Public layout builders (used by controller) ---
