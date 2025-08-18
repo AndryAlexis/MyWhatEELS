@@ -264,24 +264,6 @@ class SpectrumImageVisualizer(AbstractEELSVisualizer):
         except Exception:
             return fig
 
-    def _extract_region(self, data):
-        """De selected_data → lista de (i,j). Acepta selección de cualquier traza (tomamos x,y)."""
-        try:
-            if not data or "points" not in data or not data["points"]:
-                return []
-            pairs = []
-            for p in data["points"]:
-                x = p.get("x")
-                y = p.get("y")
-                if x is None or y is None:
-                    continue
-                pairs.append((int(y), int(x)))
-            # Remove duplicates preserving order
-            pairs = list(dict.fromkeys(pairs))
-            return pairs
-        except Exception:
-            return []
-
     # --- Inactivity logic (restaurar selección tras inactivity) ---
     def _now_ms(self):
         return int(time.time() * 1000)
@@ -369,8 +351,8 @@ class SpectrumImageVisualizer(AbstractEELSVisualizer):
                 self._pc.stop()
             self._last_hover_ts = None
 
-    def _on_paneA_selected(self, event):
-        pairs = self._extract_region(event.new)
+    def _on_paneA_selected(self, event: "Event"):
+        pairs = SpectrumExtractor.extract_region(event)
         self._region_pairs = pairs
         if not pairs:
             if self._pc.running:
@@ -379,8 +361,8 @@ class SpectrumImageVisualizer(AbstractEELSVisualizer):
             if self._last_hover_point is not None:
                 fig = self._figB_hover(self._last_hover_point)
                 if self._fitting_active:
-                    i, j = int(self._last_hover_point["y"]), int(self._last_hover_point["x"])
-                    spec = SpectrumExtractor.get_spectrum_from_pixel(self._electron_count_data, i, j)
+                    y, x = int(self._last_hover_point["y"]), int(self._last_hover_point["x"])
+                    spec = SpectrumExtractor.get_spectrum_from_pixel(self._electron_count_data, y, x)
                     if spec is not None:
                         fig = self.add_fit_traces(fig, self._energy, spec, range_values=self.range_slider.value)
                 self.paneB.object = self._set_ranges_and_convert(fig)
