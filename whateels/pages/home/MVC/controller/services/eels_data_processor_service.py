@@ -41,7 +41,7 @@ class EELSDataProcessorService:
     
     def __init__(self, model):
         """Initialize the processor with a Model instance for constants/config."""
-        self.model = model
+        self._model = model
 
     # --- Public Methods ---
 
@@ -87,11 +87,11 @@ class EELSDataProcessorService:
         x_size = len(dataset.coords[self._AXIS_X])
         y_size = len(dataset.coords[self._AXIS_Y])
         if x_size == 1 and y_size == 1:
-            return self.model.constants.SINGLE_SPECTRUM
+            return self._model.constants.SINGLE_SPECTRUM
         elif y_size == 1:
-            return self.model.constants.SPECTRUM_LINE
+            return self._model.constants.SPECTRUM_LINE
         else:
-            return self.model.constants.SPECTRUM_IMAGE
+            return self._model.constants.SPECTRUM_IMAGE
 
     def process_data_for_xarray(self, electron_count_data, energy_axis):
         """Process raw EELS data into xarray format (y, x, energy)."""

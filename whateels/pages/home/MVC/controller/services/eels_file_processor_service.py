@@ -22,7 +22,7 @@ class EELSFileProcessorService:
     """
     
     def __init__(self, model):
-        self.model = model
+        self._model = model
 
     # -- Public Methods --
 
@@ -32,15 +32,15 @@ class EELSFileProcessorService:
         file_extension = Path(filename).suffix
         
         # Create temporary file that will be automatically cleaned up
-        with TempFile(suffix=file_extension, prefix=self.model.constants.TEMP_PREFIX) as temp_path:
+        with TempFile(suffix=file_extension, prefix=self._model.constants.TEMP_PREFIX) as temp_path:
             try:
                 # Write the file content to a temporary file
                 with open(temp_path, 'wb') as f:
                     f.write(file_content)
                 
                 # Load the DM3/DM4 file and convert to xarray dataset
-                dataset = self.load_dm_file(temp_path)
-                
+                dataset: xr.Dataset | None = self._load_dm_file(temp_path)
+
                 if dataset is not None:
                     return dataset
                 else:
@@ -51,8 +51,10 @@ class EELSFileProcessorService:
                 print(f"Error during file upload processing: {e}")
                 traceback.print_exc()
                 return None
+
+    # -- Private Methods --
     
-    def load_dm_file(self, filepath):
+    def _load_dm_file(self, filepath) -> xr.Dataset | None:
         """Load DM3/DM4 file and convert to xarray dataset with metadata."""
         try:
             # Check file size first
@@ -83,13 +85,11 @@ class EELSFileProcessorService:
             electron_count_data = np.nan_to_num(electron_count_data, nan=0.0, posinf=0.0, neginf=0.0)
 
             # Add metadata and return
-            dataset = self._create_dataset_from_data(electron_count_data, energy_axis, spectrum_image, filepath)
+            dataset: xr.Dataset | None = self._create_dataset_from_data(electron_count_data, energy_axis, spectrum_image, filepath)
             return dataset
 
         except Exception as exception:
             return self._handle_file_error(exception)
-
-    # -- Private Methods --
 
     def _store_metadata(self, infoDict=None):
         """
@@ -127,9 +127,9 @@ class EELSFileProcessorService:
         if energy_nan_count > 0 or energy_inf_count > 0:
             print(f"Warning: Energy axis has {energy_nan_count} NaN values and {energy_inf_count} Inf values")
     
-    def _create_dataset_from_data(self, electron_count_data, energy_axis, spectrum_image, filepath):
+    def _create_dataset_from_data(self, electron_count_data, energy_axis, spectrum_image, filepath) -> xr.Dataset | None:
         """Create xarray dataset from processed data"""
-        eels_data_processor = EELSDataProcessorService(self.model)
+        eels_data_processor = EELSDataProcessorService(self._model)
         
         # Process the data using DataService
         processed_data = eels_data_processor.process_data_for_xarray(electron_count_data, energy_axis)
@@ -165,12 +165,7 @@ class EELSFileProcessorService:
         dataset.attrs['convergence_angle'] = getattr(spectrum_image, 'convergence_angle', 0.0)
 
         try:
-            image_name = spectrum_image.spectralInfo.get('Name', '')
-        except Exception:
-            image_name = ''
-        dataset.attrs['image_name'] = image_name
-
-        try:
+            dataset.attrs['image_name'] = spectrum_image.spectralInfo.get('Name', '')
             dataset.attrs['shape'] = list(dataset['ElectronCount'].shape)
         except Exception:
             pass
