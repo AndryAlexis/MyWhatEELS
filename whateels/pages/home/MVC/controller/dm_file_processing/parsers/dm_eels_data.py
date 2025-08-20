@@ -1,10 +1,7 @@
 
 import numpy as np
-import json
-from typing import List
 from whateels.helpers.logging import Logger
 from whateels.errors import *
-from whateels.shared_state import AppState
 
 _logger = Logger.get_logger("dm_eels_data.log", __name__)
 
@@ -32,7 +29,7 @@ class DM_EELS_data:
         """Initialize instance attributes."""
         self.spectrum_images = {}
         self._spectralInfo = None
-        self.f = None
+        self._file = None
         self.data = None
 
     # ==================== PUBLIC INTERFACE ====================
@@ -44,7 +41,7 @@ class DM_EELS_data:
         This method combines metadata storage and spectrum filtering for backward compatibility.
         """
 
-        self.f = file
+        self._file = file
         
         if not infoDict:
             message = f"Expected an information dictionary from parser. None provided : {infoDict =}"
@@ -57,6 +54,7 @@ class DM_EELS_data:
         imageKeys = list(self.spectrum_images.keys())
         # TODO - Here is where the code is choosing the first image as spectralInfo
         self._spectralInfo = self.spectrum_images[imageKeys[0]] if imageKeys else None
+        self._all_spectral_info = self.spectrum_images
 
     def handle_EELS_data(self):
         """
@@ -65,6 +63,10 @@ class DM_EELS_data:
         of the object can be accessed from the exterior (energy_axis, shape, collection_angle, etc)
         """
         self.data = self._get_eels_data()
+        return self
+    
+    def handle_all_EELS_data(self):
+        self.all_data = self._get_all_eels_data()
         return self
 
     # ==================== PUBLIC PROPERTIES ====================
@@ -158,6 +160,30 @@ class DM_EELS_data:
         )
         return dims[::-1]
 
+    def get_image_shape(self, image_dict):
+        """
+        Get the shape of a spectrum image from its metadata dictionary.
+        Returns
+        -------
+        tuple
+            Shape of the image, reversed as in the current property.
+        """
+        dims = tuple(
+            [el[1] for el in image_dict["ImageData"]["Dimensions"].items()]
+        )
+        return dims[::-1]
+
+    # @property
+    # def all_shapes(self):
+    #     """
+    #     Get the shapes of all spectrum images.
+    #     Returns
+    #     -------
+    #     dict
+    #         Dictionary mapping image keys to their shapes.
+    #     """
+    #     return {k: self.get_image_shape(v) for k, v in self.spectrum_images.items()}
+
     @property
     def energy_axis(self):
         """Energy axis for the spectral dataset.
@@ -214,17 +240,23 @@ class DM_EELS_data:
             _logger.exception(message)
             raise DMNonEelsError(message)
 
-    def _get_eels_data(self):
-        """This method will attempt to extract the actual EELS data,
+    def _get_eels_data(self) -> np.ndarray:
+        """
+        This method will attempt to extract the actual EELS data,
         to be handled to the factory later on.
         It does several things.
+
+        Returns
+        -------
+        np.ndarray
+            The EELS data for the selected spectrum image, reshaped according to its dimensions.
         """
         idx = self._spectralInfo["ImageData"]["DataType"]
         try:
             dtype = self._supported_dtypes[idx]
         except KeyError as e:
             message = (
-                f"Data Type index ({idx}) read from file ({self.f.name}) not supported."
+                f"Data Type index ({idx}) read from file ({self._file.name}) not supported."
             )
             _logger.exception(message)
             raise DMNonSupportedDataType(message)
@@ -239,9 +271,48 @@ class DM_EELS_data:
             _logger.error(message)
             raise DMConflictingDataTypeRead(message)
 
-        self.f.seek(0)
-        data = np.fromfile(self.f, count=nItems, offset=offset, dtype=dtype)
+        self._file.seek(0)
+        data = np.fromfile(self._file, count=nItems, offset=offset, dtype=dtype)
         return data.reshape(self.shape)
+
+    def _get_all_eels_data(self) -> list[np.ndarray]:
+        """This method will extract all EELS data from the spectrum images."""
+        
+        IMAGE_DATA = 'ImageData'
+        DATA_TYPE = 'DataType'
+        DATA = 'Data'
+        BYTES_SIZE = 'bytes_size'
+        OFFSET = 'offset'
+        SIZE = 'size'
+        KEY_ERROR_MESSAGE = "Data Type index ({idx}) read from file ({filename}) not supported."
+        READABLE_ERROR_MESSAGE = "Size_in_bytes / Number_of_items = {bSize} != from NumPy expected size for {nItems} = {dtype}"
+
+        all_eels_data = []
+
+        for _, image_data in self.spectrum_images.items():
+            idx = image_data[IMAGE_DATA][DATA_TYPE]
+            try:
+                dtype = self._supported_dtypes[idx]
+            except KeyError:
+                message = KEY_ERROR_MESSAGE.format(idx=idx, filename=self._file.name)
+                _logger.exception(message)
+                raise DMNonSupportedDataType(message)
+
+            bSize = image_data[IMAGE_DATA][DATA][BYTES_SIZE]
+            offset = image_data[IMAGE_DATA][DATA][OFFSET]
+            nItems = image_data[IMAGE_DATA][DATA][SIZE]
+
+            # Checking that the info is readable
+            if bSize / nItems != np.dtype(dtype).itemsize:
+                message = READABLE_ERROR_MESSAGE.format(bSize=bSize, nItems=nItems, dtype=dtype)
+                _logger.error(message)
+                raise DMConflictingDataTypeRead(message)
+
+            self._file.seek(0)
+            shape = self.get_image_shape(image_data)
+            all_eels_data.append(np.fromfile(self._file, count=nItems, offset=offset, dtype=dtype).reshape(shape))
+
+        return all_eels_data
 
     def _recursively_add_key(self, infoD, keylist):
         """Method used to expand the dictionary recursevely, if a keyError is raised during

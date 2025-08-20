@@ -13,6 +13,10 @@ from whateels.shared_state import AppState
 from ..dm_file_processing import DM_EELS_Reader
 from .eels_data_processor_service import EELSDataProcessorService
 
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from ..dm_file_processing.readers.dm_eels_reader import DM_EELS_data
+
 class EELSFileProcessorService:
     """
     Handles DM3/DM4 file I/O and orchestrates file-to-dataset processing.
@@ -65,11 +69,15 @@ class EELSFileProcessorService:
             dm_eels_reader = DM_EELS_Reader(filepath)
 
             # Get file metadata
-            file_metadata_dictionary = dm_eels_reader.file_metadata
-            spectrum_image = dm_eels_reader.processed_eels_spectrum
+            all_metadata_file = dm_eels_reader.file_metadata
+            spectrum_image: DM_EELS_data = dm_eels_reader.processed_eels_spectrum
+            all_spectrum_images: DM_EELS_data = dm_eels_reader.processed_all_eels_spectrums
+
+            print("all_spectrum_images:", all_spectrum_images.all_data)
+            print("length:", len(all_spectrum_images.all_data))
 
             # Store metadata in AppState for global access
-            self._store_metadata(file_metadata_dictionary)
+            self._store_metadata(all_metadata_file)
 
             # Get data and energy axis
             electron_count_data = spectrum_image.data
