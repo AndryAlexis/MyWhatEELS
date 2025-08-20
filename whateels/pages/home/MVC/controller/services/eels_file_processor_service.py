@@ -68,7 +68,7 @@ class EELSFileProcessorService:
             file_metadata_dictionary = dm_eels_reader.file_metadata
             spectrum_image = dm_eels_reader.processed_eels_spectrum
 
-            # Store metadata
+            # Store metadata in AppState for global access
             self._store_metadata(file_metadata_dictionary)
 
             # Get data and energy axis
