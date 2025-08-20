@@ -55,6 +55,7 @@ class DM_EELS_data:
 
         # For backward compatibility, set the first image as spectralInfo
         imageKeys = list(self.spectrum_images.keys())
+        # TODO - Here is where the code is choosing the first image as spectralInfo
         self._spectralInfo = self.spectrum_images[imageKeys[0]] if imageKeys else None
 
     def handle_EELS_data(self):
