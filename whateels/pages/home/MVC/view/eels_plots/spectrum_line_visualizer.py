@@ -83,11 +83,17 @@ class SpectrumLineVisualizer(AbstractEELSVisualizer):
         image_pane = pn.pane.HoloViews(image, sizing_mode=self._STRETCH_BOTH)
         self.spectrum_pane = pn.pane.HoloViews(empty_spectrum, sizing_mode=self._STRETCH_BOTH)
         self._trigger_refresh(image_pane)
-        return pn.Column(
+        
+        app = pn.Column(
             image_pane,
             self.spectrum_pane,
             sizing_mode=self._STRETCH_BOTH
         )
+        
+        tabs = pn.Tabs(
+            ("Spectrum Image", app),
+        )
+        return tabs
 
     def _handle_tap_stream(self, x=None, y=None, **kwargs):
         """Handle tap events from HoloViews streams for spectrum line."""

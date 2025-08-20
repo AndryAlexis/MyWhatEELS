@@ -526,12 +526,17 @@ class SpectrumImageVisualizer(AbstractEELSVisualizer):
     # --- Public layout builders (used by controller) ---
     @override
     def create_plots(self):
+
         right_col = pn.Column(self.paneB, self.fitting_button, self.range_slider, sizing_mode="stretch_width")
         app = pn.Column(
             pn.Row(self.paneA, right_col, sizing_mode="stretch_width"),
             sizing_mode="stretch_width",
         )
-        return app
+        
+        tabs = pn.Tabs(
+            ("Spectrum Image", app),
+        )
+        return tabs
 
     @override
     def create_dataset_info(self):
