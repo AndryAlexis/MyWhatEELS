@@ -13,8 +13,6 @@ Example
     eels_data = reader.read_data()
 """
 
-from whateels.errors.dm.data import DMEmptyInfoDictionary, DMNonEelsError
-from whateels.shared_state import AppState
 from ..parsers import DM_InfoParser, DM_EELS_data
 from whateels.helpers.logging import Logger
 

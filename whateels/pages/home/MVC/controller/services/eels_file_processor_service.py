@@ -73,8 +73,8 @@ class EELSFileProcessorService:
             spectrum_image: DM_EELS_data = dm_eels_reader.processed_eels_spectrum
             all_spectrum_images: DM_EELS_data = dm_eels_reader.processed_all_eels_spectrums
 
-            print("all_spectrum_images:", all_spectrum_images.all_data)
-            print("length:", len(all_spectrum_images.all_data))
+            # print("all_spectrum_images:", all_spectrum_images.all_data)
+            # print("length:", len(all_spectrum_images.all_data))
 
             # Store metadata in AppState for global access
             self._store_metadata(all_metadata_file)
@@ -83,14 +83,20 @@ class EELSFileProcessorService:
             electron_count_data = spectrum_image.data
             energy_axis = spectrum_image.energy_axis
 
+            all_electron_count_data = all_spectrum_images.all_data
+            all_energy_axes = all_spectrum_images.all_energy_axes
+
             # Check for NaN/inf in raw data
-            self._log_data_quality(electron_count_data, energy_axis)
+            self._log_data_quality(electron_count_data, energy_axis) # TODO - DELETE IT
+            self._log_all_data_quality(all_electron_count_data, all_energy_axes)
 
             # Clean energy axis for NaN/inf values
-            energy_axis = np.nan_to_num(energy_axis, nan=0.0, posinf=0.0, neginf=0.0)
+            energy_axis = np.nan_to_num(energy_axis, nan=0.0, posinf=0.0, neginf=0.0) # TODO - DELETE IT
+            all_energy_axes = self._clean_all_axes(all_energy_axes)
 
             # Clean electron count data
-            electron_count_data = np.nan_to_num(electron_count_data, nan=0.0, posinf=0.0, neginf=0.0)
+            electron_count_data = np.nan_to_num(electron_count_data, nan=0.0, posinf=0.0, neginf=0.0) # TODO - DELETE IT
+            all_electron_count_data = self._clean_all_electron_count_data(all_electron_count_data)
 
             # Add metadata and return
             dataset: xr.Dataset | None = self._create_dataset_from_data(electron_count_data, energy_axis, spectrum_image, filepath)
@@ -98,6 +104,19 @@ class EELSFileProcessorService:
 
         except Exception as exception:
             return self._handle_file_error(exception)
+        
+    def _clean_all_electron_count_data(self, all_electron_count_data) -> list[np.ndarray]:
+        cleaned_electron_count_data = []
+        for electron_count_data in all_electron_count_data:
+            cleaned_electron_count_data.append(np.nan_to_num(electron_count_data, nan=0.0, posinf=0.0, neginf=0.0))
+        return cleaned_electron_count_data
+
+    def _clean_all_axes(self, all_energy_axes) -> list[np.ndarray]:
+        cleaned_energy_axes = []
+        for energy_axis in all_energy_axes:
+            cleaned_energy_axis = np.nan_to_num(energy_axis, nan=0.0, posinf=0.0, neginf=0.0)
+            cleaned_energy_axes.append(cleaned_energy_axis)
+        return cleaned_energy_axes
 
     def _store_metadata(self, infoDict=None):
         """
@@ -115,13 +134,17 @@ class EELSFileProcessorService:
 
     def _validate_file_size(self, filepath):
         """Validate file size for DM files"""
+
+        MIN_FILE_SIZE = 1000  # Minimum size in bytes for a valid DM3/DM4 file
+
         file_size = os.path.getsize(filepath)
-        
-        if file_size < 1000:  # Less than 1KB is suspicious for DM files
+
+        if file_size < MIN_FILE_SIZE:  # Less than 1KB is suspicious for DM files
             print(f"Error: File size ({file_size} bytes) is too small for a valid DM3/DM4 file. Expected at least 1KB.")
             return False
         return True
     
+    # TODO - DELETE IT
     def _log_data_quality(self, electron_count_data, energy_axis):
         """Log data quality information"""
         data_nan_count = np.isnan(electron_count_data).sum()
@@ -134,9 +157,38 @@ class EELSFileProcessorService:
             print(f"Warning: Raw data has {data_nan_count} NaN values and {data_inf_count} Inf values")
         if energy_nan_count > 0 or energy_inf_count > 0:
             print(f"Warning: Energy axis has {energy_nan_count} NaN values and {energy_inf_count} Inf values")
-    
+
+    def _log_all_data_quality(self, all_electron_count_data, all_energy_axes):
+        """Log data quality information for all spectra"""
+        for _, (electron_count_data, energy_axis) in enumerate(zip(all_electron_count_data, all_energy_axes)):
+            data_nan_count = np.isnan(electron_count_data).sum()
+            data_inf_count = np.isinf(electron_count_data).sum()
+            energy_nan_count = np.isnan(energy_axis).sum()
+            energy_inf_count = np.isinf(energy_axis).sum()
+            
+            # Only log if there are quality issues
+            if data_nan_count > 0 or data_inf_count > 0:
+                print(f"Warning: Raw data has {data_nan_count} NaN values and {data_inf_count} Inf values")
+            if energy_nan_count > 0 or energy_inf_count > 0:
+                print(f"Warning: Energy axis has {energy_nan_count} NaN values and {energy_inf_count} Inf values")
+
     def _create_dataset_from_data(self, electron_count_data, energy_axis, spectrum_image, filepath) -> xr.Dataset | None:
         """Create xarray dataset from processed data"""
+        
+        ELECTRON_COUNT = 'ElectronCount'
+        X = 'x'
+        Y = 'y'
+        ELOSS = 'Eloss'
+        
+        ORIGINAL_NAME = 'original_name'
+        DATASET_TYPE = 'dataset_type'
+        BEAM_ENERGY = 'beam_energy'
+        COLLECTION_ANGLE = 'collection_angle'
+        CONVERGENCE_ANGLE = 'convergence_angle'
+        IMAGE_NAME = 'image_name'
+        NAME = 'name'
+        SHAPE = 'shape'
+
         eels_data_processor = EELSDataProcessorService(self._model)
         
         # Process the data using DataService
@@ -154,10 +206,10 @@ class EELSFileProcessorService:
             print(f"Actual: {electron_count_data.shape}")
             return None
         
-        dataset = xr.Dataset(
-            {'ElectronCount': (['y', 'x', 'Eloss'], electron_count_data)},
-            coords={'y': y_coordinates, 'x': x_coordinates, 'Eloss': energy_axis}
-        )
+        dataset = xr.Dataset({
+            ELECTRON_COUNT: ([Y, X, ELOSS], electron_count_data)},
+            coords={Y: y_coordinates, X: x_coordinates, ELOSS: energy_axis
+        })
         
         # Clean dataset for NaN/inf values
         dataset = eels_data_processor.clean_dataset(dataset)
@@ -166,15 +218,15 @@ class EELSFileProcessorService:
         dataset_type = eels_data_processor.determine_dataset_type(dataset)
         
         # Add metadata
-        dataset.attrs['original_name'] = os.path.basename(filepath)
-        dataset.attrs['dataset_type'] = dataset_type
-        dataset.attrs['beam_energy'] = getattr(spectrum_image, 'beam_energy', 0)
-        dataset.attrs['collection_angle'] = getattr(spectrum_image, 'collection_angle', 0.0)
-        dataset.attrs['convergence_angle'] = getattr(spectrum_image, 'convergence_angle', 0.0)
+        dataset.attrs[ORIGINAL_NAME] = os.path.basename(filepath)
+        dataset.attrs[DATASET_TYPE] = dataset_type
+        dataset.attrs[BEAM_ENERGY] = getattr(spectrum_image, BEAM_ENERGY, 0)
+        dataset.attrs[COLLECTION_ANGLE] = getattr(spectrum_image, COLLECTION_ANGLE, 0.0)
+        dataset.attrs[CONVERGENCE_ANGLE] = getattr(spectrum_image, CONVERGENCE_ANGLE, 0.0)
 
         try:
-            dataset.attrs['image_name'] = spectrum_image.spectralInfo.get('Name', '')
-            dataset.attrs['shape'] = list(dataset['ElectronCount'].shape)
+            dataset.attrs[IMAGE_NAME] = spectrum_image.spectral_info.get(NAME, '')
+            dataset.attrs[SHAPE] = list(dataset[ELECTRON_COUNT].shape)
         except Exception:
             pass
         
