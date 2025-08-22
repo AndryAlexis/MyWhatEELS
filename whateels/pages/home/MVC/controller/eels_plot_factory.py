@@ -8,7 +8,7 @@ Features:
 - Handles errors robustly by raising exceptions with clear messages.
 """
 
-from ..view.eels_plots import SpectrumLineVisualizer, SpectrumImageVisualizer
+from ..view.eels_plots import SpectrumLineVisualizer, SpectrumImageVisualizer, SingleSpectrumVisualizer
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
@@ -39,7 +39,7 @@ class EELSPlotFactory:
         self._all_spectrum_visualizer = {
             model.constants.SPECTRUM_LINE: SpectrumLineVisualizer,
             model.constants.SPECTRUM_IMAGE: SpectrumImageVisualizer,
-            model.constants.SINGLE_SPECTRUM: SpectrumLineVisualizer,  # TODO Assuming single spectrum uses line visualizer
+            model.constants.SINGLE_SPECTRUM: SingleSpectrumVisualizer,
         }
     
     def choose_spectrum(self, dataset_type: str) -> SpectrumLineVisualizer | SpectrumImageVisualizer | None:
