@@ -2870,6 +2870,7 @@ class ElementalReferenceControllerTests(unittest.TestCase):
         self.assertEqual(self.state.nlls_run_state, "running")
         self.assertTrue(self.layout.elemental_run_progress.visible)
         self.assertFalse(self.layout.elemental_cancel_button.disabled)
+        self.assertFalse(self.layout.elemental_cancel_button.loading)
         thread = self.controller._run_thread
         self.assertIsNotNone(thread)
         thread.join(timeout=10.0)

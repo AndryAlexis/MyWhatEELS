@@ -157,8 +157,8 @@ class FittingView:
         return self._elemental_select_all_fit_areas_button
     @property
     def elemental_cancel_button(self) -> pn.widgets.Button:
-        """Access the Elemental NLLS 'Cancel' button."""
-        return self._elemental_cancel_button
+        """Backward-compatible alias for the combined Run/Cancel button."""
+        return self._elemental_run_nlls_button
     @property
     def elemental_run_progress(self) -> pn.indicators.Progress:
         """Access the progress indicator for the active multipixel run."""
@@ -293,7 +293,6 @@ class FittingView:
         self._elemental_fit_areas_input = layout.elemental_fit_areas_input
         self._elemental_select_all_fit_areas_button = layout.elemental_select_all_fit_areas_button
         self._elemental_run_nlls_button = layout.elemental_run_nlls_button
-        self._elemental_cancel_button = layout.elemental_cancel_button
         self._elemental_run_progress = layout.elemental_run_progress
         self._elemental_use_current_clustering_button = layout.elemental_use_current_clustering_button
         self._elemental_background_status = layout.elemental_background_status

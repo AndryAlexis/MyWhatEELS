@@ -148,9 +148,6 @@ class NLLSController:
         self.view.elemental_run_nlls_button.on_click(
             self._on_run_elemental_nlls
         )
-        self.view.elemental_cancel_button.on_click(
-            self._on_cancel_elemental_nlls
-        )
         self.view.elemental_select_all_fit_areas_button.on_click(
             self._on_select_all_fit_areas
         )
@@ -1024,11 +1021,10 @@ class NLLSController:
                 if not self._reference_is_current(area_id):
                     run_ready = False
                     break
-        self.view.elemental_run_nlls_button.disabled = run_active or not run_ready
-        cancel_requested = bool(
-            self._run_cancel_event is not None and self._run_cancel_event.is_set()
-        )
-        self.view.elemental_cancel_button.disabled = not run_active or cancel_requested
+        run_button = self.view.elemental_run_nlls_button
+        run_button.name = "Cancel" if run_active else "Run Elemental NLLS"
+        run_button.button_type = "danger" if run_active else "success"
+        run_button.disabled = not run_ready if not run_active else False
 
         # A run owns an immutable configuration snapshot. Lock all inputs that could
         # otherwise make the request stale while the worker is fitting pixels.
@@ -1291,7 +1287,6 @@ class NLLSController:
         self._run_thread = None
         self._prior_complete_results = None
         self.view.elemental_run_nlls_button.loading = False
-        self.view.elemental_cancel_button.loading = False
         self._refresh_button_states()
 
     def _publish_multifit_result_plot(
@@ -1346,7 +1341,7 @@ class NLLSController:
         progress = self.view.elemental_run_progress
         progress.name = "Cancelling after the active pixel..."
         progress.active = True
-        self.view.elemental_cancel_button.loading = True
+        self.view.elemental_run_nlls_button.loading = False
         self._refresh_button_states()
         if notify:
             self._notify(
@@ -1388,6 +1383,9 @@ class NLLSController:
             )
 
     def _on_run_elemental_nlls(self, event) -> None:
+        if self._active_run_request is not None:
+            self._request_run_cancellation()
+            return
         try:
             (
                 request,
@@ -1416,7 +1414,10 @@ class NLLSController:
                 bar_color="success",
                 visible=True,
             )
-            self.view.elemental_run_nlls_button.loading = True
+            # This same button becomes "Cancel" while the worker runs.  Panel's
+            # loading overlay intercepts pointer events, so keep it off here to
+            # ensure the cancellation click remains available.
+            self.view.elemental_run_nlls_button.loading = False
             self._refresh_button_states()
             thread = Thread(
                 target=self._run_worker,

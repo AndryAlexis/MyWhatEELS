@@ -1401,15 +1401,6 @@ class FittingRightSidebarLayout(pn.Column):
             sizing_mode=self._STRETCH_WIDTH,
             disabled=True,
         )
-        self._elemental_cancel_button = pn.widgets.Button(
-            name='Cancel',
-            button_type='danger',
-            height=55,
-            margin=0,
-            width=110,
-            sizing_mode='fixed',
-            disabled=True,
-        )
         self._elemental_run_progress = pn.indicators.Progress(
             name="Elemental NLLS progress",
             value=0,
@@ -1645,8 +1636,8 @@ class FittingRightSidebarLayout(pn.Column):
 
     @property
     def elemental_cancel_button(self) -> pn.widgets.Button:
-        """Access the Elemental NLLS 'Cancel' button."""
-        return self._elemental_cancel_button
+        """Backward-compatible alias for the combined Run/Cancel button."""
+        return self._elemental_run_nlls_button
 
     @property
     def elemental_run_progress(self) -> pn.indicators.Progress:
@@ -1976,7 +1967,6 @@ class FittingRightSidebarLayout(pn.Column):
                 ),
                 pn.Row(
                     self._elemental_run_nlls_button,
-                    self._elemental_cancel_button,
                     margin=0,
                     sizing_mode=self._STRETCH_WIDTH,
                     styles=self._fluid_row_styles(gap='10px'),
