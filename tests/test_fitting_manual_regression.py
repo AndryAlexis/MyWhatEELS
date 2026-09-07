@@ -2523,7 +2523,9 @@ class ElementalReferenceControllerTests(unittest.TestCase):
         self.assertEqual(editor.continuum_selector.stylesheets, [])
         self.assertEqual(editor._continuum_form.styles["background"], "transparent")
 
-        def assert_parameter_block(block, widgets, label, margin):
+        def assert_parameter_block(
+            block, widgets, label, margin, number_format="0.00", step=0.01
+        ):
             header, numeric_fields = block.objects
             self.assertEqual(header.objects[0].value, label)
             self.assertEqual(header.objects[-2].value, "Flexibility")
@@ -2535,8 +2537,8 @@ class ElementalReferenceControllerTests(unittest.TestCase):
             self.assertIs(numeric_fields.objects[1], widgets["minimum"])
             self.assertIs(numeric_fields.objects[2], widgets["maximum"])
             for numeric_widget in numeric_fields.objects:
-                self.assertEqual(numeric_widget.format, "0.00")
-                self.assertEqual(numeric_widget.step, 0.01)
+                self.assertEqual(numeric_widget.format, number_format)
+                self.assertEqual(numeric_widget.step, step)
 
         first_amplitude = editor.parameter_widgets[(first_continuum.id, "amplitude")]
         first_shift = editor.parameter_widgets[(first_continuum.id, "chemical_shift")]
@@ -2609,6 +2611,8 @@ class ElementalReferenceControllerTests(unittest.TestCase):
             editor.parameter_widgets[(second_fine.id, "amplitude")],
             "Amplitude",
             (0, 0, 10, 0),
+            number_format="0.00000",
+            step=0.00001,
         )
         fine_controls["enabled"].value = False
         self.assertFalse(

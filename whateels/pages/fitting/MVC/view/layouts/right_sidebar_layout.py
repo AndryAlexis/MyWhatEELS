@@ -153,16 +153,27 @@ class EdgeAddedModal(pn.Column):
         to_storage=None,
     ) -> pn.Row:
         is_chemical_shift = parameter_name == "chemical_shift"
+        is_elnes_amplitude = (
+            component_kind == "fine" and parameter_name == "amplitude"
+        )
         compact = bool(getattr(self, "_compact_editor", False))
         compact_block_margin = (
             (0, 0, 10, 0)
             if compact
             else 0
         )
-        # Cards are deliberately concise: show values to two decimals and use
-        # matching spinner increments without changing the persisted precision.
-        number_format = "0.00" if compact or is_chemical_shift else None
-        step = 0.01 if compact or is_chemical_shift else 0.1
+        # Cards are deliberately concise, except ELNES amplitudes: their small
+        # positive lower bound must remain visible instead of being rounded to 0.
+        number_format = (
+            "0.00000"
+            if is_elnes_amplitude
+            else ("0.00" if compact or is_chemical_shift else None)
+        )
+        step = (
+            0.00001
+            if is_elnes_amplitude
+            else (0.01 if compact or is_chemical_shift else 0.1)
+        )
         # The compact cards place the Boolean beside the parameter title, then
         # give Value / Min / Max the full width of a second row.  The modal
         # keeps its legacy inline layout.

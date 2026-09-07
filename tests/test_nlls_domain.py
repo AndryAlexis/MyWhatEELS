@@ -401,6 +401,10 @@ class ProvenanceAndWorkspaceTests(unittest.TestCase):
         groups = canonical_subshell_groups(("L3",), ("K1", "L2", "L3"))
         self.assertEqual(groups, (("L2", "L3"),))
 
+    def test_default_elnes_amplitude_has_a_small_positive_lower_bound(self):
+        _, _, amplitude = fine_structure_parameter_specs(4.8)
+        self.assertEqual(amplitude.minimum, 0.00001)
+
 
 class ClusteringAreaTests(unittest.TestCase):
     def setUp(self) -> None:

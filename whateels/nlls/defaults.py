@@ -120,5 +120,5 @@ def fine_structure_parameter_specs(
             maximum=sigma * 2.25,
             vary=True,
         ),
-        ParameterSpec(value=1.0, minimum=0.0, maximum=math.inf, vary=True),
+        ParameterSpec(value=1.0, minimum=0.00001, maximum=math.inf, vary=True),
     )
